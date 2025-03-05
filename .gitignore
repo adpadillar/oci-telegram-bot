@@ -48,3 +48,7 @@ frontend/package-lock.json
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
+
+# ignore wallet directory and any files in it
+wallet/
+.env
