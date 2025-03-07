@@ -1,7 +1,7 @@
 package com.springboot.MyTodoList.service;
 
-import com.springboot.MyTodoList.model.ToDoItem;
-import com.springboot.MyTodoList.repository.ToDoItemRepository;
+import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,23 +11,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ToDoItemService {
+public class TaskService {
 
     @Autowired
-    private ToDoItemRepository toDoItemRepository;
-    public List<ToDoItem> findAll(){
-        List<ToDoItem> todoItems = toDoItemRepository.findAll();
+    private TaskRepository toDoItemRepository;
+    public List<Task> findAll(){
+        List<Task> todoItems = toDoItemRepository.findAll();
         return todoItems;
     }
-    public ResponseEntity<ToDoItem> getItemById(int id){
-        Optional<ToDoItem> todoData = toDoItemRepository.findById(id);
+    public ResponseEntity<Task> getItemById(int id){
+        Optional<Task> todoData = toDoItemRepository.findById(id);
         if (todoData.isPresent()){
             return new ResponseEntity<>(todoData.get(), HttpStatus.OK);
         }else{
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    public ToDoItem addToDoItem(ToDoItem toDoItem){
+    public Task addToDoItem(Task toDoItem){
         return toDoItemRepository.save(toDoItem);
     }
 
@@ -39,14 +39,14 @@ public class ToDoItemService {
             return false;
         }
     }
-    public ToDoItem updateToDoItem(int id, ToDoItem td){
-        Optional<ToDoItem> toDoItemData = toDoItemRepository.findById(id);
+    public Task updateToDoItem(int id, Task td){
+        Optional<Task> toDoItemData = toDoItemRepository.findById(id);
         if(toDoItemData.isPresent()){
-            ToDoItem toDoItem = toDoItemData.get();
+            Task toDoItem = toDoItemData.get();
             toDoItem.setID(id);
-            toDoItem.setCreation_ts(td.getCreation_ts());
+            toDoItem.setCreatedAt(td.getCreatedAt());
             toDoItem.setDescription(td.getDescription());
-            toDoItem.setDone(td.isDone());
+            toDoItem.setStatus(td.getStatus());
             return toDoItemRepository.save(toDoItem);
         }else{
             return null;

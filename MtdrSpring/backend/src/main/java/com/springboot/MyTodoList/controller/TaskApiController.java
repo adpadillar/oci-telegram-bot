@@ -1,6 +1,6 @@
 package com.springboot.MyTodoList.controller;
-import com.springboot.MyTodoList.model.ToDoItem;
-import com.springboot.MyTodoList.service.ToDoItemService;
+import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -12,28 +12,28 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-public class ToDoItemController {
+public class TaskApiController {
     @Autowired
-    private ToDoItemService toDoItemService;
+    private TaskService toDoItemService;
     //@CrossOrigin
     @GetMapping(value = "/todolist")
-    public List<ToDoItem> getAllToDoItems(){
+    public List<Task> getAllToDoItems(){
         return toDoItemService.findAll();
     }
     //@CrossOrigin
     @GetMapping(value = "/todolist/{id}")
-    public ResponseEntity<ToDoItem> getToDoItemById(@PathVariable int id){
+    public ResponseEntity<Task> getToDoItemById(@PathVariable int id){
         try{
-            ResponseEntity<ToDoItem> responseEntity = toDoItemService.getItemById(id);
-            return new ResponseEntity<ToDoItem>(responseEntity.getBody(), HttpStatus.OK);
+            ResponseEntity<Task> responseEntity = toDoItemService.getItemById(id);
+            return new ResponseEntity<Task>(responseEntity.getBody(), HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
     //@CrossOrigin
     @PostMapping(value = "/todolist")
-    public ResponseEntity addToDoItem(@RequestBody ToDoItem todoItem) throws Exception{
-        ToDoItem td = toDoItemService.addToDoItem(todoItem);
+    public ResponseEntity addToDoItem(@RequestBody Task todoItem) throws Exception{
+        Task td = toDoItemService.addToDoItem(todoItem);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("location",""+td.getID());
         responseHeaders.set("Access-Control-Expose-Headers","location");
@@ -44,9 +44,9 @@ public class ToDoItemController {
     }
     //@CrossOrigin
     @PutMapping(value = "todolist/{id}")
-    public ResponseEntity updateToDoItem(@RequestBody ToDoItem toDoItem, @PathVariable int id){
+    public ResponseEntity updateToDoItem(@RequestBody Task toDoItem, @PathVariable int id){
         try{
-            ToDoItem toDoItem1 = toDoItemService.updateToDoItem(id, toDoItem);
+            Task toDoItem1 = toDoItemService.updateToDoItem(id, toDoItem);
             System.out.println(toDoItem1.toString());
             return new ResponseEntity<>(toDoItem1,HttpStatus.OK);
         }catch (Exception e){

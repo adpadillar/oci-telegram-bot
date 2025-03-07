@@ -7,6 +7,9 @@
 # BlueJ files
 *.ctxt
 
+#gzipped log files
+*.gz
+
 # Package Files #
 *.jar
 *.war
