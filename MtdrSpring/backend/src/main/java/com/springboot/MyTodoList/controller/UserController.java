@@ -21,15 +21,15 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(@PathVariable int id) {
         User user = userService.findUserById(id);
         return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/project/{projectId}")
-    public List<User> getUsersByProject(@PathVariable Long projectId) {
-        return userService.findUsersByProject(projectId);
-    }
+    // @GetMapping("/project/{projectId}")
+    // public List<User> getUsersByProject(@PathVariable int projectId) {
+    //     return userService.findUsersByProject(projectId);
+    // }
 
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
@@ -37,13 +37,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User userDetails) {
         User updatedUser = userService.updateUser(id, userDetails);
         return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
         return userService.deleteUser(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 }

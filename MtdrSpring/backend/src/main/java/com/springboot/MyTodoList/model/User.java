@@ -8,10 +8,10 @@ public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "TELEGRAM_ID", unique = true, nullable = false)
-    private Long telegramId;
+    private int telegramId;
 
 
     //Tentativo por que todavia no existe el project model LOL
@@ -30,7 +30,7 @@ public class User {
 
     public User() {}
 
-    public User(Long telegramId, Project project, String firstName, String lastName, String role) {
+    public User(int telegramId, Project project, String firstName, String lastName, String role) {
         this.telegramId = telegramId;
         this.project = project;
         this.firstName = firstName;
@@ -39,10 +39,10 @@ public class User {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
+    public int getId() { return id; }
 
-    public Long getTelegramId() { return telegramId; }
-    public void setTelegramId(Long telegramId) { this.telegramId = telegramId; }
+    public int getTelegramId() { return telegramId; }
+    public void setTelegramId(int telegramId) { this.telegramId = telegramId; }
 
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }

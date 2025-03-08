@@ -19,23 +19,23 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User findUserById(Long id) {
+    public User findUserById(int id) {
         return userRepository.findById(id).orElse(null);
     }
 
-    public List<User> findUsersByProject(Long projectId) {
-        return userRepository.findByProjectId(projectId);
-    }
+    // public List<User> findUsersByProject(int projectId) {
+    //     return userRepository.findByProjectId(projectId);
+    // }
 
-    public User findUserByTelegramId(Long telegramId) {
-        return userRepository.findByTelegramId(telegramId);
-    }
+    // public User findUserByTelegramId(int telegramId) {
+    //     return userRepository.findByTelegramId(telegramId);
+    // }
 
     public User createUser(User user) {
         return userRepository.save(user);
     }
 
-    public User updateUser(Long id, User userDetails) {
+    public User updateUser(int id, User userDetails) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User existingUser = optionalUser.get();
@@ -50,7 +50,7 @@ public class UserService {
         return null;
     }
 
-    public boolean deleteUser(Long id) {
+    public boolean deleteUser(int id) {
         if (userRepository.existsById(id)) {
             userRepository.deleteById(id);
             return true;
