@@ -1,5 +1,6 @@
 package com.springboot.MyTodoList.controller;
 
+import com.springboot.MyTodoList.dto.UserDTO;
 import com.springboot.MyTodoList.model.User;
 import com.springboot.MyTodoList.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,41 +10,47 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userService.findAllUsers();
+    @GetMapping("/api/{project}/users")
+    public List<User> getAllUsers(@PathVariable("project") int project) {
+        return userService.findUsersByProject(project);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable int id) {
+    @PostMapping("/api/{project}/users")
+    public ResponseEntity<User> createUser(@PathVariable("project") int projectId, @RequestBody UserDTO userDTO) {
+        // Convert DTO to User entity or pass both to service
+        return ResponseEntity.ok(userService.createUser(userDTO, projectId));
+    }
+
+    @GetMapping("/api/{project}/users/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable("project") int project, @PathVariable("id") int id) {
         User user = userService.findUserById(id);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+
+        if (user.getProject().getID() != project) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(user);
     }
 
-    // @GetMapping("/project/{projectId}")
-    // public List<User> getUsersByProject(@PathVariable int projectId) {
-    //     return userService.findUsersByProject(projectId);
-    // }
-
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User userDetails) {
-        User updatedUser = userService.updateUser(id, userDetails);
+    @PatchMapping("/api/{project}/users/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable("project") int project, @PathVariable int id, @RequestBody UserDTO userDetails) {
+        User updatedUser = userService.patchUserOnProject(id, project, userDetails);
         return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+    @DeleteMapping("/api/{project}/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable("project") int project, @PathVariable int id) {
+        User user = userService.findUserById(id);
+
+        if (user.getProject().getID() != project) {
+            return ResponseEntity.notFound().build();
+        }
+
         return userService.deleteUser(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 }

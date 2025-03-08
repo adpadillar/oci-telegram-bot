@@ -8,13 +8,11 @@ public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int ID;
 
-    @Column(name = "TELEGRAM_ID", unique = true, nullable = false)
-    private int telegramId;
+    @Column(name = "TELEGRAM_ID", nullable = true, length = 255)
+    private String telegramId;
 
-
-    //Tentativo por que todavia no existe el project model LOL
     @ManyToOne
     @JoinColumn(name = "PROJECT_ID", nullable = false)
     private Project project;
@@ -30,7 +28,7 @@ public class User {
 
     public User() {}
 
-    public User(int telegramId, Project project, String firstName, String lastName, String role) {
+    public User(String telegramId, Project project, String firstName, String lastName, String role) {
         this.telegramId = telegramId;
         this.project = project;
         this.firstName = firstName;
@@ -39,10 +37,11 @@ public class User {
     }
 
     // Getters y Setters
-    public int getId() { return id; }
+    public int getID() { return ID; }
+    public void setID(int id) { this.ID = id; }
 
-    public int getTelegramId() { return telegramId; }
-    public void setTelegramId(int telegramId) { this.telegramId = telegramId; }
+    public String getTelegramId() { return telegramId; }
+    public void setTelegramId(String telegramId) { this.telegramId = telegramId; }
 
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }
