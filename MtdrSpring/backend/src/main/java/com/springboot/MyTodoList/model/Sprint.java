@@ -13,32 +13,32 @@ public class Sprint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
-    @Column(name = "PROJECT_ID")
-    private int projectId;
+    @ManyToOne
+    @JoinColumn(name = "PROJECT_ID", nullable = false)
+    private Project project;
     
-    @Column(name = "NAME")
+    @Column(name = "NAME", length = 255, nullable = false)
     private String name;
     
-    @Column(name = "DESCRIPTION")
+    @Column(name = "DESCRIPTION", length = 4000, nullable = true)
     private String description;
 
-    @Column(name = "STARTED_AT")
+    @Column(name = "STARTED_AT", nullable = false)
     private OffsetDateTime startedAt;
     
-    @Column(name = "ENDS_AT")
+    @Column(name = "ENDS_AT", nullable = false)
     private OffsetDateTime endsAt;
     
     public Sprint() {
     }
     
-    public Sprint(int ID, int projectId,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
+    public Sprint(int ID, Project project,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
         this.ID = ID;
-        this.projectId = projectId;
+        this.project = project;
         this.name = name;
         this.description = description;
         this.startedAt = startedAt;
         this.endsAt = endsAt;
-
     }
     
     public int getID() {
@@ -49,12 +49,12 @@ public class Sprint {
         this.ID = ID;
     }
     
-    public int getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
     
-    public void setProjectId(int projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        this.project = project;
     }
     
     public String getName() {
@@ -94,7 +94,7 @@ public class Sprint {
     public String toString() {
         return "Sprint{" +
                 "ID=" + ID +
-                ", projectId=" + projectId +
+                ", project=" + project.toString() +
                 ", name='" + name +
                 ", description='" + description + '\'' +
                 ", startedAt=" + startedAt + '\'' +

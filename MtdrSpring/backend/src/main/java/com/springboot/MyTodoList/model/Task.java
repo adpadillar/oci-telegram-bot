@@ -13,44 +13,48 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
-    @Column(name = "PROJECT_ID")
-    private int projectId;
+    @ManyToOne
+    @JoinColumn(name = "PROJECT_ID", nullable = false)
+    private Project project;
     
-    @Column(name = "DESCRIPTION")
+    @Column(name = "DESCRIPTION", length = 4000, nullable = true)
     private String description;
     
-    @Column(name = "CREATED_AT")
+    @Column(name = "CREATED_AT", nullable = false)
     private OffsetDateTime createdAt;
     
-    @Column(name = "STATUS")
+    @Column(name = "STATUS", length = 128, nullable = false)
     private String status;
     
-    @Column(name = "CREATED_BY")
-    private int createdBy;
+    @ManyToOne
+    @JoinColumn(name = "CREATED_BY", nullable = false)
+    private User createdBy;
     
-    @Column(name = "ASSIGNED_TO")
-    private int assignedTo;
+    @ManyToOne
+    @JoinColumn(name = "ASSIGNED_TO", nullable = true)
+    private User assignedTo;
     
-    @Column(name = "ESTIMATE_HOURS")
+    @Column(name = "ESTIMATE_HOURS", nullable = true)
     private Double estimateHours;
     
-    @Column(name = "REAL_HOURS")
+    @Column(name = "REAL_HOURS", nullable = true)
     private Double realHours;
     
-    @Column(name = "SPRINT_ID")
-    private int sprintId;
+    @ManyToOne
+    @JoinColumn(name = "SPRINT_ID", nullable = true)
+    private Sprint sprint;
     
-    @Column(name = "CATEGORY")
+    @Column(name = "CATEGORY", length = 128, nullable = true)
     private String category;
     
     public Task() {
     }
     
-    public Task(int ID, int projectId, String description, OffsetDateTime createdAt, 
-                String status, int createdBy, int assignedTo, Double estimateHours, 
-                Double realHours, int sprintId, String category) {
+    public Task(int ID, Project project, String description, OffsetDateTime createdAt, 
+                String status, User createdBy, User assignedTo, Double estimateHours, 
+                Double realHours, Sprint sprint, String category) {
         this.ID = ID;
-        this.projectId = projectId;
+        this.project = project;
         this.description = description;
         this.createdAt = createdAt;
         this.status = status;
@@ -58,7 +62,7 @@ public class Task {
         this.assignedTo = assignedTo;
         this.estimateHours = estimateHours;
         this.realHours = realHours;
-        this.sprintId = sprintId;
+        this.sprint = sprint;
         this.category = category;
     }
     
@@ -70,12 +74,12 @@ public class Task {
         this.ID = ID;
     }
     
-    public int getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
     
-    public void setProjectId(int projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        this.project = project;
     }
     
     public String getDescription() {
@@ -102,19 +106,19 @@ public class Task {
         this.status = status;
     }
     
-    public int getCreatedBy() {
+    public User getCreatedBy() {
         return createdBy;
     }
     
-    public void setCreatedBy(int createdBy) {
+    public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
     
-    public int getAssignedTo() {
+    public User getAssignedTo() {
         return assignedTo;
     }
     
-    public void setAssignedTo(int assignedTo) {
+    public void setAssignedTo(User assignedTo) {
         this.assignedTo = assignedTo;
     }
     
@@ -134,12 +138,12 @@ public class Task {
         this.realHours = realHours;
     }
     
-    public int getSprintId() {
-        return sprintId;
+    public Sprint getSprint() {
+        return sprint;
     }
     
-    public void setSprintId(int sprintId) {
-        this.sprintId = sprintId;
+    public void setSprint(Sprint sprint) {
+        this.sprint = sprint;
     }
     
     public String getCategory() {
@@ -154,15 +158,15 @@ public class Task {
     public String toString() {
         return "ToDoItem{" +
                 "ID=" + ID +
-                ", projectId=" + projectId +
+                ", project=" + (project != null ? project.getID() : null) +
                 ", description='" + description + '\'' +
                 ", createdAt=" + createdAt +
                 ", status='" + status + '\'' +
-                ", createdBy=" + createdBy +
-                ", assignedTo=" + assignedTo +
+                ", createdBy=" + (createdBy != null ? createdBy.getID() : null) +
+                ", assignedTo=" + (assignedTo != null ? assignedTo.getID() : null) +
                 ", estimateHours=" + estimateHours +
                 ", realHours=" + realHours +
-                ", sprintId=" + sprintId +
+                ", sprint=" + (sprint != null ? sprint.getID() : null) +
                 ", category='" + category + '\'' +
                 '}';
     }

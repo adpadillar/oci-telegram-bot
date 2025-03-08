@@ -3,6 +3,7 @@ package com.springboot.MyTodoList.controller;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -92,7 +93,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 				try {
 
-					Task item = getToDoItemById(id).getBody();
+					Task item = getToDoItemById(id);
 					item.setStatus("done");
 					updateToDoItem(item, id);
 					BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DONE.getMessage(), this);
@@ -109,7 +110,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 				try {
 
-					Task item = getToDoItemById(id).getBody();
+					Task item = getToDoItemById(id);
 					item.setStatus("created");
 					updateToDoItem(item, id);
 					BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_UNDONE.getMessage(), this);
@@ -249,14 +250,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 	// GET BY ID /todolist/{id}
-	public ResponseEntity<Task> getToDoItemById(@PathVariable int id) {
-		try {
-			ResponseEntity<Task> responseEntity = toDoItemService.getItemById(id);
-			return new ResponseEntity<Task>(responseEntity.getBody(), HttpStatus.OK);
-		} catch (Exception e) {
-			logger.error(e.getLocalizedMessage(), e);
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
+	public Task getToDoItemById(@PathVariable int id) throws RuntimeException {
+			Optional<Task> task = toDoItemService.getItemById(id);
+			if (task.isPresent()) {
+				return task.get();
+			} else {
+				throw new RuntimeException("Task not found");
+			}
 	}
 
 	// PUT /todolist
