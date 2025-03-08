@@ -4,25 +4,22 @@ import javax.persistence.*;
 import java.time.OffsetDateTime;
 
 /*
-    representation of the TASKS table that exists in the database
+    representation of the PROJECTS table that exists in the database
  */
 @Entity
-@Table(name = "MESSAGES")
+@Table(name = "PROJECTS")
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
-    @Column(name = "MANAGER_ID")
-    private int managerId;
-    
-    @Column(name = "NAME")
+    @Column(name = "NAME", length = 255, nullable = false)
     private String name;
     
-    @Column(name = "START_TIME")
+    @Column(name = "START_TIME", nullable = false)
     private OffsetDateTime startTime;
     
-    @Column(name = "END_TIME")
+    @Column(name = "END_TIME", nullable = false)
     private OffsetDateTime endTime;
     
     public Project() {
@@ -30,19 +27,15 @@ public class Project {
     
     public Project(
             int ID,
-            int managerId,
             String name,
             OffsetDateTime startTime,
             OffsetDateTime endTime
     ) {
         this.ID = ID;
-        this.managerId = managerId;
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
     }
-
-    
     
     public int getID() {
         return ID;
@@ -50,14 +43,6 @@ public class Project {
     
     public void setID(int ID) {
         this.ID = ID;
-    }
-    
-    public int getManagerId() {
-        return managerId;
-    }
-
-    public void setManagerId(int managerId) {
-        this.managerId = managerId;
     }
 
     public String getName() {
@@ -84,13 +69,10 @@ public class Project {
         this.endTime = endTime;
     }
 
-    
-    
     @Override
     public String toString() {
         return "Project{" +
                 "ID=" + ID +
-                ", managerId=" + managerId +
                 ", name='" + name + '\'' +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
