@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "SPRINTS")
-public class Task {
+public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
@@ -16,50 +16,29 @@ public class Task {
     @Column(name = "PROJECT_ID")
     private int projectId;
     
+    @Column(name = "NAME")
+    private String name;
+    
     @Column(name = "DESCRIPTION")
     private String description;
+
+    @Column(name = "STARTED_AT")
+    private OffsetDateTime startedAt;
     
-    @Column(name = "CREATED_AT")
-    private OffsetDateTime createdAt;
+    @Column(name = "ENDS_AT")
+    private OffsetDateTime endsAt;
     
-    @Column(name = "STATUS")
-    private String status;
-    
-    @Column(name = "CREATED_BY")
-    private int createdBy;
-    
-    @Column(name = "ASSIGNED_TO")
-    private int assignedTo;
-    
-    @Column(name = "ESTIMATE_HOURS")
-    private Double estimateHours;
-    
-    @Column(name = "REAL_HOURS")
-    private Double realHours;
-    
-    @Column(name = "SPRINT_ID")
-    private int sprintId;
-    
-    @Column(name = "CATEGORY")
-    private String category;
-    
-    public Task() {
+    public Sprint() {
     }
     
-    public Task(int ID, int projectId, String description, OffsetDateTime createdAt, 
-                String status, int createdBy, int assignedTo, Double estimateHours, 
-                Double realHours, int sprintId, String category) {
+    public Sprint(int ID, int projectId,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
         this.ID = ID;
         this.projectId = projectId;
+        this.name = name;
         this.description = description;
-        this.createdAt = createdAt;
-        this.status = status;
-        this.createdBy = createdBy;
-        this.assignedTo = assignedTo;
-        this.estimateHours = estimateHours;
-        this.realHours = realHours;
-        this.sprintId = sprintId;
-        this.category = category;
+        this.startedAt = startedAt;
+        this.endsAt = endsAt;
+
     }
     
     public int getID() {
@@ -78,6 +57,14 @@ public class Task {
         this.projectId = projectId;
     }
     
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -86,84 +73,32 @@ public class Task {
         this.description = description;
     }
     
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
+    public OffsetDateTime getStartedAt() {
+        return startedAt;
     }
     
-    public void setCreatedAt(OffsetDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setStartedAt(OffsetDateTime startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public OffsetDateTime getEndsAt() {
+        return endsAt;
     }
     
-    public String getStatus() {
-        return status;
+    public void setEndsAt(OffsetDateTime endsAt) {
+        this.endsAt = endsAt;
     }
     
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
-    public int getCreatedBy() {
-        return createdBy;
-    }
-    
-    public void setCreatedBy(int createdBy) {
-        this.createdBy = createdBy;
-    }
-    
-    public int getAssignedTo() {
-        return assignedTo;
-    }
-    
-    public void setAssignedTo(int assignedTo) {
-        this.assignedTo = assignedTo;
-    }
-    
-    public Double getEstimateHours() {
-        return estimateHours;
-    }
-    
-    public void setEstimateHours(Double estimateHours) {
-        this.estimateHours = estimateHours;
-    }
-    
-    public Double getRealHours() {
-        return realHours;
-    }
-    
-    public void setRealHours(Double realHours) {
-        this.realHours = realHours;
-    }
-    
-    public int getSprintId() {
-        return sprintId;
-    }
-    
-    public void setSprintId(int sprintId) {
-        this.sprintId = sprintId;
-    }
-    
-    public String getCategory() {
-        return category;
-    }
-    
-    public void setCategory(String category) {
-        this.category = category;
-    }
-    
+
     @Override
     public String toString() {
-        return "ToDoItem{" +
+        return "Sprint{" +
                 "ID=" + ID +
                 ", projectId=" + projectId +
+                ", name='" + name +
                 ", description='" + description + '\'' +
-                ", createdAt=" + createdAt +
-                ", status='" + status + '\'' +
-                ", createdBy=" + createdBy +
-                ", assignedTo=" + assignedTo +
-                ", estimateHours=" + estimateHours +
-                ", realHours=" + realHours +
-                ", sprintId=" + sprintId +
-                ", category='" + category + '\'' +
+                ", startedAt=" + startedAt + '\'' +
+                ", endsAt=" + endsAt + '\'' +
                 '}';
     }
 }
