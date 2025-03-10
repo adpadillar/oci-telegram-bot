@@ -1,6 +1,6 @@
 package com.springboot.MyTodoList.service;
 
-import com.springboot.MyTodoList.model.Project;
+import com.springboot.MyTodoList.model.ProjectModel;
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,19 +15,19 @@ public class ProjectService {
 
     @Autowired
     private ProjectRepository projectRepository;
-    public List<Project> findAll(){
-        List<Project> projects = projectRepository.findAll();
+    public List<ProjectModel> findAll(){
+        List<ProjectModel> projects = projectRepository.findAll();
         return projects;
     }
-    public ResponseEntity<Project> getProjectById(int id){
-        Optional<Project> projectData = projectRepository.findById(id);
+    public ResponseEntity<ProjectModel> getProjectById(int id){
+        Optional<ProjectModel> projectData = projectRepository.findById(id);
         if (projectData.isPresent()){
             return new ResponseEntity<>(projectData.get(), HttpStatus.OK);
         }else{
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    public Project addProject(Project project){
+    public ProjectModel addProject(ProjectModel project){
         return projectRepository.save(project);
     }
 

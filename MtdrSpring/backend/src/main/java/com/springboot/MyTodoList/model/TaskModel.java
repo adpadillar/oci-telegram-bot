@@ -8,14 +8,14 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "TASKS")
-public class Task {
+public class TaskModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
     @ManyToOne
     @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private Project project;
+    private ProjectModel project;
     
     @Column(name = "DESCRIPTION", length = 4000, nullable = true)
     private String description;
@@ -28,11 +28,11 @@ public class Task {
     
     @ManyToOne
     @JoinColumn(name = "CREATED_BY", nullable = false)
-    private User createdBy;
+    private UserModel createdBy;
     
     @ManyToOne
     @JoinColumn(name = "ASSIGNED_TO", nullable = true)
-    private User assignedTo;
+    private UserModel assignedTo;
     
     @Column(name = "ESTIMATE_HOURS", nullable = true)
     private Double estimateHours;
@@ -42,17 +42,17 @@ public class Task {
     
     @ManyToOne
     @JoinColumn(name = "SPRINT_ID", nullable = true)
-    private Sprint sprint;
+    private SprintModel sprint;
     
     @Column(name = "CATEGORY", length = 128, nullable = true)
     private String category;
     
-    public Task() {
+    public TaskModel() {
     }
     
-    public Task(int ID, Project project, String description, OffsetDateTime createdAt, 
-                String status, User createdBy, User assignedTo, Double estimateHours, 
-                Double realHours, Sprint sprint, String category) {
+    public TaskModel(int ID, ProjectModel project, String description, OffsetDateTime createdAt, 
+                String status, UserModel createdBy, UserModel assignedTo, Double estimateHours, 
+                Double realHours, SprintModel sprint, String category) {
         this.ID = ID;
         this.project = project;
         this.description = description;
@@ -74,11 +74,11 @@ public class Task {
         this.ID = ID;
     }
     
-    public Project getProject() {
+    public ProjectModel getProject() {
         return project;
     }
     
-    public void setProject(Project project) {
+    public void setProject(ProjectModel project) {
         this.project = project;
     }
     
@@ -106,19 +106,19 @@ public class Task {
         this.status = status;
     }
     
-    public User getCreatedBy() {
+    public UserModel getCreatedBy() {
         return createdBy;
     }
     
-    public void setCreatedBy(User createdBy) {
+    public void setCreatedBy(UserModel createdBy) {
         this.createdBy = createdBy;
     }
     
-    public User getAssignedTo() {
+    public UserModel getAssignedTo() {
         return assignedTo;
     }
     
-    public void setAssignedTo(User assignedTo) {
+    public void setAssignedTo(UserModel assignedTo) {
         this.assignedTo = assignedTo;
     }
     
@@ -138,11 +138,11 @@ public class Task {
         this.realHours = realHours;
     }
     
-    public Sprint getSprint() {
+    public SprintModel getSprint() {
         return sprint;
     }
     
-    public void setSprint(Sprint sprint) {
+    public void setSprint(SprintModel sprint) {
         this.sprint = sprint;
     }
     

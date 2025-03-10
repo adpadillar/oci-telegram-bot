@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "USERS")
-public class User {
+public class UserModel {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,7 +15,7 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private Project project;
+    private ProjectModel project;
 
     @Column(name = "FIRST_NAME", length = 255, nullable = false)
     private String firstName;
@@ -26,9 +26,9 @@ public class User {
     @Column(name = "ROLE", length = 128, nullable = false)
     private String role;
 
-    public User() {}
+    public UserModel() {}
 
-    public User(String telegramId, Project project, String firstName, String lastName, String role) {
+    public UserModel(String telegramId, ProjectModel project, String firstName, String lastName, String role) {
         this.telegramId = telegramId;
         this.project = project;
         this.firstName = firstName;
@@ -43,8 +43,8 @@ public class User {
     public String getTelegramId() { return telegramId; }
     public void setTelegramId(String telegramId) { this.telegramId = telegramId; }
 
-    public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
+    public ProjectModel getProject() { return project; }
+    public void setProject(ProjectModel project) { this.project = project; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

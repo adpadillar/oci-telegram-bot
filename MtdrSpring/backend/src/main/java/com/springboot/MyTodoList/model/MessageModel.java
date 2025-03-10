@@ -7,7 +7,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "MESSAGES")
-public class Message {
+public class MessageModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
@@ -24,10 +24,10 @@ public class Message {
     @Column(name = "USER_ID")
     private int userId;
     
-    public Message() {
+    public MessageModel() {
     }
     
-    public Message(
+    public MessageModel(
             int ID,
             String messageType,
             String description,

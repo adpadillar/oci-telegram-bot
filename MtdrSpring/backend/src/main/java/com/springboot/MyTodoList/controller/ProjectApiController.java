@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.springboot.MyTodoList.model.Project;
+import com.springboot.MyTodoList.model.ProjectModel;
 import com.springboot.MyTodoList.service.ProjectService;
 import java.util.List;
 
@@ -19,14 +19,14 @@ public class ProjectApiController {
     private ProjectService projectService;
     //@CrossOrigin
     @GetMapping(value = "/api/projects")
-    public List<Project> getAllProjects(){
+    public List<ProjectModel> getAllProjects(){
         return projectService.findAll();
     }
 
     //@CrossOrigin
     @PostMapping(value = "/api/projects")
-    public ResponseEntity addProject(@RequestBody Project project) throws Exception{
-        Project pr = projectService.addProject(project);
+    public ResponseEntity addProject(@RequestBody ProjectModel project) throws Exception{
+        ProjectModel pr = projectService.addProject(project);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("location",""+pr.getID());
         responseHeaders.set("Access-Control-Expose-Headers","location");
@@ -38,10 +38,10 @@ public class ProjectApiController {
     
     //@CrossOrigin
     @GetMapping(value = "/api/projects/{id}")
-    public ResponseEntity<Project> getSprintById(@PathVariable int id){
+    public ResponseEntity<ProjectModel> getSprintById(@PathVariable int id){
         try{
-            ResponseEntity<Project> responseEntity = projectService.getProjectById(id);
-            return new ResponseEntity<Project>(responseEntity.getBody(), HttpStatus.OK);
+            ResponseEntity<ProjectModel> responseEntity = projectService.getProjectById(id);
+            return new ResponseEntity<ProjectModel>(responseEntity.getBody(), HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
