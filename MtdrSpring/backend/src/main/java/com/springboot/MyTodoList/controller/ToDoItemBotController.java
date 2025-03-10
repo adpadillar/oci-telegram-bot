@@ -205,15 +205,37 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				}
 
 				logger.info(messages.toString());
+				return;
 			}
 
+			// now we know the user is defined
+			// we need to check if the user is activated
+			if (user.getRole().equals("user-pending-activation")) {
+				SendMessage messageToTelegram = new SendMessage();
+				messageToTelegram.setChatId(chatId);
+				messageToTelegram.setText("Your account is still pending activation. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
 
+				try {
+					execute(messageToTelegram);
+				} catch (TelegramApiException e) {
+					logger.error(e.getLocalizedMessage(), e);
+				}
 
-			
+				// we dont need to save this message to the database
+				return;
+			}
 
-			
-			
+			if (user.getRole().equals("developer")) {
+				// we will handle this here
+				logger.info("This is a message from a developer");
+				return;
+			}
 
+			if (user.getRole().equals("manager")) {
+				// we will handle this here
+				logger.info("This is a message from a manager");
+				return;
+			}
 
 			// String messageTextFromTelegram = update.getMessage().getText();
 			// long chatId = update.getMessage().getChatId();

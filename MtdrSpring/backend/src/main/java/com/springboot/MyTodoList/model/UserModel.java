@@ -54,4 +54,16 @@ public class UserModel {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    @Override
+    public String toString() {
+        return "UserModel{" +
+                "ID=" + ID +
+                ", telegramId=" + telegramId +
+                ", project=" + project +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", role='" + role + '\'' +
+                '}';
+    }
 }
