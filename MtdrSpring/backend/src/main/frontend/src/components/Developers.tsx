@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Plus, ListTodo, ChevronRight } from "lucide-react";
-import useApi from "../../utils/useAPI";
+// import useApi from "../../utils/useAPI";
 
 const Developers = () => {
   const navigate = useNavigate();
-  const api = useApi("http://localhost:8000");
+  // const api = useApi("http://localhost:8000");
 
   const [developers] = useState([
     {
