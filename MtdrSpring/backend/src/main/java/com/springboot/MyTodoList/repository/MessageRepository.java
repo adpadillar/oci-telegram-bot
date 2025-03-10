@@ -14,5 +14,5 @@ import javax.transaction.Transactional;
 @Transactional
 @EnableTransactionManagement
 public interface MessageRepository extends JpaRepository<MessageModel,Integer> {
-  List<MessageModel> findByUserId(int userId);
+  List<MessageModel> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

@@ -40,8 +40,8 @@ public class ProjectApiController {
     @GetMapping(value = "/api/projects/{id}")
     public ResponseEntity<ProjectModel> getSprintById(@PathVariable int id){
         try{
-            ResponseEntity<ProjectModel> responseEntity = projectService.getProjectById(id);
-            return new ResponseEntity<ProjectModel>(responseEntity.getBody(), HttpStatus.OK);
+            ProjectModel project = projectService.getProjectById(id);
+            return new ResponseEntity<ProjectModel>(project, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

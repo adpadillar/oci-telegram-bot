@@ -11,7 +11,7 @@ public class UserModel {
     private int ID;
 
     @Column(name = "TELEGRAM_ID", nullable = true, length = 255)
-    private String telegramId;
+    private Long telegramId;
 
     @ManyToOne
     @JoinColumn(name = "PROJECT_ID", nullable = false)
@@ -28,7 +28,7 @@ public class UserModel {
 
     public UserModel() {}
 
-    public UserModel(String telegramId, ProjectModel project, String firstName, String lastName, String role) {
+    public UserModel(Long telegramId, ProjectModel project, String firstName, String lastName, String role) {
         this.telegramId = telegramId;
         this.project = project;
         this.firstName = firstName;
@@ -40,8 +40,8 @@ public class UserModel {
     public int getID() { return ID; }
     public void setID(int id) { this.ID = id; }
 
-    public String getTelegramId() { return telegramId; }
-    public void setTelegramId(String telegramId) { this.telegramId = telegramId; }
+    public Long getTelegramId() { return telegramId; }
+    public void setTelegramId(Long telegramId) { this.telegramId = telegramId; }
 
     public ProjectModel getProject() { return project; }
     public void setProject(ProjectModel project) { this.project = project; }

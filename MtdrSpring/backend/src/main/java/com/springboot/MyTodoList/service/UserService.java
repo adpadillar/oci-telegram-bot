@@ -28,6 +28,10 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
+    public UserModel findUserByChatId(Long chatId) {
+        return userRepository.findByTelegramId(chatId);
+    }
+
     public List<UserModel> findUsersByProject(int projectId) {
         return userRepository.findByProject_ID(projectId);
     }

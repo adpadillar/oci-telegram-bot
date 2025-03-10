@@ -14,4 +14,5 @@ import javax.transaction.Transactional;
 @EnableTransactionManagement
 public interface UserRepository extends JpaRepository<UserModel, Integer> {
     List<UserModel> findByProject_ID(int projectId);
+    UserModel findByTelegramId(Long telegramId);
 }

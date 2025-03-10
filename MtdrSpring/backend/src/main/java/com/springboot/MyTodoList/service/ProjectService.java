@@ -19,12 +19,12 @@ public class ProjectService {
         List<ProjectModel> projects = projectRepository.findAll();
         return projects;
     }
-    public ResponseEntity<ProjectModel> getProjectById(int id){
+    public ProjectModel getProjectById(int id) {
         Optional<ProjectModel> projectData = projectRepository.findById(id);
         if (projectData.isPresent()){
-            return new ResponseEntity<>(projectData.get(), HttpStatus.OK);
+            return projectData.get();
         }else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return null;
         }
     }
     public ProjectModel addProject(ProjectModel project){
