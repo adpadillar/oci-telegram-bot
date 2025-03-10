@@ -132,11 +132,29 @@ Example Output: 200 OK
     "id": 1,
     "description": "Task 1",
     "status": "created",
-    "createdBy": 1,
-    "assignedTo": 2,
+    "createdBy": {
+      "id": 1,
+      "telegramId": "123456",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "developer"
+    },
+    "assignedTo": {
+      "id": 2,
+      "telegramId": "789012",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "role": "tester"
+    },
     "estimateHours": 5.0,
     "realHours": 4.0,
-    "sprint": 1,
+    "sprint": {
+      "id": 1,
+      "name": "Sprint 1",
+      "description": "First sprint",
+      "startedAt": "2025-01-01T00:00:00Z",
+      "endsAt": "2025-01-15T23:59:59Z"
+    },
     "category": "development"
   },
   ...
@@ -173,11 +191,29 @@ Example Output: 200 OK
   "id": 1,
   "description": "Task 1",
   "status": "created",
-  "createdBy": 1,
-  "assignedTo": 2,
+  "createdBy": {
+    "id": 1,
+    "telegramId": "123456",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "developer"
+  },
+  "assignedTo": {
+    "id": 2,
+    "telegramId": "789012",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "role": "tester"
+  },
   "estimateHours": 5.0,
   "realHours": 4.0,
-  "sprint": 1,
+  "sprint": {
+    "id": 1,
+    "name": "Sprint 1",
+    "description": "First sprint",
+    "startedAt": "2025-01-01T00:00:00Z",
+    "endsAt": "2025-01-15T23:59:59Z"
+  },
   "category": "development"
 }
 ```
