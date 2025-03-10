@@ -4,12 +4,19 @@ public enum BotLabels {
 	
 	SHOW_MAIN_SCREEN("Show Main Screen"), 
 	HIDE_MAIN_SCREEN("Hide Main Screen"),
-	LIST_ALL_ITEMS("List All Items"), 
-	ADD_NEW_ITEM("Add New Item"),
+	VIEW_TASKS("View Tasks"), 
+	ADD_TASK("Add Task"),
+	UPDATE_TASK("Update Task"),
+	DETAILS("Details"),
+	FILTER_TASKS("Filter Tasks"),
 	DONE("DONE"),
-	UNDO("UNDO"),
-	DELETE("DELETE"),
-	MY_TODO_LIST("MY TODO LIST"),
+	//UNDO("UNDO"),
+	IN_PROGRESS("IN PROGRESS"),
+	READY("READY"),
+	DELETE_TASK("DELETE_TASK"),
+	MY_TASKS("MY TASKS"),
+	CREATE_SPRINT("Create Sprint"),
+	DELETE_SPRINT("Delete Sprint"),
 	DASH("-");
 
 	private String label;
