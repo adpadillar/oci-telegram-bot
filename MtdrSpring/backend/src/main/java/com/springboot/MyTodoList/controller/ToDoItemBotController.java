@@ -59,171 +59,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	public void onUpdateReceived(Update update) {
 
 		if (update.hasMessage() && update.getMessage().hasText()) {
-			Message message = update.getMessage();
-			Long chatId = message.getChatId();
-
-			UserModel user = userService.findUserByChatId(chatId);
-			logger.info("Message from user: " + user);
-
-			MessageModel newMessage = new MessageModel();
-			newMessage.setMessageType("text");
-			newMessage.setRole("user");
-			newMessage.setContent(message.getText());
-			newMessage.setUserId(chatId);
-			newMessage.setCreatedAt(OffsetDateTime.now());
-			messageService.saveMessage(newMessage);
-
-			logger.info("Saved new message from chat id: " + chatId);
-
-			if (user == null) {
-				// this means this is a new user to the system. We want to ask him for his
-				// fist name, last name, and project id
-				List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
-
-				logger.info("Messages from chat id: " + chatId + " are: " + messages);
-
-				boolean isThereAssistantMessages = false;
-				for (MessageModel m : messages) {
-					if (m.getRole().equals("assistant")) {
-						isThereAssistantMessages = true;
-						break;
-					}
-				}
-
-				if (!isThereAssistantMessages) {
-					// we need to send a message to the user asking for his first name
-					SendMessage messageToTelegram = new SendMessage();
-					messageToTelegram.setChatId(chatId);
-					messageToTelegram.setText("Hello! Welcome to Oracle TaskBot. Since this is a new account, I need to ask you a few questions. Firstly, what is your first name?");
-
-					try {
-						MessageModel assistantMessage = new MessageModel();
-						assistantMessage.setMessageType("input-first-name");
-						assistantMessage.setRole("assistant");
-						assistantMessage.setContent("Hello! Welcome to Oracle TaskBot. Since this is a new account, I need to ask you a few questions. Firstly, what is your first name?");
-						assistantMessage.setUserId(chatId);
-						assistantMessage.setCreatedAt(OffsetDateTime.now());
-						messageService.saveMessage(assistantMessage);
-
-						execute(messageToTelegram);
-						// we need to save our message to the database
-					} catch (TelegramApiException e) {
-						logger.error(e.getLocalizedMessage(), e);
-					}
-
-					return;
-				}
-
-				// we are now looking for the first assistant message
-				MessageModel firstAssistantMessage = null;
-				for (MessageModel m : messages) {
-					if (m.getRole().equals("assistant")) {
-						firstAssistantMessage = m;
-						break;
-					}
-				}
-
-				// we check the type of this message
-				if (firstAssistantMessage.getMessageType().equals("input-first-name")) {
-					// we ask for the last name. We still dont save anything. We will save once we
-					// get all the required information
-					SendMessage messageToTelegram = new SendMessage();
-					messageToTelegram.setChatId(chatId);
-					messageToTelegram.setText("Great! Now, what is your last name?");
-					try {
-						MessageModel assistantMessage = new MessageModel();
-						assistantMessage.setMessageType("input-last-name");
-						assistantMessage.setRole("assistant");
-						assistantMessage.setContent("Great! Now, what is your last name?");
-						assistantMessage.setUserId(chatId);
-						assistantMessage.setCreatedAt(OffsetDateTime.now());
-						messageService.saveMessage(assistantMessage);
-
-						execute(messageToTelegram);
-					} catch (TelegramApiException e) {
-						logger.error(e.getLocalizedMessage(), e);
-					}
-
-					return;
-				}
-
-				if (firstAssistantMessage.getMessageType().equals("input-last-name")) {
-					// we ask for the project id. We still dont save anything. We will save once we
-					// get all the required information
-					SendMessage messageToTelegram = new SendMessage();
-					messageToTelegram.setChatId(chatId);
-					messageToTelegram.setText("Amazing! Lastly, could you please copy/paste your project ID here? (Your manager should have provided you with this ID)");
-					try {
-						MessageModel assistantMessage = new MessageModel();
-						assistantMessage.setMessageType("input-project-id");
-						assistantMessage.setRole("assistant");
-						assistantMessage.setContent("Amazing! Lastly, could you please copy/paste your project ID here? (Your manager should have provided you with this ID)");
-						assistantMessage.setUserId(chatId);
-						assistantMessage.setCreatedAt(OffsetDateTime.now());
-						messageService.saveMessage(assistantMessage);
-
-						execute(messageToTelegram);
-					} catch (TelegramApiException e) {
-						logger.error(e.getLocalizedMessage(), e);
-					}
-
-					return;
-				}
-
-				if (firstAssistantMessage.getMessageType().equals("input-project-id")) {
-					// we save the user to the database
-					String projectId = messages.get(0).getContent();
-					String firstName = messages.get(2).getContent();
-					String lastName = messages.get(4).getContent();
-
-					UserDTO newUser = new UserDTO();
-					newUser.setTelegramId(chatId);
-					newUser.setFirstName(firstName);
-					newUser.setLastName(lastName);
-					newUser.setRole("user-pending-activation");
-
-					userService.createUser(newUser, Integer.parseInt(projectId));
-
-					SendMessage messageToTelegram = new SendMessage();
-					messageToTelegram.setChatId(chatId);
-					messageToTelegram.setText("Thank you! Your account has been created. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
-					try {
-						MessageModel assistantMessage = new MessageModel();
-						assistantMessage.setMessageType("account-created");
-						assistantMessage.setRole("assistant");
-						assistantMessage.setContent("Thank you! Your account has been created. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
-						assistantMessage.setUserId(chatId);
-						assistantMessage.setCreatedAt(OffsetDateTime.now());
-						messageService.saveMessage(assistantMessage);
-
-						execute(messageToTelegram);
-					} catch (TelegramApiException e) {
-						logger.error(e.getLocalizedMessage(), e);
-					}
-
-					return;
-				}
-
-				logger.info(messages.toString());
-				return;
-			}
-
-			// now we know the user is defined
-			// we need to check if the user is activated
-			if (user.getRole().equals("user-pending-activation")) {
-				SendMessage messageToTelegram = new SendMessage();
-				messageToTelegram.setChatId(chatId);
-				messageToTelegram.setText("Your account is still pending activation. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
-
-				try {
-					execute(messageToTelegram);
-				} catch (TelegramApiException e) {
-					logger.error(e.getLocalizedMessage(), e);
-				}
-
-				// we dont need to save this message to the database
-				return;
-			}
+			UserModel user = runAuthMiddleware(update);
+			if (user == null) return;
 
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -432,6 +269,181 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	@Override
 	public String getBotUsername() {		
 		return botName;
+	}
+
+	public UserModel runAuthMiddleware(Update update) {
+		if (update.hasMessage() && update.getMessage().hasText()) {
+			Message message = update.getMessage();
+			Long chatId = message.getChatId();
+			UserModel user = userService.findUserByChatId(chatId);
+
+			logger.info("Message from user: " + user);
+
+			MessageModel newMessage = new MessageModel();
+			newMessage.setMessageType("text");
+			newMessage.setRole("user");
+			newMessage.setContent(message.getText());
+			newMessage.setUserId(chatId);
+			newMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(newMessage);
+
+			logger.info("Saved new message from chat id: " + chatId);
+
+			if (user == null) {
+				// this means this is a new user to the system. We want to ask him for his
+				// fist name, last name, and project id
+				List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+
+				logger.info("Messages from chat id: " + chatId + " are: " + messages);
+
+				boolean isThereAssistantMessages = false;
+				for (MessageModel m : messages) {
+					if (m.getRole().equals("assistant")) {
+						isThereAssistantMessages = true;
+						break;
+					}
+				}
+
+				if (!isThereAssistantMessages) {
+					// we need to send a message to the user asking for his first name
+					SendMessage messageToTelegram = new SendMessage();
+					messageToTelegram.setChatId(chatId);
+					messageToTelegram.setText("Hello! Welcome to Oracle TaskBot. Since this is a new account, I need to ask you a few questions. Firstly, what is your first name?");
+
+					try {
+						MessageModel assistantMessage = new MessageModel();
+						assistantMessage.setMessageType("input-first-name");
+						assistantMessage.setRole("assistant");
+						assistantMessage.setContent("Hello! Welcome to Oracle TaskBot. Since this is a new account, I need to ask you a few questions. Firstly, what is your first name?");
+						assistantMessage.setUserId(chatId);
+						assistantMessage.setCreatedAt(OffsetDateTime.now());
+						messageService.saveMessage(assistantMessage);
+
+						execute(messageToTelegram);
+						// we need to save our message to the database
+					} catch (TelegramApiException e) {
+						logger.error(e.getLocalizedMessage(), e);
+					}
+
+					return null;
+				}
+
+				// we are now looking for the first assistant message
+				MessageModel firstAssistantMessage = null;
+				for (MessageModel m : messages) {
+					if (m.getRole().equals("assistant")) {
+						firstAssistantMessage = m;
+						break;
+					}
+				}
+
+				// we check the type of this message
+				if (firstAssistantMessage.getMessageType().equals("input-first-name")) {
+					// we ask for the last name. We still dont save anything. We will save once we
+					// get all the required information
+					SendMessage messageToTelegram = new SendMessage();
+					messageToTelegram.setChatId(chatId);
+					messageToTelegram.setText("Great! Now, what is your last name?");
+					try {
+						MessageModel assistantMessage = new MessageModel();
+						assistantMessage.setMessageType("input-last-name");
+						assistantMessage.setRole("assistant");
+						assistantMessage.setContent("Great! Now, what is your last name?");
+						assistantMessage.setUserId(chatId);
+						assistantMessage.setCreatedAt(OffsetDateTime.now());
+						messageService.saveMessage(assistantMessage);
+
+						execute(messageToTelegram);
+					} catch (TelegramApiException e) {
+						logger.error(e.getLocalizedMessage(), e);
+					}
+
+					return null;
+				}
+
+				if (firstAssistantMessage.getMessageType().equals("input-last-name")) {
+					// we ask for the project id. We still dont save anything. We will save once we
+					// get all the required information
+					SendMessage messageToTelegram = new SendMessage();
+					messageToTelegram.setChatId(chatId);
+					messageToTelegram.setText("Amazing! Lastly, could you please copy/paste your project ID here? (Your manager should have provided you with this ID)");
+					try {
+						MessageModel assistantMessage = new MessageModel();
+						assistantMessage.setMessageType("input-project-id");
+						assistantMessage.setRole("assistant");
+						assistantMessage.setContent("Amazing! Lastly, could you please copy/paste your project ID here? (Your manager should have provided you with this ID)");
+						assistantMessage.setUserId(chatId);
+						assistantMessage.setCreatedAt(OffsetDateTime.now());
+						messageService.saveMessage(assistantMessage);
+
+						execute(messageToTelegram);
+					} catch (TelegramApiException e) {
+						logger.error(e.getLocalizedMessage(), e);
+					}
+
+					return null;
+				}
+
+				if (firstAssistantMessage.getMessageType().equals("input-project-id")) {
+					// we save the user to the database
+					String projectId = messages.get(0).getContent();
+					String firstName = messages.get(2).getContent();
+					String lastName = messages.get(4).getContent();
+
+					UserDTO newUser = new UserDTO();
+					newUser.setTelegramId(chatId);
+					newUser.setFirstName(firstName);
+					newUser.setLastName(lastName);
+					newUser.setRole("user-pending-activation");
+
+					userService.createUser(newUser, Integer.parseInt(projectId));
+
+					SendMessage messageToTelegram = new SendMessage();
+					messageToTelegram.setChatId(chatId);
+					messageToTelegram.setText("Thank you! Your account has been created. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
+					try {
+						MessageModel assistantMessage = new MessageModel();
+						assistantMessage.setMessageType("account-created");
+						assistantMessage.setRole("assistant");
+						assistantMessage.setContent("Thank you! Your account has been created. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
+						assistantMessage.setUserId(chatId);
+						assistantMessage.setCreatedAt(OffsetDateTime.now());
+						messageService.saveMessage(assistantMessage);
+
+						execute(messageToTelegram);
+					} catch (TelegramApiException e) {
+						logger.error(e.getLocalizedMessage(), e);
+					}
+
+					return null;
+				}
+
+				logger.info(messages.toString());
+				return null;
+			}
+
+			// now we know the user is defined
+			// we need to check if the user is activated
+			if (user.getRole().equals("user-pending-activation")) {
+				SendMessage messageToTelegram = new SendMessage();
+				messageToTelegram.setChatId(chatId);
+				messageToTelegram.setText("Your account is still pending activation. Please wait until your account is activated by your manager. You will receive a message once your account is activated.");
+
+				try {
+					execute(messageToTelegram);
+				} catch (TelegramApiException e) {
+					logger.error(e.getLocalizedMessage(), e);
+				}
+
+				// we dont need to save this message to the database
+				return null;
+			}
+
+			// here we already know the user is activated
+			return user;
+		}
+
+		return null;
 	}
 
 	// // GET /todolist
