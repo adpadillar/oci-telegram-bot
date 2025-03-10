@@ -21,7 +21,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.model.TaskModel;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.util.BotCommands;
 import com.springboot.MyTodoList.util.BotHelper;
@@ -93,7 +93,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 				try {
 
-					Task item = getToDoItemById(id);
+					TaskModel item = getToDoItemById(id);
 					item.setStatus("done");
 					updateToDoItem(item, id);
 					BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DONE.getMessage(), this);
@@ -110,7 +110,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 				try {
 
-					Task item = getToDoItemById(id);
+					TaskModel item = getToDoItemById(id);
 					item.setStatus("created");
 					updateToDoItem(item, id);
 					BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_UNDONE.getMessage(), this);
@@ -143,7 +143,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					|| messageTextFromTelegram.equals(BotLabels.LIST_ALL_ITEMS.getLabel())
 					|| messageTextFromTelegram.equals(BotLabels.MY_TODO_LIST.getLabel())) {
 
-				List<Task> allItems = getAllToDoItems();
+				List<TaskModel> allItems = getAllToDoItems();
 				ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
 				List<KeyboardRow> keyboard = new ArrayList<>();
 
@@ -160,10 +160,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				myTodoListTitleRow.add(BotLabels.MY_TODO_LIST.getLabel());
 				keyboard.add(myTodoListTitleRow);
 
-				List<Task> activeItems = allItems.stream().filter(item -> item.getStatus().equals("created"))
+				List<TaskModel> activeItems = allItems.stream().filter(item -> item.getStatus().equals("created"))
 						.collect(Collectors.toList());
 
-				for (Task item : activeItems) {
+				for (TaskModel item : activeItems) {
 
 					KeyboardRow currentRow = new KeyboardRow();
 					currentRow.add(item.getDescription());
@@ -171,10 +171,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					keyboard.add(currentRow);
 				}
 
-				List<Task> doneItems = allItems.stream().filter(item -> item.getStatus().equals("done"))
+				List<TaskModel> doneItems = allItems.stream().filter(item -> item.getStatus().equals("done"))
 						.collect(Collectors.toList());
 
-				for (Task item : doneItems) {
+				for (TaskModel item : doneItems) {
 					KeyboardRow currentRow = new KeyboardRow();
 					currentRow.add(item.getDescription());
 					currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.UNDO.getLabel());
@@ -221,11 +221,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 			else {
 				try {
-					Task newItem = new Task();
+					TaskModel newItem = new TaskModel();
 					newItem.setDescription(messageTextFromTelegram);
 					newItem.setCreatedAt(OffsetDateTime.now());
 					newItem.setStatus("created");
-					ResponseEntity<Task> entity = addToDoItem(newItem);
+					ResponseEntity<TaskModel> entity = addToDoItem(newItem);
 
 					SendMessage messageToTelegram = new SendMessage();
 					messageToTelegram.setChatId(chatId);
@@ -245,13 +245,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 	// GET /todolist
-	public List<Task> getAllToDoItems() { 
+	public List<TaskModel> getAllToDoItems() { 
 		return toDoItemService.findAll();
 	}
 
 	// GET BY ID /todolist/{id}
-	public Task getToDoItemById(@PathVariable int id) throws RuntimeException {
-			Optional<Task> task = toDoItemService.getItemById(id);
+	public TaskModel getToDoItemById(@PathVariable int id) throws RuntimeException {
+			Optional<TaskModel> task = toDoItemService.getItemById(id);
 			if (task.isPresent()) {
 				return task.get();
 			} else {
@@ -260,8 +260,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 	// PUT /todolist
-	public ResponseEntity addToDoItem(@RequestBody Task todoItem) throws Exception {
-		Task td = toDoItemService.addToDoItem(todoItem);
+	public ResponseEntity addToDoItem(@RequestBody TaskModel todoItem) throws Exception {
+		TaskModel td = toDoItemService.addToDoItem(todoItem);
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.set("location", "" + td.getID());
 		responseHeaders.set("Access-Control-Expose-Headers", "location");
@@ -270,10 +270,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		return ResponseEntity.ok().headers(responseHeaders).build();
 	}
 
-	// UPDATE /todolist/{id}
-	public ResponseEntity updateToDoItem(@RequestBody Task toDoItem, @PathVariable int id) {
+	// UPDATE /todolist/{id}TaskModel
+	public ResponseEntity updateToDoItem(@RequestBody TaskModel toDoItem, @PathVariable int id) {
 		try {
-			Task toDoItem1 = toDoItemService.updateToDoItem(id, toDoItem);
+			TaskModel toDoItem1 = toDoItemService.updateToDoItem(id, toDoItem);
 			System.out.println(toDoItem1.toString());
 			return new ResponseEntity<>(toDoItem1, HttpStatus.OK);
 		} catch (Exception e) {
