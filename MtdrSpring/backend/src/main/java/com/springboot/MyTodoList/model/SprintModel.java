@@ -8,14 +8,14 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "SPRINTS")
-public class Sprint {
+public class SprintModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
     @ManyToOne
     @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private Project project;
+    private ProjectModel project;
     
     @Column(name = "NAME", length = 255, nullable = false)
     private String name;
@@ -29,10 +29,10 @@ public class Sprint {
     @Column(name = "ENDS_AT", nullable = false)
     private OffsetDateTime endsAt;
     
-    public Sprint() {
+    public SprintModel() {
     }
     
-    public Sprint(int ID, Project project,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
+    public SprintModel(int ID, ProjectModel project,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
         this.ID = ID;
         this.project = project;
         this.name = name;
@@ -49,11 +49,11 @@ public class Sprint {
         this.ID = ID;
     }
     
-    public Project getProject() {
+    public ProjectModel getProject() {
         return project;
     }
     
-    public void setProject(Project project) {
+    public void setProject(ProjectModel project) {
         this.project = project;
     }
     

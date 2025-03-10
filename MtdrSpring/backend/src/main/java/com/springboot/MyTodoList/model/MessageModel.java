@@ -1,5 +1,7 @@
 package com.springboot.MyTodoList.model;
 
+import java.time.OffsetDateTime;
+
 import javax.persistence.*;
 
 /*
@@ -7,7 +9,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "MESSAGES")
-public class Message {
+public class MessageModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
@@ -16,29 +18,34 @@ public class Message {
     private String messageType;
     
     @Column(name = "ROLE")
-    private String description;
+    private String role;
     
     @Column(name = "CONTENT")
     private String content;
     
     @Column(name = "USER_ID")
-    private int userId;
+    private Long userId;
+
+    @Column(name = "CREATED_AT")
+    private OffsetDateTime createdAt;
     
-    public Message() {
+    public MessageModel() {
     }
     
-    public Message(
+    public MessageModel(
             int ID,
             String messageType,
-            String description,
+            String role,
             String content,
-            int userId
+            Long userId,
+            OffsetDateTime createdAt
     ) {
         this.ID = ID;
         this.messageType = messageType;
-        this.description = description;
+        this.role = role;
         this.content = content;
         this.userId = userId;
+        this.createdAt = createdAt;
     }
     
     
@@ -58,12 +65,12 @@ public class Message {
         this.messageType = messageType;
     }
     
-    public String getDescription() {
-        return description;
+    public String getRole() {
+        return role;
     }
     
-    public void setDescription(String description) {
-        this.description = description;
+    public void setRole(String role) {
+        this.role = role;
     }
     
     public String getContent() {
@@ -74,12 +81,20 @@ public class Message {
         this.content = content;
     }
 
-    public int getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
     }
     
     
@@ -88,9 +103,10 @@ public class Message {
         return "Message{" +
                 "ID=" + ID +
                 ", messageType='" + messageType + '\'' +
-                ", description='" + description + '\'' +
+                ", role='" + role + '\'' +
                 ", content='" + content + '\'' +
                 ", userId=" + userId +
+                ", createdAt=" + createdAt +
                 '}';
     }
 }

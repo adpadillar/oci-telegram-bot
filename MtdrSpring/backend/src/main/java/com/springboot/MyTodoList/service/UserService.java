@@ -1,8 +1,8 @@
 package com.springboot.MyTodoList.service;
 
 import com.springboot.MyTodoList.dto.UserDTO;
-import com.springboot.MyTodoList.model.Project;
-import com.springboot.MyTodoList.model.User;
+import com.springboot.MyTodoList.model.ProjectModel;
+import com.springboot.MyTodoList.model.UserModel;
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import com.springboot.MyTodoList.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +20,19 @@ public class UserService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    public List<User> findAllUsers() {
+    public List<UserModel> findAllUsers() {
         return userRepository.findAll();
     }
 
-    public User findUserById(int id) {
+    public UserModel findUserById(int id) {
         return userRepository.findById(id).orElse(null);
     }
 
-    public List<User> findUsersByProject(int projectId) {
+    public UserModel findUserByChatId(Long chatId) {
+        return userRepository.findByTelegramId(chatId);
+    }
+
+    public List<UserModel> findUsersByProject(int projectId) {
         return userRepository.findByProject_ID(projectId);
     }
 
@@ -40,14 +44,14 @@ public class UserService {
     //     return userRepository.findByTelegramId(telegramId);
     // }
 
-    public User createUser(UserDTO userDTO, int projectId) throws RuntimeException {
+    public UserModel createUser(UserDTO userDTO, int projectId) throws RuntimeException {
         // Find project by ID
-        Project project = projectRepository.findById(projectId).orElseThrow(
+        ProjectModel project = projectRepository.findById(projectId).orElseThrow(
             () -> new RuntimeException("Project not found")
         );
         
         // Create and save user
-        User user = new User();
+        UserModel user = new UserModel();
         user.setTelegramId(userDTO.getTelegramId());
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
@@ -57,10 +61,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User patchUserOnProject(int id, int projectId, UserDTO newValues) {
-        Optional<User> optionalUser = userRepository.findById(id);
+    public UserModel patchUserOnProject(int id, int projectId, UserDTO newValues) {
+        Optional<UserModel> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+            UserModel user = optionalUser.get();
             if (user.getProject().getID() == projectId) {
                 if (newValues.getTelegramId() != null) {
                     user.setTelegramId(newValues.getTelegramId());
@@ -84,10 +88,10 @@ public class UserService {
         return null;
     }
 
-    public User updateUser(int id, User userDetails) {
-        Optional<User> optionalUser = userRepository.findById(id);
+    public UserModel updateUser(int id, UserModel userDetails) {
+        Optional<UserModel> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
-            User existingUser = optionalUser.get();
+            UserModel existingUser = optionalUser.get();
             existingUser.setTelegramId(userDetails.getTelegramId());
             //Tentativo lol por que no existe project todavia
             existingUser.setProject(userDetails.getProject());

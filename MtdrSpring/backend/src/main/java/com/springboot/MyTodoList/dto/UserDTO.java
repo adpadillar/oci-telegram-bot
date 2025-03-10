@@ -1,7 +1,7 @@
 package com.springboot.MyTodoList.dto;
 
 public class UserDTO {
-    private String telegramId;
+    private Long telegramId;
     private String firstName;
     private String lastName;
     private String role;
@@ -10,7 +10,7 @@ public class UserDTO {
     public UserDTO() {}
     
     // Constructor with fields
-    public UserDTO(String telegramId, String firstName, String lastName, String role) {
+    public UserDTO(Long telegramId, String firstName, String lastName, String role) {
         this.telegramId = telegramId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -18,8 +18,8 @@ public class UserDTO {
     }
     
     // Getters and setters
-    public String getTelegramId() { return telegramId; }
-    public void setTelegramId(String telegramId) { this.telegramId = telegramId; }
+    public Long getTelegramId() { return telegramId; }
+    public void setTelegramId(Long telegramId) { this.telegramId = telegramId; }
     
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

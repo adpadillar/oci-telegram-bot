@@ -1,8 +1,8 @@
 package com.springboot.MyTodoList.service;
 
 import com.springboot.MyTodoList.dto.SprintDTO;
-import com.springboot.MyTodoList.model.Project;
-import com.springboot.MyTodoList.model.Sprint;
+import com.springboot.MyTodoList.model.ProjectModel;
+import com.springboot.MyTodoList.model.SprintModel;
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import com.springboot.MyTodoList.repository.SprintRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,30 +20,30 @@ public class SprintService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    public List<Sprint> findByProjectId(int projectId){
-        List<Sprint> sprints = sprintRepository.findByProject_ID(projectId);
+    public List<SprintModel> findByProjectId(int projectId){
+        List<SprintModel> sprints = sprintRepository.findByProject_ID(projectId);
         return sprints;
     }
 
-    public List<Sprint> findAll(){
-        List<Sprint> sprints = sprintRepository.findAll();
+    public List<SprintModel> findAll(){
+        List<SprintModel> sprints = sprintRepository.findAll();
         return sprints;
     }
-    public Optional<Sprint> getSprintById(int id){
-        Optional<Sprint> todoData = sprintRepository.findById(id);
+    public Optional<SprintModel> getSprintById(int id){
+        Optional<SprintModel> todoData = sprintRepository.findById(id);
         
         return todoData;
     }
-    public Sprint addSprint(Sprint sprint){
+    public SprintModel addSprint(SprintModel sprint){
         return sprintRepository.save(sprint);
     }
 
-    public Sprint addSprintToProject(int projectId, SprintDTO sprint){
-        Optional<Project> maybeProject = projectRepository.findById(projectId);
+    public SprintModel addSprintToProject(int projectId, SprintDTO sprint){
+        Optional<ProjectModel> maybeProject = projectRepository.findById(projectId);
 
         if (maybeProject.isPresent()) {
-            Project project = maybeProject.get();
-            Sprint newSprint = new Sprint();
+            ProjectModel project = maybeProject.get();
+            SprintModel newSprint = new SprintModel();
             newSprint.setProject(project);
             newSprint.setName(sprint.getName());
             newSprint.setDescription(sprint.getDescription());
@@ -64,10 +64,10 @@ public class SprintService {
         }
     }
 
-    public Sprint patchSprintFromProject(int id, int projectid, SprintDTO newValues) throws RuntimeException {
-        Optional<Sprint> maybeSprint = sprintRepository.findById(id);
+    public SprintModel patchSprintFromProject(int id, int projectid, SprintDTO newValues) throws RuntimeException {
+        Optional<SprintModel> maybeSprint = sprintRepository.findById(id);
         if (maybeSprint.isPresent()) {
-            Sprint sprint = maybeSprint.get();
+            SprintModel sprint = maybeSprint.get();
             if (sprint.getProject().getID() == projectid) {
                 if (newValues.getName() != null) {
                     sprint.setName(newValues.getName());

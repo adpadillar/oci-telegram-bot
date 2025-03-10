@@ -1,6 +1,6 @@
 package com.springboot.MyTodoList.controller;
 import com.springboot.MyTodoList.dto.TaskDTO;
-import com.springboot.MyTodoList.model.Task;
+import com.springboot.MyTodoList.model.TaskModel;
 import com.springboot.MyTodoList.service.TaskService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +18,14 @@ public class TaskApiController {
     private TaskService taskService;
     //@CrossOrigin
     @GetMapping(value = "/api/{project}/tasks")
-    public List<Task> getAllToDoItems(@PathVariable("project") int project){
+    public List<TaskModel> getAllToDoItems(@PathVariable("project") int project){
         return taskService.findAllByProjectId(project);
     }
 
     //@CrossOrigin
     @PostMapping(value = "/api/{project}/tasks")
     public ResponseEntity<Object> addToDoItem(@RequestBody TaskDTO todoItem, @PathVariable("project") int project) throws Exception {
-        Task task = taskService.addTodoItemToProject(project, todoItem);
+        TaskModel task = taskService.addTodoItemToProject(project, todoItem);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("location",""+task.getID());
         responseHeaders.set("Access-Control-Expose-Headers","location");
@@ -37,11 +37,11 @@ public class TaskApiController {
 
     //@CrossOrigin
     @GetMapping(value = "/api/{project}/tasks/{id}")
-    public ResponseEntity<Task> getToDoItemById(@PathVariable("project") int project, @PathVariable("id") int id){
-        Optional<Task> maybeTask = taskService.getItemById(id);
+    public ResponseEntity<TaskModel> getToDoItemById(@PathVariable("project") int project, @PathVariable("id") int id){
+        Optional<TaskModel> maybeTask = taskService.getItemById(id);
 
         if(maybeTask.isPresent()){
-            Task task = maybeTask.get();
+            TaskModel task = maybeTask.get();
 
             if (task.getProject().getID() != project){
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -57,7 +57,7 @@ public class TaskApiController {
     //@CrossOrigin
     @PatchMapping(value = "/api/{project}/tasks/{id}")
     public ResponseEntity<Object> updateToDoItem(@RequestBody TaskDTO toDoItem, @PathVariable("project") int project, @PathVariable("id") int id){
-       Task task = taskService.patchTaskOnProject(id, project, toDoItem);
+       TaskModel task = taskService.patchTaskOnProject(id, project, toDoItem);
        HttpHeaders responseHeaders = new HttpHeaders();
        responseHeaders.set("location",""+task.getID());
        responseHeaders.set("Access-Control-Expose-Headers","location");
@@ -67,7 +67,7 @@ public class TaskApiController {
     //@CrossOrigin
     @DeleteMapping(value = "/api/{project}/tasks/{id}")
     public ResponseEntity<Boolean> deleteToDoItem(@PathVariable("project") int project, @PathVariable("id") int id){
-        Task task = taskService.getItemById(id).orElse(null);
+        TaskModel task = taskService.getItemById(id).orElse(null);
         if(task == null){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

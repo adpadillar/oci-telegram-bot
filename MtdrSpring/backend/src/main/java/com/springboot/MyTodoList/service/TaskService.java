@@ -1,10 +1,10 @@
 package com.springboot.MyTodoList.service;
 
 import com.springboot.MyTodoList.dto.TaskDTO;
-import com.springboot.MyTodoList.model.Project;
-import com.springboot.MyTodoList.model.Sprint;
-import com.springboot.MyTodoList.model.Task;
-import com.springboot.MyTodoList.model.User;
+import com.springboot.MyTodoList.model.ProjectModel;
+import com.springboot.MyTodoList.model.SprintModel;
+import com.springboot.MyTodoList.model.TaskModel;
+import com.springboot.MyTodoList.model.UserModel;
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import com.springboot.MyTodoList.repository.SprintRepository;
 import com.springboot.MyTodoList.repository.TaskRepository;
@@ -32,25 +32,25 @@ public class TaskService {
     @Autowired
     private SprintRepository sprintRepository;
     
-    public List<Task> findAll(){
-        List<Task> todoItems = toDoItemRepository.findAll();
+    public List<TaskModel> findAll(){
+        List<TaskModel> todoItems = toDoItemRepository.findAll();
         return todoItems;
     }
 
-    public List<Task> findAllByProjectId(int projectId){
-        List<Task> todoItems = toDoItemRepository.findByProject_ID(projectId);
+    public List<TaskModel> findAllByProjectId(int projectId){
+        List<TaskModel> todoItems = toDoItemRepository.findByProject_ID(projectId);
         return todoItems;
     }
 
-    public Task addTodoItemToProject(int projectId, TaskDTO taskDTO) throws RuntimeException {
-        Task task = new Task();
+    public TaskModel addTodoItemToProject(int projectId, TaskDTO taskDTO) throws RuntimeException {
+        TaskModel task = new TaskModel();
 
-        Optional<Project> maybeProject = projectRepository.findById(projectId);
+        Optional<ProjectModel> maybeProject = projectRepository.findById(projectId);
         if (!maybeProject.isPresent()){
             throw new RuntimeException("Project not found");
         }
 
-        Project project = maybeProject.get();
+        ProjectModel project = maybeProject.get();
 
         task.setProject(project);
         task.setDescription(taskDTO.getDescription());
@@ -58,30 +58,30 @@ public class TaskService {
         task.setEstimateHours(taskDTO.getEstimateHours());
         task.setRealHours(taskDTO.getRealHours());
 
-        Optional<User> maybeCreatedBy = userRepository.findById(taskDTO.getCreatedBy());
+        Optional<UserModel> maybeCreatedBy = userRepository.findById(taskDTO.getCreatedBy());
 
         if (!maybeCreatedBy.isPresent()) {
             throw new RuntimeException("User not found");
         }
 
-        User createdBy = maybeCreatedBy.get();
+        UserModel createdBy = maybeCreatedBy.get();
 
         if (taskDTO.getAssignedTo() != null) {
-            Optional<User> maybeAssignedTo = userRepository.findById(taskDTO.getAssignedTo());
+            Optional<UserModel> maybeAssignedTo = userRepository.findById(taskDTO.getAssignedTo());
             if (!maybeAssignedTo.isPresent()) {
                 throw new RuntimeException("User not found");
             }
-            User assignedTo = maybeAssignedTo.get();
+            UserModel assignedTo = maybeAssignedTo.get();
             task.setAssignedTo(assignedTo);
         }
 
         if (taskDTO.getSprint() != null) {
-            Optional<Sprint> maybeSprint = sprintRepository.findById(taskDTO.getSprint());
+            Optional<SprintModel> maybeSprint = sprintRepository.findById(taskDTO.getSprint());
             if (!maybeSprint.isPresent()){
                 throw new RuntimeException("Sprint not found");
             }
 
-            Sprint sprint = maybeSprint.get();
+            SprintModel sprint = maybeSprint.get();
             task.setSprint(sprint);
         }
 
@@ -93,11 +93,11 @@ public class TaskService {
         return toDoItemRepository.save(task);
     }
 
-    public Optional<Task> getItemById(int id){
-        Optional<Task> todoData = toDoItemRepository.findById(id);
+    public Optional<TaskModel> getItemById(int id){
+        Optional<TaskModel> todoData = toDoItemRepository.findById(id);
         return todoData;
     }
-    public Task addToDoItem(Task toDoItem){
+    public TaskModel addToDoItem(TaskModel toDoItem){
         return toDoItemRepository.save(toDoItem);
     }
 
@@ -110,10 +110,10 @@ public class TaskService {
         }
     }
 
-    public Task patchTaskOnProject(int id, int projectId, TaskDTO newValues) throws RuntimeException {
-        Optional<Task> optionalTask = toDoItemRepository.findById(id);
+    public TaskModel patchTaskOnProject(int id, int projectId, TaskDTO newValues) throws RuntimeException {
+        Optional<TaskModel> optionalTask = toDoItemRepository.findById(id);
         if (optionalTask.isPresent()) {
-            Task task = optionalTask.get();
+            TaskModel task = optionalTask.get();
             if (task.getProject().getID() == projectId) {
                 if (newValues.getDescription() != null) {
                     task.setDescription(newValues.getDescription());
@@ -124,11 +124,11 @@ public class TaskService {
                 }
                 
                 if (newValues.getAssignedTo() != null) {
-                    Optional<User> maybeAssignedTo = userRepository.findById(newValues.getAssignedTo());
+                    Optional<UserModel> maybeAssignedTo = userRepository.findById(newValues.getAssignedTo());
                     if (!maybeAssignedTo.isPresent()) {
                         throw new RuntimeException("User not found");
                     }
-                    User assignedTo = maybeAssignedTo.get();
+                    UserModel assignedTo = maybeAssignedTo.get();
                     task.setAssignedTo(assignedTo);
                 }
                 
@@ -141,11 +141,11 @@ public class TaskService {
                 }
                 
                 if (newValues.getSprint() != null) {
-                    Optional<Sprint> maybeSprint = sprintRepository.findById(newValues.getSprint());
+                    Optional<SprintModel> maybeSprint = sprintRepository.findById(newValues.getSprint());
                     if (!maybeSprint.isPresent()){
                         throw new RuntimeException("Sprint not found");
                     }
-                    Sprint sprint = maybeSprint.get();
+                    SprintModel sprint = maybeSprint.get();
                     task.setSprint(sprint);
                 }
                 
@@ -159,10 +159,10 @@ public class TaskService {
         return null;
     }
 
-    public Task updateToDoItem(int id, Task td){
-        Optional<Task> toDoItemData = toDoItemRepository.findById(id);
+    public TaskModel updateToDoItem(int id, TaskModel td){
+        Optional<TaskModel> toDoItemData = toDoItemRepository.findById(id);
         if(toDoItemData.isPresent()){
-            Task toDoItem = toDoItemData.get();
+            TaskModel toDoItem = toDoItemData.get();
             toDoItem.setID(id);
             toDoItem.setCreatedAt(td.getCreatedAt());
             toDoItem.setDescription(td.getDescription());

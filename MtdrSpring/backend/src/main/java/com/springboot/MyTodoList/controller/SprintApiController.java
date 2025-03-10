@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.springboot.MyTodoList.dto.SprintDTO;
-import com.springboot.MyTodoList.model.Sprint;
+import com.springboot.MyTodoList.model.SprintModel;
 import com.springboot.MyTodoList.service.SprintService;
 
 import java.util.List;
@@ -24,14 +24,14 @@ public class SprintApiController {
 
     //@CrossOrigin
     @GetMapping("/api/{project}/sprints")
-    public List<Sprint> getAllSprints(@PathVariable("project") int project){
+    public List<SprintModel> getAllSprints(@PathVariable("project") int project){
         return sprintService.findByProjectId(project);
     }
 
     //@CrossOrigin
     @PostMapping("/api/{project}/sprints")
     public ResponseEntity<Object> addSprint(@PathVariable("project") int project, @RequestBody SprintDTO sprint) throws Exception{
-        Sprint sp = sprintService.addSprintToProject(project, sprint);
+        SprintModel sp = sprintService.addSprintToProject(project, sprint);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("location",""+sp.getID());
         responseHeaders.set("Access-Control-Expose-Headers","location");
@@ -43,11 +43,11 @@ public class SprintApiController {
     
     //@CrossOrigin
     @GetMapping("/api/{project}/sprints/{id}")
-    public ResponseEntity<Sprint> getSprintById(@PathVariable("project") int project, @PathVariable("id") int id){
-        Optional<Sprint> sprint = sprintService.getSprintById(id);
+    public ResponseEntity<SprintModel> getSprintById(@PathVariable("project") int project, @PathVariable("id") int id){
+        Optional<SprintModel> sprint = sprintService.getSprintById(id);
 
         if(sprint.isPresent()){
-            Sprint s = sprint.get();
+            SprintModel s = sprint.get();
 
             if (s.getProject().getID() == project) {
                 return new ResponseEntity<>(sprint.get(), HttpStatus.OK);
@@ -63,7 +63,7 @@ public class SprintApiController {
     @PatchMapping("/api/{project}/sprints/{id}")
     public ResponseEntity<Object> updateSprint(@PathVariable("project") int project, @RequestBody SprintDTO sprint, @PathVariable("id") int id){
         try{
-            Sprint sprint1 = sprintService.patchSprintFromProject(id, project,  sprint);
+            SprintModel sprint1 = sprintService.patchSprintFromProject(id, project,  sprint);
             System.out.println(sprint1.toString());
             return new ResponseEntity<>(sprint1,HttpStatus.OK);
         }catch (Exception e){

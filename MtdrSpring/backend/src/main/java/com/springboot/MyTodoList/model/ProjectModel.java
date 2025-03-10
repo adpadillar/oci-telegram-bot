@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "PROJECTS")
-public class Project {
+public class ProjectModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
@@ -22,10 +22,10 @@ public class Project {
     @Column(name = "END_TIME", nullable = false)
     private OffsetDateTime endTime;
     
-    public Project() {
+    public ProjectModel() {
     }
     
-    public Project(
+    public ProjectModel(
             int ID,
             String name,
             OffsetDateTime startTime,
