@@ -45,6 +45,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	private String botName;
 	private MessageService messageService;
 	private UserService userService;
+	private TaskService taskService;
 
 	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService) {
 		super(botToken);
@@ -74,8 +75,61 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
-			// String messageTextFromTelegram = update.getMessage().getText();
-			// long chatId = update.getMessage().getChatId();
+			String messageText = update.getMessage().getText();
+        	long chatId = update.getMessage().getChatId();
+
+			// Handle VIEW_TASKS button
+			if (messageText.equals(BotLabels.VIEW_TASKS.getLabel())) {
+				try {
+					List<TaskModel> allTasks = taskService.findAll();
+					
+					if (allTasks.isEmpty()) {
+						SendMessage message = new SendMessage();
+						message.setChatId(chatId);
+						message.setText("No tasks found in the system.");
+						execute(message);
+						return;
+					}
+					StringBuilder taskList = new StringBuilder("📋 *All Tasks*\n\n");
+                
+					for (TaskModel task : allTasks) {
+						taskList.append("🔹 *Task ID:* ").append(task.getID())
+							.append("\n📝 *Description:* ").append(task.getDescription())
+							.append("\n📊 *Status:* ").append(task.getStatus())
+							.append("\n📅 *Created:* ").append(task.getCreatedAt().toLocalDateTime().toString())
+							.append("\n\n");
+					}
+
+					SendMessage message = new SendMessage();
+					message.setChatId(chatId);
+					message.setText(taskList.toString());
+					message.enableMarkdown(true); // Enable markdown formatting
+                
+					// Add a keyboard with back button
+					ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+					List<KeyboardRow> keyboard = new ArrayList<>();
+					KeyboardRow row = new KeyboardRow();
+					row.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
+					keyboard.add(row);
+					keyboardMarkup.setKeyboard(keyboard);
+					message.setReplyMarkup(keyboardMarkup);
+	
+					execute(message);
+					
+				} catch (Exception e) {
+					logger.error("Error while fetching tasks", e);
+					try {
+						SendMessage errorMessage = new SendMessage();
+						errorMessage.setChatId(chatId);
+						errorMessage.setText("Sorry, there was an error while fetching the tasks. Please try again later.");
+						execute(errorMessage);
+					} catch (TelegramApiException ex) {
+						logger.error("Error sending error message", ex);
+					}
+				}
+				return;
+			}
+	
 
 			// if (messageTextFromTelegram.equals(BotCommands.START_COMMAND.getCommand())
 			// 		|| messageTextFromTelegram.equals(BotLabels.SHOW_MAIN_SCREEN.getLabel())) {
