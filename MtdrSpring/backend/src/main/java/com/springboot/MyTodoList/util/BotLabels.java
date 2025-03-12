@@ -17,7 +17,12 @@ public enum BotLabels {
 	MY_TASKS("MY TASKS"),
 	CREATE_SPRINT("Create Sprint"),
 	DELETE_SPRINT("Delete Sprint"),
+	SPRINT("Sprint"),
+	STATUS("Status"),
+	CATEGORY("Category"),
+	USER("User"),
 	DASH("-");
+
 
 	private String label;
 

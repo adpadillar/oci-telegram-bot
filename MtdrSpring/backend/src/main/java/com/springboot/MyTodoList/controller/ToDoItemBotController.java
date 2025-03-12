@@ -84,21 +84,25 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// 	messageToTelegram.setChatId(chatId);
 			// 	messageToTelegram.setText(BotMessages.HELLO_MYTODO_BOT.getMessage());
 
-			// 	ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-			// 	List<KeyboardRow> keyboard = new ArrayList<>();
+			 	ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+			 	List<KeyboardRow> keyboard = new ArrayList<>();
 
-			// 	// first row
-			// 	KeyboardRow row = new KeyboardRow();
-			// 	row.add(BotLabels.LIST_ALL_ITEMS.getLabel());
-			// 	row.add(BotLabels.ADD_NEW_ITEM.getLabel());
-			// 	// Add the first row to the keyboard
-			// 	keyboard.add(row);
+			 	// first row
+			 	KeyboardRow row = new KeyboardRow();
+			 	row.add(BotLabels.VIEW_TASKS.getLabel());
+			 	// Add the first row to the keyboard
+			 	keyboard.add(row);
 
-			// 	// second row
-			// 	row = new KeyboardRow();
-			// 	row.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-			// 	row.add(BotLabels.HIDE_MAIN_SCREEN.getLabel());
-			// 	keyboard.add(row);
+			 	// second row
+			 	row = new KeyboardRow();
+			 	row.add(BotLabels.DETAILS.getLabel());
+			 	row.add(BotLabels.ADD_TASK.getLabel());
+			 	keyboard.add(row);
+
+				row = new KeyboardRow();
+			 	row.add(BotLabels.FILTER_TASKS.getLabel());
+			 	row.add(BotLabels.UPDATE_TASK.getLabel());
+			 	keyboard.add(row);
 
 			// 	// Set the keyboard
 			// 	keyboardMarkup.setKeyboard(keyboard);
