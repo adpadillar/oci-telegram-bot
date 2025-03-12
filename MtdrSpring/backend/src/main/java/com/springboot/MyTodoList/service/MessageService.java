@@ -20,4 +20,9 @@ public class MessageService {
     public void saveMessage(MessageModel message) {
         messageRepository.save(message);
     }
+
+    public MessageModel findLastAssistantMessageFromChat(long chatId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findLastAssistantMessageFromChat'");
+    }
 }
