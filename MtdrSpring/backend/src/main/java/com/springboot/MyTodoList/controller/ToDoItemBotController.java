@@ -611,13 +611,19 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	
 	private void handleFilterTasks(long chatId) {
 		try {
+			// Get user to check role
+			UserModel user = userService.findUserByChatId(chatId);
 			ReplyKeyboardMarkup filterKeyboard = new ReplyKeyboardMarkup();
 			List<KeyboardRow> keyboard = new ArrayList<>();
 			
-			KeyboardRow row1 = new KeyboardRow();
-			row1.add("⏰ My Tasks");
-			keyboard.add(row1);
+			// Only add "My Tasks" option for developers
+			if ("developer".equals(user.getRole())) {
+				KeyboardRow row1 = new KeyboardRow();
+				row1.add("⏰ My Tasks");
+				keyboard.add(row1);
+			}
 			
+			// Common filter options for both roles
 			KeyboardRow row2 = new KeyboardRow();
 			row2.add("⭕ Created Tasks");
 			row2.add("📊 In progress Tasks");
@@ -633,12 +639,15 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Select a filter:");
+			message.setText(user.getRole().equals("manager") ? 
+				"Select a status filter:" : 
+				"Select a filter option:");
 			message.setReplyMarkup(filterKeyboard);
 			
 			execute(message);
 		} catch (Exception e) {
 			logger.error("Error showing filters", e);
+			
 		}
 	}
 	
