@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const userValidator = z.object({
+  title: z.string(),
+  role: z.enum(["developer", "manager", "user-pending-activation"]),
   firstName: z.string(),
   lastName: z.string(),
 });

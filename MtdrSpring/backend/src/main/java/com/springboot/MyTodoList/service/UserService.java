@@ -56,6 +56,7 @@ public class UserService {
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
         user.setRole(userDTO.getRole());
+        user.setTitle(userDTO.getTitle());
         user.setProject(project);
         
         return userRepository.save(user);
@@ -80,6 +81,10 @@ public class UserService {
                 
                 if (newValues.getRole() != null) {
                     user.setRole(newValues.getRole());
+                }
+
+                if (newValues.getTitle() != null) {
+                    user.setTitle(newValues.getTitle());
                 }
                 
                 return userRepository.save(user);
