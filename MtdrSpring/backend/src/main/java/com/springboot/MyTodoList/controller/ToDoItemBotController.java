@@ -592,6 +592,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			TaskDTO taskDTO = new TaskDTO();
 			taskDTO.setStatus("created");
 			taskDTO.setCreatedBy(user.getID());
+			taskDTO.setAssignedTo(user.getID());
 			taskDTO.setDescription(taskDescription);
 			
 			// Add task to the project
