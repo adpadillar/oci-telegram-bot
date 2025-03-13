@@ -21,8 +21,24 @@ public class MessageService {
         messageRepository.save(message);
     }
 
-    public MessageModel findLastAssistantMessageFromChat(long chatId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findLastAssistantMessageFromChat'");
+    public void deleteMessage(MessageModel message) {
+        messageRepository.delete(message);
+    }
+
+
+    public MessageModel findLastMessageByUserId(long chatId) {
+        List<MessageModel> messages = messageRepository.findByUserIdOrderByCreatedAtDesc(chatId);
+        if (messages != null && !messages.isEmpty()) {
+            return messages.get(0);
+        }
+        return null;
+    }
+
+    public MessageModel findLastAssistantMessageByUserId(long chatId) {
+        List<MessageModel> messages = messageRepository.findByUserIdOrderByCreatedAtDesc(chatId);
+        if (messages != null && !messages.isEmpty()) {
+            return messages.get(1);
+        }
+        return null;
     }
 }
