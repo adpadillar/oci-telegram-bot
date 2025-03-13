@@ -16,7 +16,7 @@ public enum BotLabels {
 	DELETE_TASK("DELETE_TASK"),
 	MY_TASKS("MY TASKS"),
 	CREATE_SPRINT("Create Sprint"),
-	DELETE_SPRINT("Delete Sprint"),
+	UPDATE_SPRINT("Update Sprint"),
 	SPRINT("Sprint"),
 	STATUS("Status"),
 	CATEGORY("Category"),
