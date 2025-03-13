@@ -34,6 +34,7 @@ import com.springboot.MyTodoList.service.MessageService;
 import com.springboot.MyTodoList.service.ProjectService;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.UserService;
+import com.springboot.MyTodoList.dto.TaskDTO;
 import com.springboot.MyTodoList.util.BotCommands;
 import com.springboot.MyTodoList.util.BotHelper;
 import com.springboot.MyTodoList.util.BotLabels;
@@ -70,7 +71,15 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		
 			
 
-			if (user == null) return;			
+			if (user == null) return;
+			
+			// Check if the user is in the state of waiting for task description
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			if ("waiting_for_task_description".equals(lastMessage.getMessageType())) {
+				System.out.println("Waiting for task description");
+				handleTaskDescription(chatId, user, messageText);
+				return;
+			}
 
 			
 			if (user.getRole().equals("developer")) {
@@ -540,9 +549,32 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			stateMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(stateMessage);
 			
-			execute(message);
+			execute(message);			
 		} catch (Exception e) {
 			logger.error("Error initiating add task", e);
+		}
+	}
+	
+	private void handleTaskDescription(long chatId, UserModel user, String taskDescription) {
+		System.out.println("Task description: " + taskDescription);
+		try {
+			int projectId = user.getProject().getID();
+			TaskDTO taskDTO = new TaskDTO();
+			taskDTO.setStatus("created");
+			taskDTO.setCreatedBy(user.getID());
+			taskDTO.setDescription(taskDescription);
+			
+			// Add task to the project
+			TaskModel newTask = taskService.addTodoItemToProject(projectId, taskDTO);
+			logger.info("Task added to project: " + newTask);
+			
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Task added successfully!");
+			execute(message);
+			
+		} catch (Exception e) {
+			logger.error("Error adding task", e);
 		}
 	}
 	
