@@ -87,6 +87,21 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_id".equals(lastMessage.getMessageType())) {
+				handleTaskUpdate(chatId, messageText);
+				return;
+			}
+	
+			if ("waiting_for_new_description".equals(lastMessage.getMessageType())) {
+				handleNewDescription(chatId, messageText);
+				return;
+			}
+	
+			if ("waiting_for_new_status".equals(lastMessage.getMessageType())) {
+				handleNewStatus(chatId, messageText);
+				return;
+			}
+
 			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -464,6 +479,150 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error initiating task update", e);
 		}
 	}
+
+	private void handleTaskUpdate(long chatId, String taskIdText) {
+		try {
+			int taskId = Integer.parseInt(taskIdText);
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				// Ask for new description
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Please enter the new task description of task (" + taskId + "):");
+				
+				// Save state for next message
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_new_description");
+				stateMessage.setRole("assistant");
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (NumberFormatException e) {
+			logger.error("Invalid task ID format", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Invalid task ID format. Please enter a valid task ID.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+	private void handleNewDescription(long chatId, String newDescription) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(2).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setDescription(newDescription);
+				
+				// Ask for new status
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Please select the new task status for task (" + task.getID() + "):");
+				
+				// Create keyboard for status options
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				KeyboardRow row1 = new KeyboardRow();
+				row1.add("created");
+				row1.add("in_progress");
+				row1.add("done");
+				keyboardRows.add(row1);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+				
+				message.setReplyMarkup(keyboard);
+				
+				// Save state for next message
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_new_status");
+				stateMessage.setRole("assistant");
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task description", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task description. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+
+	private void handleNewStatus(long chatId, String newStatus) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(4).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setStatus(newStatus);
+				taskService.save(task);
+				
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task ID " + task.getID() + " updated successfully!");
+				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task status", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task status. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+
 	
 	private void handleTaskDetails(long chatId) {
 		try {
