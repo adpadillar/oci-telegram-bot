@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -81,6 +82,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_delete_id".equals(lastMessage.getMessageType())) {
+				handleTaskDeletion(chatId, messageText);
+				return;
+			}
+
 			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -103,6 +109,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					return;
 				} else if (messageText.equals(BotLabels.UPDATE_TASK.getLabel())) {
 					handleUpdateTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.DELETE_TASK.getLabel())) {
+					handleDeleteTask(chatId);
 					return;
 				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
 					handleTaskDetails(chatId);
@@ -492,7 +501,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void handleViewTasks(long chatId) {
 		try {
-
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
 			List<KeyboardRow> keyboardRows = new ArrayList<>();
 			KeyboardRow row = new KeyboardRow();
@@ -501,11 +509,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			keyboard.setKeyboard(keyboardRows);
 			keyboard.setResizeKeyboard(true);
 			keyboard.setOneTimeKeyboard(false);
-
+	
 			// Get tasks from service
-			List<TaskModel> tasks = taskService.findAll(); 
+			List<TaskModel> tasks = taskService.findAll();
+			// Sort tasks by ID
+			tasks.sort(Comparator.comparingInt(TaskModel::getID));
 			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
-			
+	
 			if (tasks == null || tasks.isEmpty()) {
 				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
 			} else {
@@ -522,17 +532,16 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			response.setChatId(chatId);
 			response.setText(message.toString());
 			response.enableMarkdown(true);
-			response.setReplyMarkup(keyboard); 
-			
+			response.setReplyMarkup(keyboard);
+	
 			execute(response);
 		} catch (NullPointerException e) {
 			logger.error("TaskService not properly initialized or null reference", e);
-			
+	
 		} catch (Exception e) {
 			logger.error("Error viewing tasks: " + e.getMessage(), e);
-			
+	
 		}
-			
 	}
 	
 	private void handleAddTask(long chatId) {
@@ -668,10 +677,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			secondRow.add(BotLabels.ADD_TASK.getLabel());
 			devKeyboard.add(secondRow);
 
-			// Third row - Details and Update
+			// Third row - Details Update and Delete
 			KeyboardRow thirdRow = new KeyboardRow();
 			thirdRow.add(BotLabels.DETAILS.getLabel());
 			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			thirdRow.add(BotLabels.DELETE_TASK.getLabel());
 			devKeyboard.add(thirdRow);
 			
 			
@@ -700,6 +710,63 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			logger.error("Error getting user tasks", e);
 			
+		}
+	}
+
+	private void handleDeleteTask(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Please enter the task ID you want to delete:");
+			
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_delete_id");
+			stateMessage.setRole("assistant");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error initiating task delete", e);
+		}
+	}
+
+
+	private void handleTaskDeletion(long chatId, String taskIdText) {
+		try {
+			int taskId = Integer.parseInt(taskIdText);
+			boolean isDeleted = taskService.deleteToDoItem(taskId);
+	
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			if (isDeleted) {
+				message.setText("Task deleted successfully!");
+			} else {
+				message.setText("Task not found or could not be deleted.");
+			}
+			execute(message);
+		} catch (NumberFormatException e) {
+			logger.error("Invalid task ID format", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Invalid task ID format. Please enter a valid task ID.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (Exception e) {
+			logger.error("Error deleting task", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while deleting the task. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
 		}
 	}
 
