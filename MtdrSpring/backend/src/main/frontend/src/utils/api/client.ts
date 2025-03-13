@@ -1,12 +1,23 @@
 import { z } from "zod";
 
-export const userValidator = z.object({
+export const userResponseValidator = z.object({
   id: z.number(),
   title: z.string().nullable(),
   role: z.enum(["developer", "manager", "user-pending-activation"]),
   firstName: z.string(),
   lastName: z.string(),
 });
+
+export const userRequestValidator = z.object({
+  telegramId: z.string().nullable(),
+  firstName: z.string(),
+  lastName: z.string(),
+  role: z.enum(["developer", "manager", "user-pending-activation"]),
+  title: z.string().nullable(),
+});
+
+export type UserResponse = z.infer<typeof userResponseValidator>;
+export type UserRequest = z.infer<typeof userRequestValidator>;
 
 export const sprintValidator = z.object({
   id: z.number(),
@@ -23,8 +34,8 @@ export const taskResponseValidator = z.object({
   description: z.string(),
   createdAt: z.string().transform((value) => new Date(value)),
   status: z.string(),
-  createdBy: userValidator,
-  assignedTo: userValidator.nullable(),
+  createdBy: userResponseValidator,
+  assignedTo: userResponseValidator.nullable(),
   estimateHours: z.number().nullable(),
   realHours: z.number().nullable(),
   sprint: sprintValidator.nullable(),
@@ -54,7 +65,7 @@ function createApiClient(baseUrl: string) {
     const response = await fetch(`${urlWithProject}/users`);
     const responseJson = await response.json();
 
-    const safeParsed = userValidator.array().safeParse(responseJson);
+    const safeParsed = userResponseValidator.array().safeParse(responseJson);
 
     if (!safeParsed.success) {
       console.error("Error", safeParsed.error);
@@ -76,7 +87,7 @@ function createApiClient(baseUrl: string) {
     const response = await fetch(`${urlWithProject}/users`);
     const responseJson = await response.json();
 
-    const safeParsed = userValidator.array().safeParse(responseJson);
+    const safeParsed = userResponseValidator.array().safeParse(responseJson);
 
     if (!safeParsed.success) {
       console.error("Error", safeParsed.error);
@@ -85,7 +96,10 @@ function createApiClient(baseUrl: string) {
 
     console.log("Safe parsed", safeParsed.data);
 
-    return safeParsed.data.filter((user) => user.role === "developer");
+    return safeParsed.data.filter(
+      (user) =>
+        user.role === "developer" || user.role === "user-pending-activation"
+    );
   }
 
   async function listTasks() {
@@ -137,6 +151,20 @@ function createApiClient(baseUrl: string) {
     });
   }
 
+  async function patchUser(id: number, user: Partial<UserRequest>) {
+    return fetch(`${urlWithProject}/users/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    });
+  }
+
+  async function updateUserStatus(id: number, status: "developer" | "manager") {
+    return patchUser(id, { role: status });
+  }
+
   return {
     tasks: {
       list: listTasks,
@@ -147,6 +175,8 @@ function createApiClient(baseUrl: string) {
     users: {
       getManager: getProjectManager,
       getDevelopers: getProjectDevelopers,
+      patch: patchUser,
+      updateStatus: updateUserStatus,
     },
   };
 }
