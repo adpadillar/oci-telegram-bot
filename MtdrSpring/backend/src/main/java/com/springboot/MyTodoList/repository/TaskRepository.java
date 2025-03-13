@@ -1,5 +1,5 @@
 package com.springboot.MyTodoList.repository;
-
+import com.springboot.MyTodoList.model.UserModel;
 
 import com.springboot.MyTodoList.model.TaskModel;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +15,6 @@ import javax.transaction.Transactional;
 @EnableTransactionManagement
 public interface TaskRepository extends JpaRepository<TaskModel,Integer> {
   List<TaskModel> findByProject_ID(int projectId);
+  List<TaskModel> findByAssignedTo(UserModel user);
+  List<TaskModel> findByStatus(String status);
 }

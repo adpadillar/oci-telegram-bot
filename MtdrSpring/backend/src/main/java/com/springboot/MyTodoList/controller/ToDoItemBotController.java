@@ -34,6 +34,7 @@ import com.springboot.MyTodoList.service.MessageService;
 import com.springboot.MyTodoList.service.ProjectService;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.UserService;
+import com.springboot.MyTodoList.dto.TaskDTO;
 import com.springboot.MyTodoList.util.BotCommands;
 import com.springboot.MyTodoList.util.BotHelper;
 import com.springboot.MyTodoList.util.BotLabels;
@@ -45,14 +46,16 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	private String botName;
 	private MessageService messageService;
 	private UserService userService;
+	private TaskService taskService;
 
-	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService) {
+	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService, TaskService taskService) {
 		super(botToken);
 		logger.info("Bot Token: " + botToken);
 		logger.info("Bot name: " + botName);
 		this.messageService = messageService;
 		this.botName = botName;
 		this.userService = userService;
+		this.taskService = taskService;
 	}
 
 	@Override
@@ -60,11 +63,67 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			UserModel user = runAuthMiddleware(update);
-			if (user == null) return;
+			String messageText = update.getMessage().getText();
+        	long chatId = update.getMessage().getChatId();
 
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+		
+			
+
+			if (user == null) return;
+			
+			// Check if the user is in the state of waiting for task description
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			if ("waiting_for_task_description".equals(lastMessage.getMessageType())) {
+				System.out.println("Waiting for task description");
+				handleTaskDescription(chatId, user, messageText);
+				return;
+			}
+
+			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
 				logger.info("This is a message from a developer");
+
+				if (messageText.equals("↩️ Back to Main Menu")) {
+					showDeveloperMainMenu(chatId);
+					return;
+				}
+				
+				// Handle button actions
+				if (messageText.equals(BotLabels.VIEW_TASKS.getLabel())) {
+					handleViewTasks(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.ADD_TASK.getLabel())) {
+					handleAddTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.FILTER_TASKS.getLabel())) {
+					handleFilterTasks(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.UPDATE_TASK.getLabel())) {
+					handleUpdateTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
+					handleTaskDetails(chatId);
+					return;
+					}
+					// Check for filter options
+					if (messageText.equals("⏰ My Tasks")) {
+						handleMyTasks(chatId, user);
+						return;
+					} else if (messageText.equals("⭕ Created Tasks")) {
+						handleTasksByStatus(chatId, "created");
+						return;
+					} else if (messageText.equals("📊 In progress Tasks")) {
+						handleTasksByStatus(chatId, "in_progress");
+						return;
+					} else if (messageText.equals("✅ Done Tasks")) {
+						handleTasksByStatus(chatId, "done");
+						return;
+					}
+				// Show the main menu by default
+				showDeveloperMainMenu(chatId);
 				return;
 			}
 
@@ -74,8 +133,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
-			// String messageTextFromTelegram = update.getMessage().getText();
-			// long chatId = update.getMessage().getChatId();
+			
+	
 
 			// if (messageTextFromTelegram.equals(BotCommands.START_COMMAND.getCommand())
 			// 		|| messageTextFromTelegram.equals(BotLabels.SHOW_MAIN_SCREEN.getLabel())) {
@@ -84,21 +143,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// 	messageToTelegram.setChatId(chatId);
 			// 	messageToTelegram.setText(BotMessages.HELLO_MYTODO_BOT.getMessage());
 
-			// 	ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-			// 	List<KeyboardRow> keyboard = new ArrayList<>();
-
-			// 	// first row
-			// 	KeyboardRow row = new KeyboardRow();
-			// 	row.add(BotLabels.LIST_ALL_ITEMS.getLabel());
-			// 	row.add(BotLabels.ADD_NEW_ITEM.getLabel());
-			// 	// Add the first row to the keyboard
-			// 	keyboard.add(row);
-
-			// 	// second row
-			// 	row = new KeyboardRow();
-			// 	row.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-			// 	row.add(BotLabels.HIDE_MAIN_SCREEN.getLabel());
-			// 	keyboard.add(row);
 
 			// 	// Set the keyboard
 			// 	keyboardMarkup.setKeyboard(keyboard);
@@ -444,6 +488,277 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 
 		return null;
+	}
+
+	private void handleViewTasks(long chatId) {
+		try {
+
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("↩️ Back to Main Menu");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			keyboard.setOneTimeKeyboard(false);
+
+			// Get tasks from service
+			List<TaskModel> tasks = taskService.findAll(); 
+			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
+			
+			if (tasks == null || tasks.isEmpty()) {
+				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
+			} else {
+				for (TaskModel task : tasks) {
+					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
+						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
+						.append("👤 *Assigned to:* ").append(task.getAssignedTo() != null ? 
+							task.getCreatedBy().getFirstName() : "Unknown").append("\n\n");
+				}
+			}
+	
+			SendMessage response = new SendMessage();
+			response.setChatId(chatId);
+			response.setText(message.toString());
+			response.enableMarkdown(true);
+			response.setReplyMarkup(keyboard); 
+			
+			execute(response);
+		} catch (NullPointerException e) {
+			logger.error("TaskService not properly initialized or null reference", e);
+			
+		} catch (Exception e) {
+			logger.error("Error viewing tasks: " + e.getMessage(), e);
+			
+		}
+			
+	}
+	
+	private void handleAddTask(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Please enter the task description:");
+			
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_description");
+			stateMessage.setRole("assistant");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+			
+			execute(message);			
+		} catch (Exception e) {
+			logger.error("Error initiating add task", e);
+		}
+	}
+	
+	private void handleTaskDescription(long chatId, UserModel user, String taskDescription) {
+		System.out.println("Task description: " + taskDescription);
+		try {
+			int projectId = user.getProject().getID();
+			TaskDTO taskDTO = new TaskDTO();
+			taskDTO.setStatus("created");
+			taskDTO.setCreatedBy(user.getID());
+			taskDTO.setDescription(taskDescription);
+			
+			// Add task to the project
+			TaskModel newTask = taskService.addTodoItemToProject(projectId, taskDTO);
+			logger.info("Task added to project: " + newTask);
+			
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Task added successfully!");
+			execute(message);
+			
+		} catch (Exception e) {
+			logger.error("Error adding task", e);
+		}
+	}
+	
+	private void handleFilterTasks(long chatId) {
+		try {
+			ReplyKeyboardMarkup filterKeyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboard = new ArrayList<>();
+			
+			KeyboardRow row1 = new KeyboardRow();
+			row1.add("⏰ My Tasks");
+			keyboard.add(row1);
+			
+			KeyboardRow row2 = new KeyboardRow();
+			row2.add("⭕ Created Tasks");
+			row2.add("📊 In progress Tasks");
+			row2.add("✅ Done Tasks");
+			keyboard.add(row2);
+			
+			KeyboardRow row3 = new KeyboardRow();
+			row3.add("↩️ Back to Main Menu");
+			keyboard.add(row3);
+			
+			filterKeyboard.setKeyboard(keyboard);
+			filterKeyboard.setResizeKeyboard(true);
+			
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Select a filter:");
+			message.setReplyMarkup(filterKeyboard);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error showing filters", e);
+		}
+	}
+	
+	private void handleUpdateTask(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Please enter the task ID you want to update:");
+			
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_id");
+			stateMessage.setRole("assistant");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error initiating task update", e);
+		}
+	}
+	
+	private void handleTaskDetails(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Please enter the task ID to view details:");
+			
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_details_id");
+			stateMessage.setRole("assistant");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error getting task details", e);
+		}
+	}
+
+	private void showDeveloperMainMenu(long chatId) {
+		try {
+			// Create developer keyboard
+			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
+			List<KeyboardRow> devKeyboard = new ArrayList<>();
+			
+			// First row - View tasks
+			KeyboardRow firstRow = new KeyboardRow();
+			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
+			devKeyboard.add(firstRow);
+			
+			// Second row - Filter and Add
+			KeyboardRow secondRow = new KeyboardRow();
+			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
+			secondRow.add(BotLabels.ADD_TASK.getLabel());
+			devKeyboard.add(secondRow);
+
+			// Third row - Details and Update
+			KeyboardRow thirdRow = new KeyboardRow();
+			thirdRow.add(BotLabels.DETAILS.getLabel());
+			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			devKeyboard.add(thirdRow);
+			
+			
+			
+			// Configure keyboard
+			devKeyboardMarkup.setKeyboard(devKeyboard);
+			devKeyboardMarkup.setResizeKeyboard(true);
+			devKeyboardMarkup.setOneTimeKeyboard(false);
+			
+			// Create and send message with keyboard
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Developer Menu - Please select an option:");
+			message.setReplyMarkup(devKeyboardMarkup);
+			
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error showing developer menu", e);
+		}
+	}
+
+	private void handleMyTasks(long chatId, UserModel user) {
+		try {
+			List<TaskModel> tasks = taskService.findByUserAssigned(user);
+			sendTaskList(chatId, tasks, "📋 *My Assigned Tasks*\n\n");
+		} catch (Exception e) {
+			logger.error("Error getting user tasks", e);
+			
+		}
+	}
+
+	/**
+	 * @param chatId
+	 * @param status
+	 */
+	private void handleTasksByStatus(long chatId, String status) {
+		/* try {
+			List<TaskModel> tasks = taskService.findByStatus(status);
+			String title = switch (status) {
+				case "created" -> "⭕ *Created Tasks*\n\n";
+				case "in_progress" -> "📊 *In Progress Tasks*\n\n";
+				case "done" -> "✅ *Done Tasks*\n\n";
+				default -> "📋 *Tasks*\n\n";
+			};
+			sendTaskList(chatId, tasks, title);
+		} catch (Exception e) {
+			logger.error("Error getting " + status + " tasks", e);
+			
+		} */
+	}
+
+	private void sendTaskList(long chatId, List<TaskModel> tasks, String title) {
+		try {
+			StringBuilder message = new StringBuilder(title);
+			
+			if (tasks.isEmpty()) {
+				message.append("No tasks found in this category.");
+			} else {
+				for (TaskModel task : tasks) {
+					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
+						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
+						.append("👤 *Assigned to:* ").append(task.getAssignedTo() != null ? 
+							task.getAssignedTo().getFirstName() : "Unassigned").append("\n\n");
+				}
+			}
+
+			// Add back button
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("↩️ Back to Main Menu");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			
+			SendMessage response = new SendMessage();
+			response.setChatId(chatId);
+			response.setText(message.toString());
+			response.enableMarkdown(true);
+			response.setReplyMarkup(keyboard);
+			
+			execute(response);
+		} catch (Exception e) {
+			logger.error("Error sending task list", e);
+			
+		}
 	}
 
 	// // GET /todolist
