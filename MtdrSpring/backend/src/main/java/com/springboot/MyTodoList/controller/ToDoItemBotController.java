@@ -431,8 +431,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				if (firstAssistantMessage.getMessageType().equals("input-project-id")) {
 					// we save the user to the database
 					String projectId = messages.get(0).getContent();
-					String firstName = messages.get(2).getContent();
-					String lastName = messages.get(4).getContent();
+					String lastName = messages.get(2).getContent();
+					String firstName = messages.get(4).getContent();
 
 					UserDTO newUser = new UserDTO();
 					newUser.setTelegramId(chatId);

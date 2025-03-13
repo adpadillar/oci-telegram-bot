@@ -5,16 +5,18 @@ public class UserDTO {
     private String firstName;
     private String lastName;
     private String role;
+    private String title;
     
     // Default constructor
     public UserDTO() {}
     
     // Constructor with fields
-    public UserDTO(Long telegramId, String firstName, String lastName, String role) {
+    public UserDTO(Long telegramId, String firstName, String lastName, String role, String title) {
         this.telegramId = telegramId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
+        this.title = title;
     }
     
     // Getters and setters
@@ -29,4 +31,7 @@ public class UserDTO {
     
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 }
