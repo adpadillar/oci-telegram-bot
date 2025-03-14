@@ -19,4 +19,3 @@ set -e
 #for r in $REPO_IDS; do
 #  oci artifacts container repository delete --repository-id "$r" --force
 #done
-
