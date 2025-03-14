@@ -35,6 +35,11 @@ const Tasks: React.FC = () => {
     queryKey: ["users"],
   });
 
+  const { data: sprints } = useQuery({
+    queryFn: api.sprints.getSprints,
+    queryKey: ["sprints"],
+  });
+
   // Filter tasks using the defined filters
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
@@ -126,7 +131,7 @@ const Tasks: React.FC = () => {
     const [category, setCategory] = useState<
       "bug" | "feature" | "issue" | null
     >("feature");
-    const [sprint, setSprint] = useState<number | null>(1);
+    const [sprint, setSprint] = useState<number | null>(null);
     const [assignedTo, setAssignedTo] = useState<number | null>(null);
     const [status, setStatus] = useState<
       "created" | "in-progress" | "in-review" | "testing" | "done"
@@ -204,14 +209,21 @@ const Tasks: React.FC = () => {
             </div>
             <div className="mb-4">
               <label className="block text-gray-700">Sprint</label>
-              <input
-                type="number"
+              <select
                 value={sprint === null ? "" : sprint}
                 onChange={(e) =>
                   setSprint(e.target.value ? Number(e.target.value) : null)
                 }
                 className="w-full px-3 py-2 border rounded-md"
-              />
+              >
+                <option value="">Select Sprint</option>
+                {/* Assuming `sprints` is an array of available sprints to select from */}
+                {sprints?.map((sprintOption) => (
+                  <option key={sprintOption.id} value={sprintOption.id}>
+                    {sprintOption.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="mb-4">
               <label className="block text-gray-700">Estimate (hours)</label>
@@ -395,14 +407,20 @@ const Tasks: React.FC = () => {
             </div>
             <div className="mb-4">
               <label className="block text-gray-700">Sprint</label>
-              <input
-                type="number"
+              <select
                 value={sprint === null ? "" : sprint}
                 onChange={(e) =>
                   setSprint(e.target.value ? Number(e.target.value) : null)
                 }
                 className="w-full px-3 py-2 border rounded-md"
-              />
+              >
+                <option value="">Select Sprint</option>
+                {sprints?.map((sprintOption) => (
+                  <option key={sprintOption.id} value={sprintOption.id}>
+                    {sprintOption.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="mb-4">
               <label className="block text-gray-700">Estimate (hours)</label>

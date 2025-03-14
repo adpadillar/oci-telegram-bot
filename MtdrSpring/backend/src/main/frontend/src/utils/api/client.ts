@@ -19,14 +19,18 @@ export const userRequestValidator = z.object({
 export type UserResponse = z.infer<typeof userResponseValidator>;
 export type UserRequest = z.infer<typeof userRequestValidator>;
 
-export const sprintValidator = z.object({
+export const projectValidator = z.object({
   id: z.number(),
   name: z.string(),
 });
 
-export const projectValidator = z.object({
+export const sprintValidator = z.object({
   id: z.number(),
   name: z.string(),
+  description: z.string().nullable(),
+  startedAt: z.string().transform((value) => new Date(value)),
+  endsAt: z.string().transform((value) => new Date(value)),
+  project: projectValidator,
 });
 
 export const taskResponseValidator = z.object({
@@ -187,6 +191,24 @@ function createApiClient(baseUrl: string) {
     return patchUser(id, { role: status });
   }
 
+  async function getSprints() {
+    const response = await fetch(`${urlWithProject}/sprints`);
+    const sprints = await response.json();
+
+    const safeParsed = sprintValidator.array().safeParse(sprints);
+
+    if (!safeParsed.success) {
+      console.error("Error", safeParsed.error);
+      throw new Error("Invalid data");
+    }
+
+    console.log("Safe parsed", safeParsed.data);
+
+    return safeParsed.data.sort(
+      (a, b) => a.name.localeCompare(b.name) || a.id - b.id
+    );
+  }
+
   return {
     tasks: {
       list: listTasks,
@@ -200,6 +222,9 @@ function createApiClient(baseUrl: string) {
       getUsers: getProjectUsers,
       patch: patchUser,
       updateStatus: updateUserStatus,
+    },
+    sprints: {
+      getSprints,
     },
   };
 }
