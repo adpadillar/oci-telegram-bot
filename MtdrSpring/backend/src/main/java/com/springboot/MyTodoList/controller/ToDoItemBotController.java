@@ -154,6 +154,36 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if (user.getRole().equals("manager")) {
 				// we will handle this here
 				logger.info("This is a message from a manager");
+				if (messageText.equals("↩️ Back to Main Menu")) {
+					showManagerMainMenu(chatId);
+					return;
+				}
+				
+				// Handle button actions
+				if (messageText.equals(BotLabels.VIEW_TASKS.getLabel())) {
+					handleViewTasks(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.ADD_TASK.getLabel())) {
+					handleAddTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.FILTER_TASKS.getLabel())) {
+					handleFilterTasks(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.UPDATE_TASK.getLabel())) {
+					handleUpdateTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
+					handleTaskDetails(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.CREATE_SPRINT.getLabel())) {
+					handleCreateSprint(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.UPDATE_SPRINT.getLabel())) {
+					handleUpdateSprint(chatId);
+					return;
+				}
+
+				showManagerMainMenu(chatId);
 				return;
 			}
 		}
@@ -280,8 +310,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				if (firstAssistantMessage.getMessageType().equals("input-project-id")) {
 					// we save the user to the database
 					String projectId = messages.get(0).getContent();
-					String firstName = messages.get(2).getContent();
-					String lastName = messages.get(4).getContent();
+					String lastName = messages.get(2).getContent();
+					String firstName = messages.get(4).getContent();
 
 					UserDTO newUser = new UserDTO();
 					newUser.setTelegramId(chatId);
@@ -411,6 +441,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			TaskDTO taskDTO = new TaskDTO();
 			taskDTO.setStatus("created");
 			taskDTO.setCreatedBy(user.getID());
+			taskDTO.setAssignedTo(user.getID());
 			taskDTO.setDescription(taskDescription);
 			
 			// Add task to the project
@@ -429,13 +460,19 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	
 	private void handleFilterTasks(long chatId) {
 		try {
+			// Get user to check role
+			UserModel user = userService.findUserByChatId(chatId);
 			ReplyKeyboardMarkup filterKeyboard = new ReplyKeyboardMarkup();
 			List<KeyboardRow> keyboard = new ArrayList<>();
 			
-			KeyboardRow row1 = new KeyboardRow();
-			row1.add("⏰ My Tasks");
-			keyboard.add(row1);
+			// Only add "My Tasks" option for developers
+			if ("developer".equals(user.getRole())) {
+				KeyboardRow row1 = new KeyboardRow();
+				row1.add("⏰ My Tasks");
+				keyboard.add(row1);
+			}
 			
+			// Common filter options for both roles
 			KeyboardRow row2 = new KeyboardRow();
 			row2.add("⭕ Created Tasks");
 			row2.add("📊 In progress Tasks");
@@ -451,12 +488,15 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Select a filter:");
+			message.setText(user.getRole().equals("manager") ? 
+				"Select a status filter:" : 
+				"Select a filter option:");
 			message.setReplyMarkup(filterKeyboard);
 			
 			execute(message);
 		} catch (Exception e) {
 			logger.error("Error showing filters", e);
+			
 		}
 	}
 	
@@ -649,22 +689,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-	private void showDeveloperMainMenu(long chatId) {
-		try {
-			// Create developer keyboard
-			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
-			List<KeyboardRow> devKeyboard = new ArrayList<>();
-			
-			// First row - View tasks
-			KeyboardRow firstRow = new KeyboardRow();
-			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
-			devKeyboard.add(firstRow);
-			
-			// Second row - Filter and Add
-			KeyboardRow secondRow = new KeyboardRow();
-			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
-			secondRow.add(BotLabels.ADD_TASK.getLabel());
-			devKeyboard.add(secondRow);
 
 			// Third row - Details Update and Delete
 			KeyboardRow thirdRow = new KeyboardRow();
@@ -691,6 +715,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error showing developer menu", e);
 		}
 	}
+
 
 	private void handleMyTasks(long chatId, UserModel user) {
 		try {
@@ -814,6 +839,103 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			logger.error("Error sending task list", e);
 			
+		}
+	}
+
+
+	private void handleCreateSprint(long chatId){
+
+	}
+					
+	private void handleUpdateSprint(long chatId){
+		
+	}
+
+	private void showDeveloperMainMenu(long chatId) {
+		try {
+			// Create developer keyboard
+			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
+			List<KeyboardRow> devKeyboard = new ArrayList<>();
+			
+			// First row - View tasks
+			KeyboardRow firstRow = new KeyboardRow();
+			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
+			devKeyboard.add(firstRow);
+			
+			// Second row - Filter and Add
+			KeyboardRow secondRow = new KeyboardRow();
+			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
+			secondRow.add(BotLabels.ADD_TASK.getLabel());
+			devKeyboard.add(secondRow);
+
+			// Third row - Details and Update
+			KeyboardRow thirdRow = new KeyboardRow();
+			thirdRow.add(BotLabels.DETAILS.getLabel());
+			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			devKeyboard.add(thirdRow);
+			
+			
+			
+			// Configure keyboard
+			devKeyboardMarkup.setKeyboard(devKeyboard);
+			devKeyboardMarkup.setResizeKeyboard(true);
+			devKeyboardMarkup.setOneTimeKeyboard(false);
+			
+			// Create and send message with keyboard
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Developer Menu - Please select an option:");
+			message.setReplyMarkup(devKeyboardMarkup);
+			
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error showing developer menu", e);
+		}
+	}
+
+	private void showManagerMainMenu(long chatId) {
+		try {
+			// Create developer keyboard
+			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
+			List<KeyboardRow> manKeyboard = new ArrayList<>();
+			
+			// First row - View tasks
+			KeyboardRow firstRow = new KeyboardRow();
+			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
+			manKeyboard.add(firstRow);
+			
+			// Second row - Filter and Add
+			KeyboardRow secondRow = new KeyboardRow();
+			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
+			secondRow.add(BotLabels.ADD_TASK.getLabel());
+			manKeyboard.add(secondRow);
+
+			// Third row - Details and Update
+			KeyboardRow thirdRow = new KeyboardRow();
+			thirdRow.add(BotLabels.DETAILS.getLabel());
+			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			manKeyboard.add(thirdRow);
+			
+			// Fourth row - Sprints
+			KeyboardRow fourthRow = new KeyboardRow();
+			fourthRow.add(BotLabels.CREATE_SPRINT.getLabel());
+			fourthRow.add(BotLabels.UPDATE_SPRINT.getLabel());
+			manKeyboard.add(fourthRow);
+
+			// Configure keyboard
+			devKeyboardMarkup.setKeyboard(manKeyboard);
+			devKeyboardMarkup.setResizeKeyboard(true);
+			devKeyboardMarkup.setOneTimeKeyboard(false);
+			
+			// Create and send message with keyboard
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Manager Menu - Please select an option:");
+			message.setReplyMarkup(devKeyboardMarkup);
+			
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error showing Manager menu", e);
 		}
 	}
 

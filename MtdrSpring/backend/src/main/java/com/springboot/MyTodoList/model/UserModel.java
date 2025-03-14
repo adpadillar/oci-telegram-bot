@@ -26,14 +26,18 @@ public class UserModel {
     @Column(name = "ROLE", length = 128, nullable = false)
     private String role;
 
+    @Column(name = "TITLE", length = 255, nullable = true)
+    private String title;
+
     public UserModel() {}
 
-    public UserModel(Long telegramId, ProjectModel project, String firstName, String lastName, String role) {
+    public UserModel(Long telegramId, ProjectModel project, String firstName, String lastName, String role, String title) {
         this.telegramId = telegramId;
         this.project = project;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
+        this.title = title;
     }
 
     // Getters y Setters
@@ -55,6 +59,9 @@ public class UserModel {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
     @Override
     public String toString() {
         return "UserModel{" +
@@ -64,6 +71,7 @@ public class UserModel {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", role='" + role + '\'' +
+                ", title='" + title + '\'' +
                 '}';
     }
 }
