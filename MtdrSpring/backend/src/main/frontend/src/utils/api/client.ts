@@ -102,6 +102,22 @@ function createApiClient(baseUrl: string) {
     );
   }
 
+  async function getProjectUsers() {
+    const response = await fetch(`${urlWithProject}/users`);
+    const responseJson = await response.json();
+
+    const safeParsed = userResponseValidator.array().safeParse(responseJson);
+
+    if (!safeParsed.success) {
+      console.error("Error", safeParsed.error);
+      throw new Error("Invalid data");
+    }
+
+    console.log("Safe parsed", safeParsed.data);
+
+    return safeParsed.data;
+  }
+
   async function listTasks() {
     const response = await fetch(`${urlWithProject}/tasks`);
     const tasks = await response.json();
@@ -175,6 +191,7 @@ function createApiClient(baseUrl: string) {
     users: {
       getManager: getProjectManager,
       getDevelopers: getProjectDevelopers,
+      getUsers: getProjectUsers,
       patch: patchUser,
       updateStatus: updateUserStatus,
     },

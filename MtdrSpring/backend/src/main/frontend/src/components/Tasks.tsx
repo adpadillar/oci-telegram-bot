@@ -30,9 +30,9 @@ const Tasks: React.FC = () => {
     queryKey: ["tasks"],
   });
 
-  const { data: developers } = useQuery({
-    queryFn: api.users.getDevelopers,
-    queryKey: ["developers"],
+  const { data: users } = useQuery({
+    queryFn: api.users.getUsers,
+    queryKey: ["users"],
   });
 
   // Filter tasks using the defined filters
@@ -132,6 +132,7 @@ const Tasks: React.FC = () => {
       "created" | "in-progress" | "in-review" | "testing" | "done"
     >("created");
     const [estimateHours, setEstimateHours] = useState<number | null>(null);
+    const [realHours, setRealHours] = useState<number | null>(null);
 
     const createTaskMutation = useMutation({
       mutationFn: (taskData: Omit<TaskRequest, "createdBy">) => {
@@ -155,7 +156,7 @@ const Tasks: React.FC = () => {
         status,
         assignedTo,
         estimateHours,
-        realHours: null,
+        realHours,
         sprint,
         category,
       });
@@ -226,6 +227,17 @@ const Tasks: React.FC = () => {
               />
             </div>
             <div className="mb-4">
+              <label className="block text-gray-700">Real (hours)</label>
+              <input
+                type="number"
+                value={realHours === null ? "" : realHours}
+                onChange={(e) =>
+                  setRealHours(e.target.value ? Number(e.target.value) : null)
+                }
+                className="w-full px-3 py-2 border rounded-md"
+              />
+            </div>
+            <div className="mb-4">
               <label className="block text-gray-700">Assigned To</label>
               <select
                 value={assignedTo === null ? "" : assignedTo}
@@ -234,8 +246,8 @@ const Tasks: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border rounded-md"
               >
-                <option value="">Select Developer</option>
-                {developers?.map((dev) => (
+                <option value="">Select User</option>
+                {users?.map((dev) => (
                   <option key={dev.id} value={dev.id}>
                     {dev.firstName} {dev.lastName}
                   </option>
@@ -311,6 +323,8 @@ const Tasks: React.FC = () => {
       task.estimateHours
     );
 
+    const [realHours, setRealHours] = useState<number | null>(task.realHours);
+
     const updateTaskMutation = useMutation({
       mutationFn: (taskData: Partial<TaskRequest>) => {
         return api.tasks.patch(task.id, taskData);
@@ -333,6 +347,7 @@ const Tasks: React.FC = () => {
         status,
         assignedTo,
         estimateHours,
+        realHours,
         sprint,
         category,
       });
@@ -403,6 +418,17 @@ const Tasks: React.FC = () => {
               />
             </div>
             <div className="mb-4">
+              <label className="block text-gray-700">Real (hours)</label>
+              <input
+                type="number"
+                value={realHours === null ? "" : realHours}
+                onChange={(e) =>
+                  setRealHours(e.target.value ? Number(e.target.value) : null)
+                }
+                className="w-full px-3 py-2 border rounded-md"
+              />
+            </div>
+            <div className="mb-4">
               <label className="block text-gray-700">Assigned To</label>
               <select
                 value={assignedTo === null ? "" : assignedTo}
@@ -412,7 +438,7 @@ const Tasks: React.FC = () => {
                 className="w-full px-3 py-2 border rounded-md"
               >
                 <option value="">Select Developer</option>
-                {developers?.map((dev) => (
+                {users?.map((dev) => (
                   <option key={dev.id} value={dev.id}>
                     {dev.firstName} {dev.lastName}
                   </option>
@@ -523,7 +549,7 @@ const Tasks: React.FC = () => {
             className="w-full px-3 py-2 border rounded-md text-sm"
           >
             <option value="">All Developers</option>
-            {developers?.map((dev) => (
+            {users?.map((dev) => (
               <option key={dev.id} value={dev.id}>
                 {dev.firstName} {dev.lastName}
               </option>
@@ -602,7 +628,7 @@ const Tasks: React.FC = () => {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Date Created
+                  Estimate / Real (hours)
                 </th>
                 <th
                   scope="col"
@@ -678,11 +704,7 @@ const Tasks: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {task.createdAt.toLocaleDateString("en-MX", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {task.estimateHours ?? "-"} / {task.realHours ?? "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {task.assignedTo ? (
