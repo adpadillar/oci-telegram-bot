@@ -96,10 +96,16 @@ function createApiClient(baseUrl: string) {
 
     console.log("Safe parsed", safeParsed.data);
 
-    return safeParsed.data.filter(
-      (user) =>
-        user.role === "developer" || user.role === "user-pending-activation"
-    );
+    return safeParsed.data
+      .filter(
+        (user) =>
+          user.role === "developer" || user.role === "user-pending-activation"
+      )
+      .sort(
+        (a, b) =>
+          a.firstName.localeCompare(b.firstName) ||
+          a.lastName.localeCompare(b.lastName)
+      );
   }
 
   async function getProjectUsers() {
