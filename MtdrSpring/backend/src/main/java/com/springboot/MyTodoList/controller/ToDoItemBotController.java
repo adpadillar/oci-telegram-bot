@@ -550,7 +550,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				List<KeyboardRow> keyboardRows = new ArrayList<>();
 				KeyboardRow row1 = new KeyboardRow();
 				row1.add("created");
-				row1.add("in_progress");
+				row1.add("in progress");
 				row1.add("done");
 				keyboardRows.add(row1);
 				keyboard.setKeyboard(keyboardRows);
@@ -597,12 +597,17 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if (taskOptional.isPresent()) {
 				TaskModel task = taskOptional.get();
 				task.setStatus(newStatus);
+				String newDescription = messages.get(2).getContent();
+				task.setDescription(newDescription);
 				taskService.save(task);
 				
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
 				message.setText("Task ID " + task.getID() + " updated successfully!");
 				execute(message);
+				
+				// Show the main menu after updating the task
+				showDeveloperMainMenu(chatId);
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
