@@ -172,6 +172,12 @@ public class TaskService {
             return null;
         }
     }
+
+    public TaskModel save(TaskModel task) {
+        return toDoItemRepository.save(task);
+    }
+
+
     public List<TaskModel> findByUserAssigned(UserModel user) {
         return toDoItemRepository.findByAssignedTo(user);
     }

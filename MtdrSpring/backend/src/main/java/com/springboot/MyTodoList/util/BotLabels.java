@@ -13,7 +13,7 @@ public enum BotLabels {
 	//UNDO("UNDO"),
 	IN_PROGRESS("IN PROGRESS"),
 	READY("READY"),
-	DELETE_TASK("DELETE_TASK"),
+	DELETE_TASK("Delete Task"),
 	MY_TASKS("MY TASKS"),
 	CREATE_SPRINT("Create Sprint"),
 	UPDATE_SPRINT("Update Sprint"),

@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -81,6 +82,26 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_delete_id".equals(lastMessage.getMessageType())) {
+				handleTaskDeletion(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_task_id".equals(lastMessage.getMessageType())) {
+				handleTaskUpdate(chatId, messageText);
+				return;
+			}
+	
+			if ("waiting_for_new_description".equals(lastMessage.getMessageType())) {
+				handleNewDescription(chatId, messageText);
+				return;
+			}
+	
+			if ("waiting_for_new_status".equals(lastMessage.getMessageType())) {
+				handleNewStatus(chatId, messageText);
+				return;
+			}
+
 			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -103,6 +124,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					return;
 				} else if (messageText.equals(BotLabels.UPDATE_TASK.getLabel())) {
 					handleUpdateTask(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.DELETE_TASK.getLabel())) {
+					handleDeleteTask(chatId);
 					return;
 				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
 					handleTaskDetails(chatId);
@@ -162,181 +186,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				showManagerMainMenu(chatId);
 				return;
 			}
-
-			
-	
-
-			// if (messageTextFromTelegram.equals(BotCommands.START_COMMAND.getCommand())
-			// 		|| messageTextFromTelegram.equals(BotLabels.SHOW_MAIN_SCREEN.getLabel())) {
-
-			// 	SendMessage messageToTelegram = new SendMessage();
-			// 	messageToTelegram.setChatId(chatId);
-			// 	messageToTelegram.setText(BotMessages.HELLO_MYTODO_BOT.getMessage());
-
-
-			// 	// Set the keyboard
-			// 	keyboardMarkup.setKeyboard(keyboard);
-
-			// 	// Add the keyboard markup
-			// 	messageToTelegram.setReplyMarkup(keyboardMarkup);
-
-			// 	try {
-			// 		execute(messageToTelegram);
-			// 	} catch (TelegramApiException e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// } else if (messageTextFromTelegram.indexOf(BotLabels.DONE.getLabel()) != -1) {
-
-			// 	String done = messageTextFromTelegram.substring(0,
-			// 			messageTextFromTelegram.indexOf(BotLabels.DASH.getLabel()));
-			// 	Integer id = Integer.valueOf(done);
-
-			// 	try {
-
-			// 		TaskModel item = getToDoItemById(id);
-			// 		item.setStatus("done");
-			// 		updateToDoItem(item, id);
-			// 		BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DONE.getMessage(), this);
-
-			// 	} catch (Exception e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// } else if (messageTextFromTelegram.indexOf(BotLabels.UNDO.getLabel()) != -1) {
-
-			// 	String undo = messageTextFromTelegram.substring(0,
-			// 			messageTextFromTelegram.indexOf(BotLabels.DASH.getLabel()));
-			// 	Integer id = Integer.valueOf(undo);
-
-			// 	try {
-
-			// 		TaskModel item = getToDoItemById(id);
-			// 		item.setStatus("created");
-			// 		updateToDoItem(item, id);
-			// 		BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_UNDONE.getMessage(), this);
-
-			// 	} catch (Exception e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// } else if (messageTextFromTelegram.indexOf(BotLabels.DELETE.getLabel()) != -1) {
-
-			// 	String delete = messageTextFromTelegram.substring(0,
-			// 			messageTextFromTelegram.indexOf(BotLabels.DASH.getLabel()));
-			// 	Integer id = Integer.valueOf(delete);
-
-			// 	try {
-
-			// 		deleteToDoItem(id).getBody();
-			// 		BotHelper.sendMessageToTelegram(chatId, BotMessages.ITEM_DELETED.getMessage(), this);
-
-			// 	} catch (Exception e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// } else if (messageTextFromTelegram.equals(BotCommands.HIDE_COMMAND.getCommand())
-			// 		|| messageTextFromTelegram.equals(BotLabels.HIDE_MAIN_SCREEN.getLabel())) {
-
-			// 	BotHelper.sendMessageToTelegram(chatId, BotMessages.BYE.getMessage(), this);
-
-			// } else if (messageTextFromTelegram.equals(BotCommands.TODO_LIST.getCommand())
-			// 		|| messageTextFromTelegram.equals(BotLabels.LIST_ALL_ITEMS.getLabel())
-			// 		|| messageTextFromTelegram.equals(BotLabels.MY_TODO_LIST.getLabel())) {
-
-			// 	List<TaskModel> allItems = getAllToDoItems();
-			// 	ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-			// 	List<KeyboardRow> keyboard = new ArrayList<>();
-
-			// 	// command back to main screen
-			// 	KeyboardRow mainScreenRowTop = new KeyboardRow();
-			// 	mainScreenRowTop.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-			// 	keyboard.add(mainScreenRowTop);
-
-			// 	KeyboardRow firstRow = new KeyboardRow();
-			// 	firstRow.add(BotLabels.ADD_NEW_ITEM.getLabel());
-			// 	keyboard.add(firstRow);
-
-			// 	KeyboardRow myTodoListTitleRow = new KeyboardRow();
-			// 	myTodoListTitleRow.add(BotLabels.MY_TODO_LIST.getLabel());
-			// 	keyboard.add(myTodoListTitleRow);
-
-			// 	List<TaskModel> activeItems = allItems.stream().filter(item -> item.getStatus().equals("created"))
-			// 			.collect(Collectors.toList());
-
-			// 	for (TaskModel item : activeItems) {
-
-			// 		KeyboardRow currentRow = new KeyboardRow();
-			// 		currentRow.add(item.getDescription());
-			// 		currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.DONE.getLabel());
-			// 		keyboard.add(currentRow);
-			// 	}
-
-			// 	List<TaskModel> doneItems = allItems.stream().filter(item -> item.getStatus().equals("done"))
-			// 			.collect(Collectors.toList());
-
-			// 	for (TaskModel item : doneItems) {
-			// 		KeyboardRow currentRow = new KeyboardRow();
-			// 		currentRow.add(item.getDescription());
-			// 		currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.UNDO.getLabel());
-			// 		currentRow.add(item.getID() + BotLabels.DASH.getLabel() + BotLabels.DELETE.getLabel());
-			// 		keyboard.add(currentRow);
-			// 	}
-
-			// 	// command back to main screen
-			// 	KeyboardRow mainScreenRowBottom = new KeyboardRow();
-			// 	mainScreenRowBottom.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
-			// 	keyboard.add(mainScreenRowBottom);
-
-			// 	keyboardMarkup.setKeyboard(keyboard);
-
-			// 	SendMessage messageToTelegram = new SendMessage();
-			// 	messageToTelegram.setChatId(chatId);
-			// 	messageToTelegram.setText(BotLabels.MY_TODO_LIST.getLabel());
-			// 	messageToTelegram.setReplyMarkup(keyboardMarkup);
-
-			// 	try {
-			// 		execute(messageToTelegram);
-			// 	} catch (TelegramApiException e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// } else if (messageTextFromTelegram.equals(BotCommands.ADD_ITEM.getCommand())
-			// 		|| messageTextFromTelegram.equals(BotLabels.ADD_NEW_ITEM.getLabel())) {
-			// 	try {
-			// 		SendMessage messageToTelegram = new SendMessage();
-			// 		messageToTelegram.setChatId(chatId);
-			// 		messageToTelegram.setText(BotMessages.TYPE_NEW_TODO_ITEM.getMessage());
-			// 		// hide keyboard
-			// 		ReplyKeyboardRemove keyboardMarkup = new ReplyKeyboardRemove(true);
-			// 		messageToTelegram.setReplyMarkup(keyboardMarkup);
-
-			// 		// send message
-			// 		execute(messageToTelegram);
-
-			// 	} catch (Exception e) {
-			// 		logger.error(e.getLocalizedMessage(), e);
-			// 	}
-
-			// }
-
-			// else {
-		// 		try {
-		// 			TaskModel newItem = new TaskModel();
-		// 			newItem.setDescription(messageTextFromTelegram);
-		// 			newItem.setCreatedAt(OffsetDateTime.now());
-		// 			newItem.setStatus("created");
-		// 			ResponseEntity<TaskModel> entity = addToDoItem(newItem);
-
-		// 			SendMessage messageToTelegram = new SendMessage();
-		// 			messageToTelegram.setChatId(chatId);
-		// 			messageToTelegram.setText(BotMessages.NEW_ITEM_ADDED.getMessage());
-
-		// 			execute(messageToTelegram);
-		// 		} catch (Exception e) {
-		// 			logger.error(e.getLocalizedMessage(), e);
-		// 		}
-		// 	}
 		}
 	}
 
@@ -522,7 +371,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void handleViewTasks(long chatId) {
 		try {
-
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
 			List<KeyboardRow> keyboardRows = new ArrayList<>();
 			KeyboardRow row = new KeyboardRow();
@@ -531,11 +379,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			keyboard.setKeyboard(keyboardRows);
 			keyboard.setResizeKeyboard(true);
 			keyboard.setOneTimeKeyboard(false);
-
+	
 			// Get tasks from service
-			List<TaskModel> tasks = taskService.findAll(); 
+			List<TaskModel> tasks = taskService.findAll();
+			// Sort tasks by ID
+			tasks.sort(Comparator.comparingInt(TaskModel::getID));
 			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
-			
+	
 			if (tasks == null || tasks.isEmpty()) {
 				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
 			} else {
@@ -552,17 +402,16 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			response.setChatId(chatId);
 			response.setText(message.toString());
 			response.enableMarkdown(true);
-			response.setReplyMarkup(keyboard); 
-			
+			response.setReplyMarkup(keyboard);
+	
 			execute(response);
 		} catch (NullPointerException e) {
 			logger.error("TaskService not properly initialized or null reference", e);
-			
+	
 		} catch (Exception e) {
 			logger.error("Error viewing tasks: " + e.getMessage(), e);
-			
+	
 		}
-			
 	}
 	
 	private void handleAddTask(long chatId) {
@@ -670,6 +519,155 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error initiating task update", e);
 		}
 	}
+
+	private void handleTaskUpdate(long chatId, String taskIdText) {
+		try {
+			int taskId = Integer.parseInt(taskIdText);
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				// Ask for new description
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Please enter the new task description of task (" + taskId + "):");
+				
+				// Save state for next message
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_new_description");
+				stateMessage.setRole("assistant");
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (NumberFormatException e) {
+			logger.error("Invalid task ID format", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Invalid task ID format. Please enter a valid task ID.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+	private void handleNewDescription(long chatId, String newDescription) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(2).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setDescription(newDescription);
+				
+				// Ask for new status
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Please select the new task status for task (" + task.getID() + "):");
+				
+				// Create keyboard for status options
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				KeyboardRow row1 = new KeyboardRow();
+				row1.add("created");
+				row1.add("in progress");
+				row1.add("done");
+				keyboardRows.add(row1);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+				
+				message.setReplyMarkup(keyboard);
+				
+				// Save state for next message
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_new_status");
+				stateMessage.setRole("assistant");
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task description", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task description. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+
+	private void handleNewStatus(long chatId, String newStatus) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(4).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setStatus(newStatus);
+				String newDescription = messages.get(2).getContent();
+				task.setDescription(newDescription);
+				taskService.save(task);
+				
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task ID " + task.getID() + " updated successfully!");
+				execute(message);
+				
+				// Show the main menu after updating the task
+				showDeveloperMainMenu(chatId);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task status", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task status. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+
+
 	
 	private void handleTaskDetails(long chatId) {
 		try {
@@ -692,6 +690,32 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 
+			// Third row - Details Update and Delete
+			KeyboardRow thirdRow = new KeyboardRow();
+			thirdRow.add(BotLabels.DETAILS.getLabel());
+			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			thirdRow.add(BotLabels.DELETE_TASK.getLabel());
+			devKeyboard.add(thirdRow);
+			
+			
+			
+			// Configure keyboard
+			devKeyboardMarkup.setKeyboard(devKeyboard);
+			devKeyboardMarkup.setResizeKeyboard(true);
+			devKeyboardMarkup.setOneTimeKeyboard(false);
+			
+			// Create and send message with keyboard
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Developer Menu - Please select an option:");
+			message.setReplyMarkup(devKeyboardMarkup);
+			
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error showing developer menu", e);
+		}
+	}
+
 
 	private void handleMyTasks(long chatId, UserModel user) {
 		try {
@@ -700,6 +724,63 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			logger.error("Error getting user tasks", e);
 			
+		}
+	}
+
+	private void handleDeleteTask(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Please enter the task ID you want to delete:");
+			
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_delete_id");
+			stateMessage.setRole("assistant");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error initiating task delete", e);
+		}
+	}
+
+
+	private void handleTaskDeletion(long chatId, String taskIdText) {
+		try {
+			int taskId = Integer.parseInt(taskIdText);
+			boolean isDeleted = taskService.deleteToDoItem(taskId);
+	
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			if (isDeleted) {
+				message.setText("Task deleted successfully!");
+			} else {
+				message.setText("Task not found or could not be deleted.");
+			}
+			execute(message);
+		} catch (NumberFormatException e) {
+			logger.error("Invalid task ID format", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Invalid task ID format. Please enter a valid task ID.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (Exception e) {
+			logger.error("Error deleting task", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while deleting the task. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
 		}
 	}
 
@@ -760,6 +841,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 		}
 	}
+
 
 	private void handleCreateSprint(long chatId){
 
@@ -856,55 +938,5 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error showing Manager menu", e);
 		}
 	}
-
-	// // GET /todolist
-	// public List<TaskModel> getAllToDoItems() { 
-	// 	return toDoItemService.findAll();
-	// }
-
-	// // GET BY ID /todolist/{id}
-	// public TaskModel getToDoItemById(@PathVariable int id) throws RuntimeException {
-	// 		Optional<TaskModel> task = toDoItemService.getItemById(id);
-	// 		if (task.isPresent()) {
-	// 			return task.get();
-	// 		} else {
-	// 			throw new RuntimeException("Task not found");
-	// 		}
-	// }
-
-	// // PUT /todolist
-	// public ResponseEntity addToDoItem(@RequestBody TaskModel todoItem) throws Exception {
-	// 	TaskModel td = toDoItemService.addToDoItem(todoItem);
-	// 	HttpHeaders responseHeaders = new HttpHeaders();
-	// 	responseHeaders.set("location", "" + td.getID());
-	// 	responseHeaders.set("Access-Control-Expose-Headers", "location");
-	// 	// URI location = URI.create(""+td.getID())
-
-	// 	return ResponseEntity.ok().headers(responseHeaders).build();
-	// }
-
-	// // UPDATE /todolist/{id}TaskModel
-	// public ResponseEntity updateToDoItem(@RequestBody TaskModel toDoItem, @PathVariable int id) {
-	// 	try {
-	// 		TaskModel toDoItem1 = toDoItemService.updateToDoItem(id, toDoItem);
-	// 		System.out.println(toDoItem1.toString());
-	// 		return new ResponseEntity<>(toDoItem1, HttpStatus.OK);
-	// 	} catch (Exception e) {
-	// 		logger.error(e.getLocalizedMessage(), e);
-	// 		return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-	// 	}
-	// }
-
-	// // DELETE todolist/{id}
-	// public ResponseEntity<Boolean> deleteToDoItem(@PathVariable("id") int id) {
-	// 	Boolean flag = false;
-	// 	try {
-	// 		flag = toDoItemService.deleteToDoItem(id);
-	// 		return new ResponseEntity<>(flag, HttpStatus.OK);
-	// 	} catch (Exception e) {
-	// 		logger.error(e.getLocalizedMessage(), e);
-	// 		return new ResponseEntity<>(flag, HttpStatus.NOT_FOUND);
-	// 	}
-	// }
 
 }
