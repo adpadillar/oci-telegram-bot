@@ -81,6 +81,14 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+				
+			if ("waiting_for_task_details_id".equals(lastMessage.getMessageType())) {
+				List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+				String taskIdStr = messages.get(0).getContent();
+				showTaskDetails(chatId, taskIdStr);
+				return;
+			}
+
 			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -611,6 +619,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	
 	private void handleFilterTasks(long chatId) {
 		try {
+
 			// Get user to check role
 			UserModel user = userService.findUserByChatId(chatId);
 			ReplyKeyboardMarkup filterKeyboard = new ReplyKeyboardMarkup();
@@ -684,14 +693,73 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			stateMessage.setUserId(chatId);
 			stateMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(stateMessage);
-			
 			execute(message);
+
+
 		} catch (Exception e) {
 			logger.error("Error getting task details", e);
+			
 		}
+		
 	}
 
+	private void showTaskDetails(long chatId, String taskIdStr) {
+		try {
+			int taskId = Integer.parseInt(taskIdStr);
+			Optional<TaskModel> taskOpt = taskService.getItemById(taskId);
+			
+			if (taskOpt.isPresent()) {
+				TaskModel task = taskOpt.get();
+				StringBuilder detailsMsg = new StringBuilder();
+				detailsMsg.append("📋 *Task Details*\n\n")
+						.append("🔹 *ID:* `").append(task.getID()).append("`\n")
+						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
+						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
+						.append("⏱ *Estimated Hours:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append("\n")
+						.append("⌛ *Real Hours:* ").append(task.getRealHours() != null ? task.getRealHours() : "Not set").append("\n")
+						.append("🏷 *Category:* ").append(task.getCategory() != null ? task.getCategory() : "Not set").append("\n")
+						.append("👤 *Created By:* ").append(task.getCreatedBy() != null ? task.getCreatedBy().getFirstName() : "Unknown").append("\n")
+						.append("👥 *Assigned To:* ").append(task.getAssignedTo() != null ? task.getAssignedTo().getFirstName() : "Unassigned").append("\n")
+						.append("📅 *Created At:* ").append(task.getCreatedAt()).append("\n")
+						.append("🏢 *Project:* ").append(task.getProject() != null ? task.getProject().getName() : "No project");
 
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				KeyboardRow row = new KeyboardRow();
+				row.add("↩️ Back to Main Menu");
+				keyboardRows.add(row);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+
+				SendMessage response = new SendMessage();
+				response.setChatId(chatId);
+				response.setText(detailsMsg.toString());
+				response.enableMarkdown(true);
+				response.setReplyMarkup(keyboard);
+				
+				execute(response);
+			} else {
+				SendMessage errorMsg = new SendMessage();
+				errorMsg.setChatId(chatId);
+				errorMsg.setText("❌ Task not found with ID: " + taskId);
+				execute(errorMsg);
+				showDeveloperMainMenu(chatId);
+			}
+		} catch (NumberFormatException e) {
+			SendMessage errorMsg = new SendMessage();
+			errorMsg.setChatId(chatId);
+			errorMsg.setText("❌ Please enter a valid task ID (number)");
+			try {
+				execute(errorMsg);
+				handleTaskDetails(chatId); // Ask again for the ID
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (Exception e) {
+			logger.error("Error showing task details", e);
+			
+		}
+	}
 
 	private void handleMyTasks(long chatId, UserModel user) {
 		try {
