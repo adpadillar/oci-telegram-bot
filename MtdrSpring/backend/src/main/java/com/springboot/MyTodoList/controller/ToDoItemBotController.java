@@ -57,7 +57,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.botName = botName;
 		this.userService = userService;
 		this.taskService = taskService;
-	}
+		}
 
 	@Override
 	public void onUpdateReceived(Update update) {
@@ -129,7 +129,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					handleDeleteTask(chatId);
 					return;
 				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
-					handleTaskDetails(chatId);
+					try {
+						handleTaskDetails(chatId);
+					} catch (TelegramApiException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return;
 					}
 					// Check for filter options
@@ -173,7 +178,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					handleUpdateTask(chatId);
 					return;
 				} else if (messageText.equals(BotLabels.DETAILS.getLabel())) {
-					handleTaskDetails(chatId);
+					try {
+						handleTaskDetails(chatId);
+					} catch (TelegramApiException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return;
 				} else if (messageText.equals(BotLabels.CREATE_SPRINT.getLabel())) {
 					handleCreateSprint(chatId);
@@ -669,7 +679,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 
 	
-	private void handleTaskDetails(long chatId) {
+	private void handleTaskDetails(long chatId) throws TelegramApiException {
 		try {
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
@@ -686,10 +696,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			execute(message);
 		} catch (Exception e) {
 			logger.error("Error getting task details", e);
-		}
-	}
-
-
+			// Create developer keyboard
+			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
+			List<KeyboardRow> devKeyboard = new ArrayList<>();
+			
 			// Third row - Details Update and Delete
 			KeyboardRow thirdRow = new KeyboardRow();
 			thirdRow.add(BotLabels.DETAILS.getLabel());
@@ -711,10 +721,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			message.setReplyMarkup(devKeyboardMarkup);
 			
 			execute(message);
-		} catch (TelegramApiException e) {
-			logger.error("Error showing developer menu", e);
+			} 
 		}
-	}
+	
 
 
 	private void handleMyTasks(long chatId, UserModel user) {
@@ -872,6 +881,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			KeyboardRow thirdRow = new KeyboardRow();
 			thirdRow.add(BotLabels.DETAILS.getLabel());
 			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			thirdRow.add(BotLabels.DELETE_TASK.getLabel());
 			devKeyboard.add(thirdRow);
 			
 			
