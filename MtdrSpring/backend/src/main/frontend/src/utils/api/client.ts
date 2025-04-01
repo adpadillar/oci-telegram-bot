@@ -57,6 +57,16 @@ export const taskRequestValidator = z.object({
 export type TaskResponse = z.infer<typeof taskResponseValidator>;
 export type TaskRequest = z.infer<typeof taskRequestValidator>;
 
+export const sprintResponseValidator = z.object({
+  id: z.number(),
+  name: z.string(),
+  startDate: z.string().transform((value) => new Date(value)),
+  endDate: z.string().transform((value) => new Date(value)),
+  status: z.enum(["planned", "active", "completed"]),
+});
+
+export type SprintResponse = z.infer<typeof sprintResponseValidator>;
+
 function createApiClient(baseUrl: string) {
   // for now we are hardcoding the project ID to 1
   const urlWithProject = `${baseUrl}/1`;
@@ -177,6 +187,36 @@ function createApiClient(baseUrl: string) {
       getDevelopers: getProjectDevelopers,
       patch: patchUser,
       updateStatus: updateUserStatus,
+    },
+    sprints: {
+      getAll: async () => {
+        const response = await fetch(`${urlWithProject}/sprints`);
+        const sprints = await response.json();
+
+        const safeParsed = sprintResponseValidator.array().safeParse(sprints);
+
+        if (!safeParsed.success) {
+          console.error("Error", safeParsed.error);
+          throw new Error("Invalid data");
+        }
+
+        return safeParsed.data;
+      },
+      getTasks: async (sprintId: number) => {
+        const response = await fetch(
+          `${urlWithProject}/sprints/${sprintId}/tasks`
+        );
+        const tasks = await response.json();
+
+        const safeParsed = taskResponseValidator.array().safeParse(tasks);
+
+        if (!safeParsed.success) {
+          console.error("Error", safeParsed.error);
+          throw new Error("Invalid data");
+        }
+
+        return safeParsed.data;
+      },
     },
   };
 }
