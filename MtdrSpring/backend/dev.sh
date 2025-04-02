@@ -27,15 +27,19 @@ cleanup() {
 # Set up trap for cleanup
 trap cleanup EXIT INT TERM
 
-# Start frontend in background
-# echo "Starting React frontend..."
-# cd ../frontend
-# npm start &
+# Determine which Maven command to use
+if command -v mvn &> /dev/null; then
+    MVN_CMD="mvn"
+    echo "Using installed Maven."
+else
+    MVN_CMD="./mvnw"
+    echo "Maven not found, using ./mvnw."
+fi
 
 # Start backend
 echo "Starting Spring Boot backend..."
 cd ../backend
-./mvnw spring-boot:run
+$MVN_CMD spring-boot:run
 
 # Wait for any remaining background processes
 wait
