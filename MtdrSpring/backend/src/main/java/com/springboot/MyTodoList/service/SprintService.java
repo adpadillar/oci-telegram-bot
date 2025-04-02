@@ -3,6 +3,7 @@ package com.springboot.MyTodoList.service;
 import com.springboot.MyTodoList.dto.SprintDTO;
 import com.springboot.MyTodoList.model.ProjectModel;
 import com.springboot.MyTodoList.model.SprintModel;
+import com.springboot.MyTodoList.model.TaskModel; // new import
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import com.springboot.MyTodoList.repository.SprintRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,45 +90,18 @@ public class SprintService {
             throw new RuntimeException("Sprint not found");
         }
     }
-    // public Sprint updateSprint(int id, Sprint spr){
-    //     Optional<Sprint> sprintData = sprintRepository.findById(id);
-    //     if(sprintData.isPresent()){
-    //         Sprint sprint = sprintData.get();
-    //         sprint.setID(id);
-    //         sprint.setProjectId(spr.getProjectId());
-    //         sprint.setName(spr.getName());
-    //         sprint.setDescription(spr.getDescription());
-    //         sprint.setStartedAt(spr.getStartedAt());
-    //         sprint.setEndsAt(spr.getEndsAt());
-    //         return sprintRepository.save(sprint);
-    //     }else{
-    //         return null;
-    //     }
-    // }
 
-    // public Sprint updateSprint(int id, Sprint spr){
-        // Optional<Sprint> sprintData = sprintRepository.findById(id);
-        // if(sprintData.isPresent()){
-        //     Sprint sprint = sprintData.get();
-        //     if (spr.getProjectId() != 0) {
-        //         sprint.setProjectId(spr.getProjectId());
-        //     }
-        //     if (spr.getName() != null) {
-        //         sprint.setName(spr.getName());
-        //     }
-        //     if (spr.getDescription() != null) {
-        //         sprint.setDescription(spr.getDescription());
-        //     }
-        //     if (spr.getStartedAt() != null) {
-        //         sprint.setStartedAt(spr.getStartedAt());
-        //     }
-        //     if (spr.getEndsAt() != null) {
-        //         sprint.setEndsAt(spr.getEndsAt());
-        //     }
-        //     return sprintRepository.save(sprint);
-        // }else{
-        //     return null;
-        // }
-    // }
+    public List<TaskModel> getTasksBySprintId(int sprintId, int projectId) {
+        Optional<SprintModel> maybeSprint = sprintRepository.findById(sprintId);
+        if (maybeSprint.isPresent()) {
+            SprintModel sprint = maybeSprint.get();
+            if (sprint.getProject().getID() != projectId) {
+                throw new RuntimeException("Sprint does not belong to project");
+            }
+            return sprint.getTasks(); // assumes SprintModel.getTasks() returns List<TaskModel>
+        } else {
+            throw new RuntimeException("Sprint not found");
+        }
+    }
 }
 
