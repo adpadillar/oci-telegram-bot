@@ -100,6 +100,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if ("waiting_for_new_status".equals(lastMessage.getMessageType())) {
 				handleNewStatus(chatId, messageText);
 				return;
+				}
+
+			if ("waiting_for_task_estimate_hours".equals(lastMessage.getMessageType())) {
+				handleTaskEstimateHours(chatId, user, messageText);
+				return;
 			}
 
 			
@@ -426,45 +431,82 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	
 	private void handleAddTask(long chatId) {
 		try {
-			SendMessage message = new SendMessage();
-			message.setChatId(chatId);
-			message.setText("Please enter the task description:");
-			
-			// Save state for next message
-			MessageModel stateMessage = new MessageModel();
-			stateMessage.setMessageType("waiting_for_task_description");
-			stateMessage.setRole("assistant");
-			stateMessage.setUserId(chatId);
-			stateMessage.setCreatedAt(OffsetDateTime.now());
-			messageService.saveMessage(stateMessage);
-			
-			execute(message);			
-		} catch (Exception e) {
-			logger.error("Error initiating add task", e);
+			// Enviar mensaje para solicitar la descripción de la tarea
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("Por favor, ingresa una descripción para la nueva tarea:");
+
+			// Guardar el estado del usuario como "waiting_for_task_description"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_task_description");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent("Por favor, ingresa una descripción para la nueva tarea:");
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+
+			execute(messageToTelegram);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar la descripción de la tarea: " + e.getMessage());
 		}
 	}
 	
 	private void handleTaskDescription(long chatId, UserModel user, String taskDescription) {
-		System.out.println("Task description: " + taskDescription);
 		try {
-			int projectId = user.getProject().getID();
-			TaskDTO taskDTO = new TaskDTO();
-			taskDTO.setStatus("created");
-			taskDTO.setCreatedBy(user.getID());
-			taskDTO.setAssignedTo(user.getID());
-			taskDTO.setDescription(taskDescription);
-			
-			// Add task to the project
-			TaskModel newTask = taskService.addTodoItemToProject(projectId, taskDTO);
-			logger.info("Task added to project: " + newTask);
-			
-			SendMessage message = new SendMessage();
-			message.setChatId(chatId);
-			message.setText("Task added successfully!");
-			execute(message);
-			
-		} catch (Exception e) {
-			logger.error("Error adding task", e);
+			// Guardar la descripción temporalmente y solicitar las horas estimadas
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("Gracias. Ahora, ¿cuántas horas estimas que tomará completar esta tarea?");
+
+			// Guardar el estado del usuario como "waiting_for_task_estimate_hours"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_task_estimate_hours");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent(taskDescription); // Guardar la descripción temporalmente
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+
+			execute(messageToTelegram);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar las horas estimadas: " + e.getMessage());
+		}
+	}
+
+	private void handleTaskEstimateHours(long chatId, UserModel user, String estimateHoursText) {
+		try {
+			// Validar que las horas estimadas sean un número
+			double estimateHours;
+			try {
+				estimateHours = Double.parseDouble(estimateHoursText);
+			} catch (NumberFormatException e) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("Por favor, ingresa un número válido para las horas estimadas.");
+				execute(errorMessage);
+				return;
+			}
+
+			// Recuperar la descripción de la tarea guardada previamente
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String taskDescription = lastMessage.getContent();
+
+			// Crear la nueva tarea
+			TaskDTO newTask = new TaskDTO();
+			newTask.setDescription(taskDescription);
+			newTask.setEstimateHours(estimateHours);
+			newTask.setStatus("created");
+			newTask.setCreatedBy(user.getID());
+
+			taskService.addTodoItemToProject(user.getProject().getID(), newTask);
+
+			// Confirmar al usuario que la tarea fue creada
+			SendMessage confirmationMessage = new SendMessage();
+			confirmationMessage.setChatId(chatId);
+			confirmationMessage.setText("¡Tarea creada exitosamente con la descripción: \"" + taskDescription + "\" y " + estimateHours + " horas estimadas!");
+			execute(confirmationMessage);
+		} catch (TelegramApiException e) {
+			logger.error("Error al crear la tarea: " + e.getMessage());
 		}
 	}
 	
@@ -521,7 +563,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			stateMessage.setMessageType("waiting_for_task_id");
 			stateMessage.setRole("assistant");
 			stateMessage.setUserId(chatId);
-			stateMessage.setCreatedAt(OffsetDateTime.now());
+			stateMessage.setCreatedAt(OffsetDateDateTime.now());
 			messageService.saveMessage(stateMessage);
 			
 			execute(message);
