@@ -107,6 +107,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_sprint".equals(lastMessage.getMessageType())) {
+				handleTaskSprint(chatId, user, messageText);
+				return;
+			}
+
 			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
@@ -475,7 +480,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void handleTaskEstimateHours(long chatId, UserModel user, String estimateHoursText) {
 		try {
-			// Validar que las horas estimadas sean un número
+			// Validate that the estimated hours are a number
 			double estimateHours;
 			try {
 				estimateHours = Double.parseDouble(estimateHoursText);
@@ -486,24 +491,65 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				execute(errorMessage);
 				return;
 			}
-
-			// Recuperar la descripción de la tarea guardada previamente
+	
+			// Retrieve the task description saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String taskDescription = lastMessage.getContent();
+	
+			// Save the estimated hours and ask for the sprint number
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("Gracias. Ahora, ¿en qué número de sprint deseas agregar esta tarea?");
+	
+			// Save the state of the user as "waiting_for_task_sprint"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_task_sprint");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent(taskDescription + "|" + estimateHours); // Save description and hours temporarily
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+	
+			execute(messageToTelegram);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar el número del sprint: " + e.getMessage());
+		}
+	}
 
-			// Crear la nueva tarea
+	private void handleTaskSprint(long chatId, UserModel user, String sprintNumberText) {
+		try {
+			// Validate that the sprint number is an integer
+			int sprintNumber;
+			try {
+				sprintNumber = Integer.parseInt(sprintNumberText);
+			} catch (NumberFormatException e) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("Por favor, ingresa un número válido para el sprint.");
+				execute(errorMessage);
+				return;
+			}
+	
+			// Retrieve the task description and estimated hours saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] taskData = lastMessage.getContent().split("\\|");
+			String taskDescription = taskData[0];
+			double estimateHours = Double.parseDouble(taskData[1]);
+	
+			// Create the new task with the sprint number
 			TaskDTO newTask = new TaskDTO();
 			newTask.setDescription(taskDescription);
 			newTask.setEstimateHours(estimateHours);
+			newTask.setSprint(sprintNumber);
 			newTask.setStatus("created");
 			newTask.setCreatedBy(user.getID());
-
+	
 			taskService.addTodoItemToProject(user.getProject().getID(), newTask);
-
-			// Confirmar al usuario que la tarea fue creada
+	
+			// Confirm to the user that the task was created
 			SendMessage confirmationMessage = new SendMessage();
 			confirmationMessage.setChatId(chatId);
-			confirmationMessage.setText("¡Tarea creada exitosamente con la descripción: \"" + taskDescription + "\" y " + estimateHours + " horas estimadas!");
+			confirmationMessage.setText("¡Tarea creada exitosamente con la descripción: \"" + taskDescription + "\", " + estimateHours + " horas estimadas, y asignada al sprint número " + sprintNumber + "!");
 			execute(confirmationMessage);
 		} catch (TelegramApiException e) {
 			logger.error("Error al crear la tarea: " + e.getMessage());
@@ -563,7 +609,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			stateMessage.setMessageType("waiting_for_task_id");
 			stateMessage.setRole("assistant");
 			stateMessage.setUserId(chatId);
-			stateMessage.setCreatedAt(OffsetDateDateTime.now());
+			stateMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(stateMessage);
 			
 			execute(message);
