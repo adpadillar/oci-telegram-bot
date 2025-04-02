@@ -76,6 +76,18 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 			// Check if the user is in the state of waiting for task description
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			if ("waiting_for_update_selection".equals(lastMessage.getMessageType())) {
+				System.out.println("Waiting for update selection");
+				handleUpdateTaskSelection(chatId, messageText);
+				return;
+			}
+			
+			if ("waiting_for_real_hours_spent".equals(lastMessage.getMessageType())) {
+				System.out.println("Waiting for task description");
+				handleUpdateRealHours(chatId, messageText);
+				return;
+			}
+
 			if ("waiting_for_task_description".equals(lastMessage.getMessageType())) {
 				System.out.println("Waiting for task description");
 				handleTaskDescription(chatId, user, messageText);
@@ -598,6 +610,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
+	//menu command activator
 	private void handleUpdateTask(long chatId) {
 		try {
 			SendMessage message = new SendMessage();
@@ -624,14 +637,42 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
 			
 			if (taskOptional.isPresent()) {
-				// Ask for new description
+
+				// Ask the user to select wht they want to update
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
-				message.setText("Please enter the new task description of task (" + taskId + "):");
+				message.setText("Please select the field you want to update for task (" + taskId + "):");
+
+				// // Create keyboard for update options
+				// ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				// List<KeyboardRow> keyboardRows = new ArrayList<>();
+				// KeyboardRow row1 = new KeyboardRow();
+				// row1.add("Description");
+				// row1.add("Status");
+				// keyboardRows.add(row1);
+				// keyboard.setKeyboard(keyboardRows);
+				// keyboard.setResizeKeyboard(true);
+
+				// Create keyboard for update options
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				KeyboardRow row1 = new KeyboardRow();
+				row1.add("Edit Description");
+				row1.add("Edit Status");
+				keyboardRows.add(row1);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+				
+				message.setReplyMarkup(keyboard);
+
+				// // Ask for new description
+				// SendMessage message = new SendMessage();
+				// message.setChatId(chatId);
+				// message.setText("Please enter the new task description of task (" + taskId + "):");
 				
 				// Save state for next message
 				MessageModel stateMessage = new MessageModel();
-				stateMessage.setMessageType("waiting_for_new_description");
+				stateMessage.setMessageType("waiting_for_update_selection");
 				stateMessage.setRole("assistant");
 				stateMessage.setUserId(chatId);
 				stateMessage.setCreatedAt(OffsetDateTime.now());
@@ -667,21 +708,26 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-	private void handleNewDescription(long chatId, String newDescription) {
+	private void handleUpdateTaskSelection(long chatId, String selection) {
 		try {
-			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
-			int taskId = Integer.parseInt(messages.get(2).getContent());
-			
-			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
-			
-			if (taskOptional.isPresent()) {
-				TaskModel task = taskOptional.get();
-				task.setDescription(newDescription);
-				
-				// Ask for new status
+			if (selection.equals("Edit Description")) {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
-				message.setText("Please select the new task status for task (" + task.getID() + "):");
+				message.setText("Please enter the new task description:");
+				
+				// Save state for next message
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_new_description");
+				stateMessage.setRole("assistant");
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				execute(message);
+			} else if (selection.equals("Edit Status")) {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Please select the new task status:");
 				
 				// Create keyboard for status options
 				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
@@ -705,6 +751,72 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				messageService.saveMessage(stateMessage);
 				
 				execute(message);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Invalid selection. Please select a valid field to update.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating task selection", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the task. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
+	
+	private void handleNewDescription(long chatId, String newDescription) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(4).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setDescription(newDescription);
+				taskService.save(task);
+				
+				// Ask for new status
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Description updated successfully!");
+				execute(message);
+
+				// Show the main menu after updating the task
+				showDeveloperMainMenu(chatId);
+
+				// Ask for new status
+				// SendMessage message = new SendMessage();
+				// message.setChatId(chatId);
+				// message.setText("Please select the new task status for task (" + task.getID() + "):");
+				
+				// Create keyboard for status options
+				// ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				// List<KeyboardRow> keyboardRows = new ArrayList<>();
+				// KeyboardRow row1 = new KeyboardRow();
+				// row1.add("created");
+				// row1.add("in progress");
+				// row1.add("done");
+				// keyboardRows.add(row1);
+				// keyboard.setKeyboard(keyboardRows);
+				// keyboard.setResizeKeyboard(true);
+				
+				// message.setReplyMarkup(keyboard);
+				
+				// Save state for next message
+				// MessageModel stateMessage = new MessageModel();
+				// stateMessage.setMessageType("waiting_for_new_status");
+				// stateMessage.setRole("assistant");
+				// stateMessage.setUserId(chatId);
+				// stateMessage.setCreatedAt(OffsetDateTime.now());
+				// messageService.saveMessage(stateMessage);
+				
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
@@ -735,17 +847,31 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if (taskOptional.isPresent()) {
 				TaskModel task = taskOptional.get();
 				task.setStatus(newStatus);
-				String newDescription = messages.get(2).getContent();
-				task.setDescription(newDescription);
+				// String newDescription = messages.get(2).getContent();
+				// task.setDescription(newDescription);
 				taskService.save(task);
 				
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
-				message.setText("Task ID " + task.getID() + " updated successfully!");
-				execute(message);
+
+				if (newStatus.equals("done")) {
+					message.setText("Task status updated successfully! Please enter the real hours spent on the task:");
+					MessageModel stateMessage = new MessageModel();
+					stateMessage.setMessageType("waiting_for_real_hours_spent");
+					stateMessage.setRole("assistant");
+					stateMessage.setUserId(chatId);
+					stateMessage.setCreatedAt(OffsetDateTime.now());
+					messageService.saveMessage(stateMessage);
 				
-				// Show the main menu after updating the task
-				showDeveloperMainMenu(chatId);
+					execute(message);
+				} else {
+					message.setText("Task status updated successfully!");
+					execute(message);
+					// Show the main menu after updating the task
+					showDeveloperMainMenu(chatId);
+				}
+
+				
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
@@ -765,7 +891,43 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-
+	private void handleUpdateRealHours(long chatId, String realHours) {
+		try {
+			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
+			int taskId = Integer.parseInt(messages.get(6).getContent());
+			
+			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
+			
+			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				task.setRealHours(Double.parseDouble(realHours));
+				taskService.save(task);
+				
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Real hours spent updated successfully!");
+				execute(message);
+				
+				// Show the main menu after updating the task
+				showDeveloperMainMenu(chatId);
+			} else {
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("Task not found. Please enter a valid task ID.");
+				execute(message);
+			}
+		} catch (Exception e) {
+			logger.error("Error updating real hours spent", e);
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("An error occurred while updating the real hours spent. Please try again.");
+			try {
+				execute(message);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		}
+	}
 	
 	private void handleTaskDetails(long chatId) throws TelegramApiException {
 		try {
