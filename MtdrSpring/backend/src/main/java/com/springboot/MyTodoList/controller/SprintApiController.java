@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.springboot.MyTodoList.dto.SprintDTO;
 import com.springboot.MyTodoList.model.SprintModel;
 import com.springboot.MyTodoList.service.SprintService;
+import com.springboot.MyTodoList.model.TaskModel;
 
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +68,16 @@ public class SprintApiController {
             System.out.println(sprint1.toString());
             return new ResponseEntity<>(sprint1,HttpStatus.OK);
         }catch (Exception e){
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping("/api/{project}/sprints/{id}/tasks")
+    public ResponseEntity<List<TaskModel>> getTasksForSprint(@PathVariable("project") int project, @PathVariable("id") int id) {
+        try {
+            List<TaskModel> tasks = sprintService.getTasksBySprintId(id, project);
+            return new ResponseEntity<>(tasks, HttpStatus.OK);
+        } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }

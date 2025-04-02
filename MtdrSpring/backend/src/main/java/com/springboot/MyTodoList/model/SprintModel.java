@@ -2,6 +2,7 @@ package com.springboot.MyTodoList.model;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /*
     representation of the TASKS table that exists in the database
@@ -28,6 +29,9 @@ public class SprintModel {
     
     @Column(name = "ENDS_AT", nullable = false)
     private OffsetDateTime endsAt;
+
+    @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
+    private List<TaskModel> tasks;
     
     public SprintModel() {
     }
@@ -88,8 +92,15 @@ public class SprintModel {
     public void setEndsAt(OffsetDateTime endsAt) {
         this.endsAt = endsAt;
     }
-    
 
+    public List<TaskModel> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<TaskModel> tasks) {
+        this.tasks = tasks;
+    }
+    
     @Override
     public String toString() {
         return "Sprint{" +
