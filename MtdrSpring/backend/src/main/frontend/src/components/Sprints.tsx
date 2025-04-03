@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Calendar, ChevronRight, ListTodo } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../utils/api/client";
 
 interface Sprint {
   id: number;
@@ -47,16 +49,36 @@ const Sprints = () => {
   ]);
 
   const AddSprintModal = ({ onClose }: { onClose: () => void }) => {
+    const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
       name: "",
+      description: "",
       startDate: "",
       endDate: "",
     });
 
+    const createSprintMutation = useMutation({
+      mutationFn: () => {
+        return api.sprints.create({
+          name: formData.name,
+          description: formData.description,
+          startedAt: new Date(formData.startDate).toISOString(),
+          endsAt: new Date(formData.endDate).toISOString(),
+        });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["sprints"] });
+        onClose();
+      },
+      onError: (error) => {
+        console.error("Failed to create sprint:", error);
+        // Could add error toast/notification here
+      },
+    });
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      console.log("New sprint data:", formData);
-      onClose();
+      createSprintMutation.mutate();
     };
 
     return (
@@ -85,6 +107,19 @@ const Sprints = () => {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={3}
               />
             </div>
             <div>
@@ -119,8 +154,9 @@ const Sprints = () => {
               <button
                 type="submit"
                 className="flex-1 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+                disabled={createSprintMutation.isPending}
               >
-                Add Sprint
+                {createSprintMutation.isPending ? "Creating..." : "Add Sprint"}
               </button>
               <button
                 type="button"

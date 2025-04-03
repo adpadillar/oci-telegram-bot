@@ -33,6 +33,15 @@ export const sprintValidator = z.object({
   project: projectValidator,
 });
 
+export const sprintRequestValidator = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  startedAt: z.string(),
+  endsAt: z.string(),
+});
+
+export type SprintRequest = z.infer<typeof sprintRequestValidator>;
+
 export const taskResponseValidator = z.object({
   id: z.number(),
   description: z.string(),
@@ -209,6 +218,16 @@ function createApiClient(baseUrl: string) {
     );
   }
 
+  async function createSprint(sprint: SprintRequest) {
+    return fetch(`${urlWithProject}/sprints`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sprint),
+    });
+  }
+
   return {
     tasks: {
       list: listTasks,
@@ -225,6 +244,7 @@ function createApiClient(baseUrl: string) {
     },
     sprints: {
       getSprints,
+      create: createSprint,
     },
   };
 }
