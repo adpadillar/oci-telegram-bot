@@ -229,4 +229,4 @@ function createApiClient(baseUrl: string) {
   };
 }
 
-export const api = createApiClient("http://localhost:8081/api");
+export const api = createApiClient("/api");
