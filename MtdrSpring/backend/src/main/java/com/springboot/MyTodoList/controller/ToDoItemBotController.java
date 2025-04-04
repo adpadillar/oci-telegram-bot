@@ -724,7 +724,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			newTask.setAssignedTo(user.getID());
 			newTask.setCategory(validCategory);
 
-			taskService.addTodoItemToProject(user.getProjectId(), newTask);
+			// Save the task and get its ID
+			TaskModel savedTask = taskService.addTodoItemToProject(user.getProjectId(), newTask);
 
 			// Create keyboard with back button
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
@@ -735,10 +736,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			keyboard.setKeyboard(keyboardRows);
 			keyboard.setResizeKeyboard(true);
 
-			// Confirm to the user that the task was created
+			// Confirm to the user that the task was created with its ID
 			SendMessage confirmationMessage = new SendMessage();
 			confirmationMessage.setChatId(chatId);
 			confirmationMessage.setText("✅ *¡Tarea Creada Exitosamente!*\n\n" +
+									 "🆔 *ID de la Tarea:* " + savedTask.getID() + "\n" +
 									 "📝 *Descripción:* " + taskDescription + "\n" +
 									 "⏱️ *Horas Estimadas:* " + estimateHours + "\n" +
 									 "📅 *Sprint:* " + sprintNumber + "\n" +
@@ -828,11 +830,33 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			Optional<TaskModel> taskOptional = taskService.getItemById(taskId);
 			
 			if (taskOptional.isPresent()) {
+				TaskModel task = taskOptional.get();
+				UserModel assignedTo = task.getAssignedToId() != null ? 
+					userService.findUserById(task.getAssignedToId()) : null;
+				UserModel createdBy = userService.findUserById(task.getCreatedById());
 
-				// Ask the user to select wht they want to update
-				SendMessage message = new SendMessage();
-				message.setChatId(chatId);
-				message.setText("Please select the field you want to update for task (" + taskId + "):");
+				// Show current task details
+				StringBuilder currentTaskInfo = new StringBuilder();
+				currentTaskInfo.append("📋 *Estado Actual de la Tarea #").append(taskId).append("*\n\n")
+					.append("📝 *Descripción:* ").append(task.getDescription()).append("\n")
+					.append("📊 *Estado:* ").append(getStatusEmoji(task.getStatus())).append(" ").append(task.getStatus()).append("\n")
+					.append("⏱️ *Horas Estimadas:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append("\n");
+				
+				if (task.getRealHours() != null) {
+					currentTaskInfo.append("⏰ *Horas Reales:* ").append(task.getRealHours()).append("\n");
+				}
+				
+				currentTaskInfo.append("📅 *Sprint:* ").append(task.getSprintId() != null ? task.getSprintId() : "Not set").append("\n");
+				
+				if (task.getCategory() != null) {
+					currentTaskInfo.append("🏷️ *Categoría:* ").append(getCategoryEmoji(task.getCategory())).append(" ").append(task.getCategory()).append("\n");
+				}
+				
+				currentTaskInfo.append("👤 *Asignado a:* ").append(assignedTo != null ? 
+					assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+					.append("👥 *Creado por:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
+					.append("📅 *Creado:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n")
+					.append("¿Qué campo deseas actualizar?");
 
 				// Create keyboard for update options
 				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
@@ -844,7 +868,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				keyboard.setKeyboard(keyboardRows);
 				keyboard.setResizeKeyboard(true);
 				
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText(currentTaskInfo.toString());
 				message.setReplyMarkup(keyboard);
+				message.enableMarkdown(true);
 
 				// Save state for next message
 				MessageModel stateMessage = new MessageModel();
@@ -858,14 +886,14 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
-				message.setText("Task not found. Please enter a valid task ID.");
+				message.setText("❌ Tarea no encontrada. Por favor, ingresa un ID de tarea válido.");
 				execute(message);
 			}
 		} catch (NumberFormatException e) {
 			logger.error("Invalid task ID format", e);
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Invalid task ID format. Please enter a valid task ID.");
+			message.setText("❌ Formato de ID inválido. Por favor, ingresa un número válido.");
 			try {
 				execute(message);
 			} catch (TelegramApiException ex) {
@@ -875,7 +903,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error updating task", e);
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("An error occurred while updating the task. Please try again.");
+			message.setText("❌ Ocurrió un error al actualizar la tarea. Por favor, intenta nuevamente.");
 			try {
 				execute(message);
 			} catch (TelegramApiException ex) {
@@ -1002,7 +1030,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				message.setChatId(chatId);
 
 				if (newStatus.equals("done")) {
-					message.setText("Task status updated successfully! Please enter the real hours spent on the task:");
+					message.setText("✅ Estado actualizado exitosamente! Por favor, ingresa las horas reales gastadas en la tarea:");
 					MessageModel stateMessage = new MessageModel();
 					stateMessage.setMessageType("waiting_for_real_hours_spent");
 					stateMessage.setRole("assistant");
@@ -1012,24 +1040,52 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				
 					execute(message);
 				} else {
-					message.setText("Task status updated successfully!");
+					message.setText("✅ Estado actualizado exitosamente!");
 					execute(message);
-					// Show the main menu after updating the task
-					showDeveloperMainMenu(chatId);
+					
+					// Get user to determine which menu to show
+					UserModel user = userService.findUserByChatId(chatId);
+					if (user != null) {
+						if (user.getRole().equals("developer")) {
+							showDeveloperMainMenu(chatId);
+						} else {
+							showManagerMainMenu(chatId);
+						}
+					}
 				}
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
-				message.setText("Task not found. Please enter a valid task ID.");
+				message.setText("❌ Tarea no encontrada. Por favor, ingresa un ID de tarea válido.");
 				execute(message);
+				
+				// Get user to determine which menu to show
+				UserModel user = userService.findUserByChatId(chatId);
+				if (user != null) {
+					if (user.getRole().equals("developer")) {
+						showDeveloperMainMenu(chatId);
+					} else {
+						showManagerMainMenu(chatId);
+					}
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Error updating task status", e);
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("An error occurred while updating the task status. Please try again.");
+			message.setText("❌ Ocurrió un error al actualizar el estado de la tarea. Por favor, intenta nuevamente.");
 			try {
 				execute(message);
+				
+				// Get user to determine which menu to show
+				UserModel user = userService.findUserByChatId(chatId);
+				if (user != null) {
+					if (user.getRole().equals("developer")) {
+						showDeveloperMainMenu(chatId);
+					} else {
+						showManagerMainMenu(chatId);
+					}
+				}
 			} catch (TelegramApiException ex) {
 				logger.error("Error sending message", ex);
 			}
