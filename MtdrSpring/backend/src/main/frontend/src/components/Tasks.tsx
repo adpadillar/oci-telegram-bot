@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Filter,
@@ -13,8 +13,10 @@ import {
 import { api, TaskRequest, TaskResponse } from "../utils/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../utils/query/query-client";
+import { useSearchParams } from "react-router-dom";
 
 const Tasks: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"kanban" | "table">("table");
@@ -24,6 +26,14 @@ const Tasks: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [assigneeFilter, setAssigneeFilter] = useState<number | null>(null);
+
+  // Read developer ID from URL and set it as the initial assignee filter
+  useEffect(() => {
+    const developerId = searchParams.get("developer");
+    if (developerId) {
+      setAssigneeFilter(Number(developerId));
+    }
+  }, [searchParams]);
 
   const { data: tasks } = useQuery({
     queryFn: api.tasks.list,
