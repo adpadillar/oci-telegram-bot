@@ -43,7 +43,7 @@ const Developers = () => {
   const developersWithTasks: DeveloperWithTasks[] = developers.map((dev) => {
     const pendingTasksCount =
       tasks?.filter(
-        (task) => task.assignedTo?.id === dev.id && task.status !== "done"
+        (task) => task.assignedToId === dev.id && task.status !== "done"
       ).length || 0;
 
     return {

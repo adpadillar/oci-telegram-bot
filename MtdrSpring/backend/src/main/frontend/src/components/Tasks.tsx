@@ -57,7 +57,7 @@ const Tasks: React.FC = () => {
 
       // Assignee filter
       if (assigneeFilter !== null) {
-        if (!task.assignedTo || task.assignedTo.id !== assigneeFilter) {
+        if (!task.assignedToId || task.assignedToId !== assigneeFilter) {
           return false;
         }
       }
@@ -100,7 +100,7 @@ const Tasks: React.FC = () => {
       </div>
       <div className="flex flex-wrap gap-2 text-sm text-gray-600">
         <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-          {task.sprint?.name ?? "N/A"}
+          {task.sprintId ?? "N/A"}
         </span>
         <span>
           Created:{" "}
@@ -110,16 +110,14 @@ const Tasks: React.FC = () => {
             day: "numeric",
           })}
         </span>
-        {task.assignedTo && (
+        {task.assignedToId && (
           <span className="flex items-center gap-1">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.assignedTo.id}`}
-              alt={`${task.assignedTo.firstName} ${task.assignedTo.lastName}'s avatar`}
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.assignedToId}`}
+              alt={`${task.assignedToId}'s avatar`}
               className="w-4 h-4 rounded-full"
             />
-            <span>
-              {task.assignedTo.firstName} {task.assignedTo.lastName}
-            </span>
+            <span>{task.assignedToId}</span>
           </span>
         )}
       </div>
@@ -315,11 +313,9 @@ const Tasks: React.FC = () => {
     const [category, setCategory] = useState<
       "bug" | "feature" | "issue" | null
     >(task.category as "bug" | "feature" | "issue" | null);
-    const [sprint, setSprint] = useState<number | null>(
-      task.sprint?.id || null
-    );
+    const [sprint, setSprint] = useState<number | null>(task.sprintId || null);
     const [assignedTo, setAssignedTo] = useState<number | null>(
-      task.assignedTo?.id || null
+      task.assignedToId || null
     );
     const [status, setStatus] = useState<
       "created" | "in-progress" | "in-review" | "testing" | "done"
@@ -710,8 +706,8 @@ const Tasks: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {task.sprint ? (
-                      task.sprint.name
+                    {task.sprintId ? (
+                      task.sprintId
                     ) : (
                       <button
                         className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -725,16 +721,14 @@ const Tasks: React.FC = () => {
                     {task.estimateHours ?? "-"} / {task.realHours ?? "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {task.assignedTo ? (
+                    {task.assignedToId ? (
                       <div className="flex items-center">
                         <img
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.assignedTo}`}
-                          alt={`${task.assignedTo.firstName} ${task.assignedTo.lastName}'s avatar`}
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.assignedToId}`}
+                          alt={`${task.assignedToId}'s avatar`}
                           className="w-5 h-5 rounded-full mr-2"
                         />
-                        <span>
-                          {task.assignedTo.firstName} {task.assignedTo.lastName}
-                        </span>
+                        <span>{task.assignedToId}</span>
                       </div>
                     ) : (
                       <button
