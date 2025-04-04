@@ -1,62 +1,51 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Calendar, ChevronRight, ListTodo } from "lucide-react";
+import { Plus, Calendar, ChevronRight, ListTodo, Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../utils/api/client";
 
-interface Sprint {
-  id: number;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: "active" | "completed" | "planned";
-  totalTasks: number;
-  completedTasks: number;
-}
+// Removed unused Sprint interface
 
 const Sprints = () => {
   const navigate = useNavigate();
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const [sprints] = useState<Sprint[]>([
-    {
-      id: 1,
-      name: "Sprint 1 - Initial Setup",
-      startDate: "2024-03-01",
-      endDate: "2024-03-15",
-      status: "completed",
-      totalTasks: 12,
-      completedTasks: 12,
-    },
-    {
-      id: 2,
-      name: "Sprint 2 - Core Features",
-      startDate: "2024-03-16",
-      endDate: "2024-03-30",
-      status: "active",
-      totalTasks: 15,
-      completedTasks: 8,
-    },
-    {
-      id: 3,
-      name: "Sprint 3 - UI Enhancement",
-      startDate: "2024-03-31",
-      endDate: "2024-04-14",
-      status: "planned",
-      totalTasks: 10,
-      completedTasks: 0,
-    },
-  ]);
+  const { data: sprints, isLoading, error } = useQuery({
+    queryKey: ["sprints"],
+    queryFn: api.sprints.getSprints,
+  });
 
   const AddSprintModal = ({ onClose }: { onClose: () => void }) => {
+    const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
       name: "",
+      description: "",
       startDate: "",
       endDate: "",
     });
 
+    const createSprintMutation = useMutation({
+      mutationFn: () => {
+        return api.sprints.create({
+          name: formData.name,
+          description: formData.description,
+          startedAt: new Date(formData.startDate).toISOString(),
+          endsAt: new Date(formData.endDate).toISOString(),
+        });
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["sprints"] });
+        onClose();
+      },
+      onError: (error) => {
+        console.error("Failed to create sprint:", error);
+        // Could add error toast/notification here
+      },
+    });
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      console.log("New sprint data:", formData);
-      onClose();
+      createSprintMutation.mutate();
     };
 
     return (
@@ -85,6 +74,19 @@ const Sprints = () => {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={3}
               />
             </div>
             <div>
@@ -119,8 +121,9 @@ const Sprints = () => {
               <button
                 type="submit"
                 className="flex-1 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+                disabled={createSprintMutation.isPending}
               >
-                Add Sprint
+                {createSprintMutation.isPending ? "Creating..." : "Add Sprint"}
               </button>
               <button
                 type="button"
@@ -136,26 +139,29 @@ const Sprints = () => {
     );
   };
 
-  const getStatusColor = (status: Sprint["status"]) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      case "planned":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600">
+        Failed to load sprints
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50">
@@ -177,7 +183,7 @@ const Sprints = () => {
 
         <div className="p-6">
           <div className="space-y-4">
-            {sprints.map((sprint) => (
+            {sprints?.map((sprint) => (
               <div
                 key={sprint.id}
                 className="flex justify-between items-center bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-gray-100 transition"
@@ -187,35 +193,14 @@ const Sprints = () => {
                     <h3 className="text-lg font-semibold text-gray-800">
                       {sprint.name}
                     </h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        sprint.status
-                      )}`}
-                    >
-                      {sprint.status.charAt(0).toUpperCase() +
-                        sprint.status.slice(1)}
-                    </span>
                   </div>
+                  {sprint.description && (
+                    <p className="text-sm text-gray-600">{sprint.description}</p>
+                  )}
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Calendar size={16} />
                     <span>
-                      {formatDate(sprint.startDate)} -{" "}
-                      {formatDate(sprint.endDate)}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500"
-                        style={{
-                          width: `${
-                            (sprint.completedTasks / sprint.totalTasks) * 100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {sprint.completedTasks}/{sprint.totalTasks} tasks
+                      {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
                     </span>
                   </div>
                 </div>
