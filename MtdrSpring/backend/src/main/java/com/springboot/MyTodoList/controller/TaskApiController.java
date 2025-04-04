@@ -25,10 +25,8 @@ public class TaskApiController {
     //@CrossOrigin
     @PostMapping(value = "/api/{project}/tasks")
     public ResponseEntity<Object> addToDoItem(@RequestBody TaskDTO todoItem, @PathVariable("project") int project) throws Exception {
-        TaskModel task = taskService.addTodoItemToProject(project, todoItem);
+        taskService.addTodoItemToProject(project, todoItem);
         HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set("location",""+task.getID());
-        responseHeaders.set("Access-Control-Expose-Headers","location");
         //URI location = URI.create(""+td.getID())
 
         return ResponseEntity.ok()
