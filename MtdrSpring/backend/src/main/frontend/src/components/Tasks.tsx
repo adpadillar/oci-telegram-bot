@@ -26,6 +26,7 @@ const Tasks: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [assigneeFilter, setAssigneeFilter] = useState<number | null>(null);
+  const [sprintFilter, setSprintFilter] = useState<number | null>(null);
 
   // Read developer ID from URL and set it as the initial assignee filter
   useEffect(() => {
@@ -72,9 +73,14 @@ const Tasks: React.FC = () => {
         }
       }
 
+      // Sprint filter
+      if (sprintFilter !== null && task.sprintId !== sprintFilter) {
+        return false;
+      }
+
       return true;
     });
-  }, [tasks, categoryFilter, statusFilter, assigneeFilter]);
+  }, [tasks, categoryFilter, statusFilter, assigneeFilter, sprintFilter]);
 
   const TaskCard = ({ task }: { task: TaskResponse }) => (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition">
@@ -518,11 +524,15 @@ const Tasks: React.FC = () => {
     const [tempAssigneeFilter, setTempAssigneeFilter] = useState<number | null>(
       assigneeFilter
     );
+    const [tempSprintFilter, setTempSprintFilter] = useState<number | null>(
+      sprintFilter
+    );
 
     const applyFilters = () => {
       setCategoryFilter(tempCategoryFilter);
       setStatusFilter(tempStatusFilter);
       setAssigneeFilter(tempAssigneeFilter);
+      setSprintFilter(tempSprintFilter);
       setShowFilters(false);
     };
 
@@ -530,6 +540,7 @@ const Tasks: React.FC = () => {
       setTempCategoryFilter("");
       setTempStatusFilter("");
       setTempAssigneeFilter(null);
+      setTempSprintFilter(null);
     };
 
     return (
@@ -580,6 +591,25 @@ const Tasks: React.FC = () => {
             {users?.map((dev) => (
               <option key={dev.id} value={dev.id}>
                 {dev.firstName} {dev.lastName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm mb-1">Sprint</label>
+          <select
+            value={tempSprintFilter === null ? "" : tempSprintFilter}
+            onChange={(e) =>
+              setTempSprintFilter(
+                e.target.value ? Number(e.target.value) : null
+              )
+            }
+            className="w-full px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="">All Sprints</option>
+            {sprints?.map((sprintOption) => (
+              <option key={sprintOption.id} value={sprintOption.id}>
+                {sprintOption.name}
               </option>
             ))}
           </select>
@@ -845,7 +875,7 @@ const Tasks: React.FC = () => {
 
   // Add some visual indicator for active filters
   const hasActiveFilters =
-    categoryFilter || statusFilter || assigneeFilter !== null;
+    categoryFilter || statusFilter || assigneeFilter !== null || sprintFilter !== null;
 
   return (
     <div className="p-6">
