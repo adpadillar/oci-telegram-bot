@@ -120,6 +120,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_category".equals(lastMessage.getMessageType())) {
+				handleTaskCategory(chatId, user, messageText);
+				return;
+			}
+
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
 				logger.info("This is a message from a developer");
@@ -553,33 +558,116 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			} catch (NumberFormatException e) {
 				SendMessage errorMessage = new SendMessage();
 				errorMessage.setChatId(chatId);
-				errorMessage.setText("Por favor, ingresa un número válido para el sprint.");
+				errorMessage.setText("❌ Por favor, ingresa un número válido para el sprint.");
 				execute(errorMessage);
 				return;
 			}
-	
+
 			// Retrieve the task description and estimated hours saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String[] taskData = lastMessage.getContent().split("\\|");
 			String taskDescription = taskData[0];
 			double estimateHours = Double.parseDouble(taskData[1]);
-	
-			// Create the new task with the sprint number
+
+			// Save the current state with sprint number
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_task_category");
+			stateMessage.setRole("assistant");
+			stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + sprintNumber);
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+
+			// Create keyboard for category options
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("🐛 Bug");
+			row.add("📝 Issue");
+			row.add("✨ Feature");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+
+			// Ask for category
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("📋 Por favor, selecciona la categoría de la tarea:");
+			message.setReplyMarkup(keyboard);
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar la categoría de la tarea: " + e.getMessage());
+		}
+	}
+
+	private void handleTaskCategory(long chatId, UserModel user, String category) {
+		try {
+			// Validate category
+			String validCategory;
+			switch (category) {
+				case "🐛 Bug":
+					validCategory = "bug";
+					break;
+				case "📝 Issue":
+					validCategory = "issue";
+					break;
+				case "✨ Feature":
+					validCategory = "feature";
+					break;
+				default:
+					SendMessage errorMessage = new SendMessage();
+					errorMessage.setChatId(chatId);
+					errorMessage.setText("❌ Por favor, selecciona una categoría válida.");
+					execute(errorMessage);
+					return;
+			}
+
+			// Retrieve the task data saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] taskData = lastMessage.getContent().split("\\|");
+			String taskDescription = taskData[0];
+			double estimateHours = Double.parseDouble(taskData[1]);
+			int sprintNumber = Integer.parseInt(taskData[2]);
+
+			// Create the new task
 			TaskDTO newTask = new TaskDTO();
 			newTask.setDescription(taskDescription);
 			newTask.setEstimateHours(estimateHours);
 			newTask.setSprint(sprintNumber);
 			newTask.setStatus("created");
 			newTask.setCreatedBy(user.getID());
-			newTask.setAssignedTo(user.getID()); // Assign the task to the current user
-	
+			newTask.setAssignedTo(user.getID());
+			newTask.setCategory(validCategory);
+
 			taskService.addTodoItemToProject(user.getProjectId(), newTask);
-	
+
 			// Confirm to the user that the task was created
 			SendMessage confirmationMessage = new SendMessage();
 			confirmationMessage.setChatId(chatId);
-			confirmationMessage.setText("¡Tarea creada exitosamente con la descripción: \"" + taskDescription + "\", " + estimateHours + " horas estimadas, y asignada al sprint número " + sprintNumber + "!");
+			confirmationMessage.setText("✅ ¡Tarea creada exitosamente!\n\n" +
+									 "📝 Descripción: " + taskDescription + "\n" +
+									 "⏱️ Horas estimadas: " + estimateHours + "\n" +
+									 "📅 Sprint: " + sprintNumber + "\n" +
+									 "🏷️ Categoría: " + category);
+
+			// Add back button
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("↩️ Back to Main Menu");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			confirmationMessage.setReplyMarkup(keyboard);
+
 			execute(confirmationMessage);
+
+			// Show the main menu based on user role
+			if (user.getRole().equals("developer")) {
+				showDeveloperMainMenu(chatId);
+			} else {
+				showManagerMainMenu(chatId);
+			}
 		} catch (TelegramApiException e) {
 			logger.error("Error al crear la tarea: " + e.getMessage());
 		}
