@@ -13,7 +13,7 @@ public class SprintModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int ID;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PROJECT_ID", nullable = false)
     private ProjectModel project;
     
