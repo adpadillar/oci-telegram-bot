@@ -25,6 +25,8 @@ import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.UserService;
 import com.springboot.MyTodoList.dto.TaskDTO;
 import com.springboot.MyTodoList.util.BotLabels;
+import com.springboot.MyTodoList.dto.SprintDTO;
+import com.springboot.MyTodoList.service.SprintService;
 
 public class ToDoItemBotController extends TelegramLongPollingBot {
 
@@ -33,8 +35,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	private MessageService messageService;
 	private UserService userService;
 	private TaskService taskService;
+	private SprintService sprintService;
 
-	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService, TaskService taskService) {
+	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService, TaskService taskService, SprintService sprintService) {
 		super(botToken);
 		logger.info("Bot Token: " + botToken);
 		logger.info("Bot name: " + botName);
@@ -42,7 +45,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.botName = botName;
 		this.userService = userService;
 		this.taskService = taskService;
-		}
+		this.sprintService = sprintService;
+	}
 
 	@Override
 	public void onUpdateReceived(Update update) {
@@ -122,6 +126,21 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 			if ("waiting_for_task_category".equals(lastMessage.getMessageType())) {
 				handleTaskCategory(chatId, user, messageText);
+				return;
+			}
+
+			if ("waiting_for_sprint_name".equals(lastMessage.getMessageType())) {
+				handleSetSprintName(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_start_date".equals(lastMessage.getMessageType())) {
+				handleSetSprintStartDate(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_end_date".equals(lastMessage.getMessageType())) {
+				handleSetSprintEndDate(chatId, messageText);
 				return;
 			}
 
@@ -1331,12 +1350,149 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 
-	private void handleCreateSprint(long chatId){
+	private void handleCreateSprint(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Por favor ingresa el nombre del nuevo sprint:");
 
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_sprint_name");
+			stateMessage.setRole("assistant");
+			stateMessage.setContent("Por favor ingresa el nombre del nuevo sprint:");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error initiating sprint creation", e);
+		}
 	}
-					
-	private void handleUpdateSprint(long chatId){
-		
+
+	private void handleSetSprintName(long chatId, String sprintName) {
+		try {
+			// Guardar el nombre temporalmente y solicitar la fecha de inicio
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("Gracias. Ahora, ingresa la fecha de inicio (formato: YYYY-MM-DD):");
+
+			// Guardar el estado del usuario como "waiting_for_start_date"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_start_date");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent(sprintName); // Guardar el nombre temporalmente
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+
+			execute(messageToTelegram);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar la fecha de inicio: " + e.getMessage());
+		}
+	}
+
+	private void handleSetSprintStartDate(long chatId, String sprintStartDate) {
+		try {
+			// Validar formato de fecha
+			if (!sprintStartDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+				throw new IllegalArgumentException("Formato de fecha inválido");
+			}
+
+			// Retrieve the sprint name saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String sprintName = lastMessage.getContent();
+
+			// Save the sprintName and ask for the endDate
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("Gracias. Ahora, ingresa la fecha de finalización (formato: YYYY-MM-DD):");
+
+			// Save the state of the user as "waiting_for_end_date"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_end_date");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent(sprintName + "|" + sprintStartDate); // Save sprintName and sprintStartDate
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+
+			execute(messageToTelegram);
+		} catch (IllegalArgumentException e) {
+			logger.error("Invalid date format", e);
+			SendMessage errorMessage = new SendMessage();
+			errorMessage.setChatId(chatId);
+			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
+			try {
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar la fecha de finalización: " + e.getMessage());
+		}
+	}
+
+	private void handleSetSprintEndDate(long chatId, String sprintEndDate) {
+		try {
+			// Validate date format
+			if (!sprintEndDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+				throw new IllegalArgumentException("Formato de fecha inválido");
+			}
+
+			// Retrieve the sprint data saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] sprintData = lastMessage.getContent().split("\\|");
+			String sprintName = sprintData[0];
+			String sprintStartDate = sprintData[1];
+
+			// Create a SprintDTO and set its properties
+			SprintDTO newSprint = new SprintDTO();
+			newSprint.setName(sprintName);
+			newSprint.setStartedAt(OffsetDateTime.parse(sprintStartDate + "T00:00:00Z"));
+			newSprint.setEndsAt(OffsetDateTime.parse(sprintEndDate + "T00:00:00Z"));
+
+			// Get the user's project ID
+			UserModel user = userService.findUserByChatId(chatId);
+			if (user != null) {
+				// Save the sprint to the database
+				sprintService.addSprintToProject(user.getProjectId(), newSprint);
+
+				// Confirm the creation of the sprint
+				SendMessage confirmationMessage = new SendMessage();
+				confirmationMessage.setChatId(chatId);
+				confirmationMessage.setText("✅ *Sprint Creado Exitosamente!*\n\n" +
+											"🏷️ *Nombre del Sprint:* " + sprintName + "\n" +
+											"📅 *Fecha de Inicio:* " + sprintStartDate + "\n" +
+											"📅 *Fecha de Finalización:* " + sprintEndDate);
+				confirmationMessage.enableMarkdown(true);
+				execute(confirmationMessage);
+
+				// Show the main menu based on user role
+				if (user.getRole().equals("developer")) {
+					showDeveloperMainMenu(chatId);
+				} else {
+					showManagerMainMenu(chatId);
+				}
+			}
+		} catch (IllegalArgumentException e) {
+			logger.error("Invalid date format", e);
+			SendMessage errorMessage = new SendMessage();
+			errorMessage.setChatId(chatId);
+			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
+			try {
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error al confirmar la creación del sprint: " + e.getMessage());
+		}
+	}
+
+	private void handleUpdateSprint(long chatId) {
+		// Implementation of handleUpdateSprint method
 	}
 
 	private void showDeveloperMainMenu(long chatId) {
@@ -1438,11 +1594,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "🔍 Filter Tasks - Filter tasks by status\n" +
 						  "➕ Add Task - Create new tasks\n" +
 						  "✏️ Update Task - Modify existing tasks\n" +
-						  "ℹ️ Details - View task details\n" +
-						  "📅 Create Sprint - Start a new sprint\n" +
-						  "🔄 Update Sprint - Manage current sprint\n" +
-						  "❓ Help - Get assistance\n\n" +
-						  "Please select an option:");
+						  "📅 *Sprint Management*\n" +
+						  "- Create new sprints\n" +
+						  "- Update sprint details\n" +
+						  "- Track sprint progress\n\n" +
+						  "ℹ️ *Details*\n" +
+						  "View detailed information about any task\n\n" +
+						  "Need more help? Contact system administrator.");
 			message.setReplyMarkup(managerKeyboardMarkup);
 			
 			execute(message);
