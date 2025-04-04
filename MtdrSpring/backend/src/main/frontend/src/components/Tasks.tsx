@@ -743,10 +743,10 @@ const Tasks: React.FC = () => {
                     ) : (
                       <button
                         className="text-gray-400 hover:text-gray-600 flex items-center text-xs border border-dashed border-gray-300 rounded-full px-2 py-1 transition-colors"
-                        title="Add category"
+                        title="Add assignee"
                       >
                         <Plus size={12} className="mr-1" />
-                        <span>Add asignee</span>
+                        <span>Add assignee</span>
                       </button>
                     )}
                   </td>
