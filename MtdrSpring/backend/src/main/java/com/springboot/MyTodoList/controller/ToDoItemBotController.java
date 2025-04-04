@@ -571,6 +571,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			newTask.setSprint(sprintNumber);
 			newTask.setStatus("created");
 			newTask.setCreatedBy(user.getID());
+			newTask.setAssignedTo(user.getID()); // Assign the task to the current user
 	
 			taskService.addTodoItemToProject(user.getProjectId(), newTask);
 	
