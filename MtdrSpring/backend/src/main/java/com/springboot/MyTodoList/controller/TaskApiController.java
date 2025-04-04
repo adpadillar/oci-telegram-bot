@@ -27,7 +27,6 @@ public class TaskApiController {
     public ResponseEntity<Object> addToDoItem(@RequestBody TaskDTO todoItem, @PathVariable("project") int project) throws Exception {
         taskService.addTodoItemToProject(project, todoItem);
         HttpHeaders responseHeaders = new HttpHeaders();
-        //URI location = URI.create(""+td.getID())
 
         return ResponseEntity.ok()
                 .headers(responseHeaders).build();
@@ -55,10 +54,8 @@ public class TaskApiController {
     //@CrossOrigin
     @PatchMapping(value = "/api/{project}/tasks/{id}")
     public ResponseEntity<Object> updateToDoItem(@RequestBody TaskDTO toDoItem, @PathVariable("project") int project, @PathVariable("id") int id){
-       TaskModel task = taskService.patchTaskOnProject(id, project, toDoItem);
+        taskService.patchTaskOnProject(id, project, toDoItem);
        HttpHeaders responseHeaders = new HttpHeaders();
-       responseHeaders.set("location",""+task.getID());
-       responseHeaders.set("Access-Control-Expose-Headers","location");
        return ResponseEntity.ok()
                .headers(responseHeaders).build();
     }

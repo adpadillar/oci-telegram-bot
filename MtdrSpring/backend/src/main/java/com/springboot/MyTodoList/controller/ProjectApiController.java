@@ -26,11 +26,8 @@ public class ProjectApiController {
     //@CrossOrigin
     @PostMapping(value = "/api/projects")
     public ResponseEntity addProject(@RequestBody ProjectModel project) throws Exception{
-        ProjectModel pr = projectService.addProject(project);
+        projectService.addProject(project);
         HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set("location",""+pr.getID());
-        responseHeaders.set("Access-Control-Expose-Headers","location");
-        //URI location = URI.create(""+sp.getID())
 
         return ResponseEntity.ok()
                 .headers(responseHeaders).build();

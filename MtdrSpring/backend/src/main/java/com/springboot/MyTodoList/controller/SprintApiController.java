@@ -32,11 +32,8 @@ public class SprintApiController {
     //@CrossOrigin
     @PostMapping("/api/{project}/sprints")
     public ResponseEntity<Object> addSprint(@PathVariable("project") int project, @RequestBody SprintDTO sprint) throws Exception{
-        SprintModel sp = sprintService.addSprintToProject(project, sprint);
+        sprintService.addSprintToProject(project, sprint);
         HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set("location",""+sp.getID());
-        responseHeaders.set("Access-Control-Expose-Headers","location");
-        //URI location = URI.create(""+sp.getID())
 
         return ResponseEntity.ok()
                 .headers(responseHeaders).build();
