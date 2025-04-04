@@ -30,7 +30,7 @@ export const sprintValidator = z.object({
   description: z.string().nullable(),
   startedAt: z.string().transform((value) => new Date(value)),
   endsAt: z.string().transform((value) => new Date(value)),
-  project: projectValidator,
+  projectId: z.number(),
 });
 
 export const sprintRequestValidator = z.object({
@@ -47,12 +47,12 @@ export const taskResponseValidator = z.object({
   description: z.string(),
   createdAt: z.string().transform((value) => new Date(value)),
   status: z.string(),
-  createdBy: userResponseValidator,
-  assignedTo: userResponseValidator.nullable(),
+  createdById: z.number(),
+  assignedToId: z.number().nullable(),
   estimateHours: z.number().nullable(),
   realHours: z.number().nullable(),
-  sprint: sprintValidator.nullable(),
-  project: projectValidator,
+  sprintId: z.number().nullable(),
+  projectId: z.number(),
   category: z.string().nullable(),
 });
 
