@@ -53,7 +53,7 @@ public class TaskModel {
     // @JoinColumn(name = "SPRINT_ID", nullable = true)
     // private SprintModel sprint;
 
-    @Column(name = "SPRINT_ID", nullable = false)
+    @Column(name = "SPRINT_ID", nullable = true)
     private Integer sprintId ;
     
     @Column(name = "CATEGORY", length = 128, nullable = true)
