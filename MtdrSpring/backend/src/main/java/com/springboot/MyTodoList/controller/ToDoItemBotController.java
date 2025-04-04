@@ -5,41 +5,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Comparator;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import com.springboot.MyTodoList.dto.UserDTO;
 import com.springboot.MyTodoList.model.MessageModel;
-import com.springboot.MyTodoList.model.ProjectModel;
 import com.springboot.MyTodoList.model.TaskModel;
 import com.springboot.MyTodoList.model.UserModel;
-import com.springboot.MyTodoList.repository.MessageRepository;
 import com.springboot.MyTodoList.service.MessageService;
-import com.springboot.MyTodoList.service.ProjectService;
 import com.springboot.MyTodoList.service.TaskService;
 import com.springboot.MyTodoList.service.UserService;
 import com.springboot.MyTodoList.dto.TaskDTO;
-import com.springboot.MyTodoList.util.BotCommands;
-import com.springboot.MyTodoList.util.BotHelper;
 import com.springboot.MyTodoList.util.BotLabels;
-import com.springboot.MyTodoList.util.BotMessages;
 
 public class ToDoItemBotController extends TelegramLongPollingBot {
 
@@ -425,8 +410,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
 						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
-						.append("👤 *Assigned to:* ").append(task.getAssignedTo() != null ? 
-							task.getCreatedBy().getFirstName() : "Unknown").append("\n\n");
+						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
+							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unknown").append("\n\n");
 				}
 			}
 	
@@ -479,7 +464,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_task_estimate_hours");
 			assistantMessage.setRole("assistant");
-			assistantMessage.setContent(taskDescription); // Guardar la descripción temporalmente
+			assistantMessage.setContent(taskDescription); // Guardar la descripción temporalmente // TODO: this is wrong 
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
@@ -556,7 +541,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			newTask.setStatus("created");
 			newTask.setCreatedBy(user.getID());
 	
-			taskService.addTodoItemToProject(user.getProject().getID(), newTask);
+			taskService.addTodoItemToProject(user.getProjectId(), newTask);
 	
 			// Confirm to the user that the task was created
 			SendMessage confirmationMessage = new SendMessage();
@@ -978,7 +963,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void handleMyTasks(long chatId, UserModel user) {
 		try {
-			List<TaskModel> tasks = taskService.findByUserAssigned(user);
+			List<TaskModel> tasks = taskService.findByUserAssigned(user.getID());
 			sendTaskList(chatId, tasks, "📋 *My Assigned Tasks*\n\n");
 		} catch (Exception e) {
 			logger.error("Error getting user tasks", e);
@@ -1074,8 +1059,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
 						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
-						.append("👤 *Assigned to:* ").append(task.getAssignedTo() != null ? 
-							task.getAssignedTo().getFirstName() : "Unassigned").append("\n\n");
+						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
+							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unassigned").append("\n\n");
 				}
 			}
 

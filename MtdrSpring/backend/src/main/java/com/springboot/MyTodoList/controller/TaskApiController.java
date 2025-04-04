@@ -43,7 +43,7 @@ public class TaskApiController {
         if(maybeTask.isPresent()){
             TaskModel task = maybeTask.get();
 
-            if (task.getProject().getID() != project){
+            if (task.getProjectId()!= project){
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
@@ -72,7 +72,7 @@ public class TaskApiController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        if (task.getProject().getID() != project){
+        if (task.getProjectId() != project){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 

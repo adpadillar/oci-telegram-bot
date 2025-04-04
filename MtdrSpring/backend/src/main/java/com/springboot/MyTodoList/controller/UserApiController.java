@@ -30,7 +30,7 @@ public class UserApiController {
     public ResponseEntity<UserModel> getUserById(@PathVariable("project") int project, @PathVariable("id") int id) {
         UserModel user = userService.findUserById(id);
 
-        if (user.getProject().getID() != project) {
+        if (user.getProjectId() != project) {
             return ResponseEntity.notFound().build();
         }
 
@@ -47,7 +47,7 @@ public class UserApiController {
     public ResponseEntity<Void> deleteUser(@PathVariable("project") int project, @PathVariable int id) {
         UserModel user = userService.findUserById(id);
 
-        if (user.getProject().getID() != project) {
+        if (user.getProjectId() != project) {
             return ResponseEntity.notFound().build();
         }
 

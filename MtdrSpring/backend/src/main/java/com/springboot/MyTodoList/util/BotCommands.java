@@ -1,6 +1,5 @@
 package com.springboot.MyTodoList.util;
 
-import com.springboot.MyTodoList.MyTodoListApplication;
 
 public enum BotCommands {
 

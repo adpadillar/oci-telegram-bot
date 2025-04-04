@@ -50,9 +50,9 @@ public class TaskService {
             throw new RuntimeException("Project not found");
         }
 
-        ProjectModel project = maybeProject.get();
+        // ProjectModel project = maybeProject.get();
 
-        task.setProject(project);
+        task.setProjectId(projectId);
         task.setDescription(taskDTO.getDescription());
         task.setStatus(taskDTO.getStatus());
         task.setEstimateHours(taskDTO.getEstimateHours());
@@ -71,8 +71,8 @@ public class TaskService {
             if (!maybeAssignedTo.isPresent()) {
                 throw new RuntimeException("User not found");
             }
-            UserModel assignedTo = maybeAssignedTo.get();
-            task.setAssignedTo(assignedTo);
+            // UserModel assignedTo = maybeAssignedTo.get();
+            task.setAssignedTo(taskDTO.getAssignedTo());
         }
 
         if (taskDTO.getSprint() != null) {
@@ -81,11 +81,11 @@ public class TaskService {
                 throw new RuntimeException("Sprint not found");
             }
 
-            SprintModel sprint = maybeSprint.get();
-            task.setSprint(sprint);
+            // SprintModel sprint = maybeSprint.get();
+            task.setSprintId(taskDTO.getSprint());
         }
 
-        task.setCreatedBy(createdBy);
+        task.setCreatedById(createdBy.getID());
         task.setCategory(taskDTO.getCategory());
         task.setCreatedAt(OffsetDateTime.now());
         task.setStatus(taskDTO.getStatus());
@@ -114,7 +114,7 @@ public class TaskService {
         Optional<TaskModel> optionalTask = toDoItemRepository.findById(id);
         if (optionalTask.isPresent()) {
             TaskModel task = optionalTask.get();
-            if (task.getProject().getID() == projectId) {
+            if (task.getProjectId() == projectId) {
                 if (newValues.getDescription() != null) {
                     task.setDescription(newValues.getDescription());
                 }
@@ -129,7 +129,7 @@ public class TaskService {
                         throw new RuntimeException("User not found");
                     }
                     UserModel assignedTo = maybeAssignedTo.get();
-                    task.setAssignedTo(assignedTo);
+                    task.setAssignedTo(assignedTo.getID());
                 }
                 
                 if (newValues.getEstimateHours() != null) {
@@ -146,7 +146,7 @@ public class TaskService {
                         throw new RuntimeException("Sprint not found");
                     }
                     SprintModel sprint = maybeSprint.get();
-                    task.setSprint(sprint);
+                    task.setSprintId(sprint.getID());
                 }
                 
                 if (newValues.getCategory() != null) {
@@ -178,8 +178,8 @@ public class TaskService {
     }
 
 
-    public List<TaskModel> findByUserAssigned(UserModel user) {
-        return toDoItemRepository.findByAssignedTo(user);
+    public List<TaskModel> findByUserAssigned(Integer userId) {
+        return toDoItemRepository.findByAssignedTo(userId);
     }
 
     public List<TaskModel> findByStatus(String status) {

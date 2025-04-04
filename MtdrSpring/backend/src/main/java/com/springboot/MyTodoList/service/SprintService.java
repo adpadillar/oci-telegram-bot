@@ -6,6 +6,8 @@ import com.springboot.MyTodoList.model.SprintModel;
 import com.springboot.MyTodoList.model.TaskModel; // new import
 import com.springboot.MyTodoList.repository.ProjectRepository;
 import com.springboot.MyTodoList.repository.SprintRepository;
+import com.springboot.MyTodoList.repository.TaskRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,9 @@ public class SprintService {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     public List<SprintModel> findByProjectId(int projectId){
         List<SprintModel> sprints = sprintRepository.findByProject_ID(projectId);
@@ -43,9 +48,9 @@ public class SprintService {
         Optional<ProjectModel> maybeProject = projectRepository.findById(projectId);
 
         if (maybeProject.isPresent()) {
-            ProjectModel project = maybeProject.get();
+            // ProjectModel project = maybeProject.get();
             SprintModel newSprint = new SprintModel();
-            newSprint.setProject(project);
+            newSprint.setProjectId(projectId);
             newSprint.setName(sprint.getName());
             newSprint.setDescription(sprint.getDescription());
             newSprint.setStartedAt(sprint.getStartedAt());
@@ -69,7 +74,7 @@ public class SprintService {
         Optional<SprintModel> maybeSprint = sprintRepository.findById(id);
         if (maybeSprint.isPresent()) {
             SprintModel sprint = maybeSprint.get();
-            if (sprint.getProject().getID() == projectid) {
+            if (sprint.getProjectId() == projectid) {
                 if (newValues.getName() != null) {
                     sprint.setName(newValues.getName());
                 }
@@ -95,10 +100,12 @@ public class SprintService {
         Optional<SprintModel> maybeSprint = sprintRepository.findById(sprintId);
         if (maybeSprint.isPresent()) {
             SprintModel sprint = maybeSprint.get();
-            if (sprint.getProject().getID() != projectId) {
+            if (sprint.getProjectId() != projectId) {
                 throw new RuntimeException("Sprint does not belong to project");
             }
-            return sprint.getTasks(); // assumes SprintModel.getTasks() returns List<TaskModel>
+            
+            return taskRepository.findBySprint_ID(sprintId);
+            // assumes SprintModel.getTasks() returns List<TaskModel>
         } else {
             throw new RuntimeException("Sprint not found");
         }

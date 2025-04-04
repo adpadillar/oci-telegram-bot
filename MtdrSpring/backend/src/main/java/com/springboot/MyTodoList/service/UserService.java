@@ -57,7 +57,7 @@ public class UserService {
         user.setLastName(userDTO.getLastName());
         user.setRole(userDTO.getRole());
         user.setTitle(userDTO.getTitle());
-        user.setProject(project);
+        user.setProjectId(project.getID());
         
         return userRepository.save(user);
     }
@@ -66,7 +66,7 @@ public class UserService {
         Optional<UserModel> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             UserModel user = optionalUser.get();
-            if (user.getProject().getID() == projectId) {
+            if (user.getProjectId() == projectId) {
                 if (newValues.getTelegramId() != null) {
                     user.setTelegramId(newValues.getTelegramId());
                 }
@@ -99,7 +99,7 @@ public class UserService {
             UserModel existingUser = optionalUser.get();
             existingUser.setTelegramId(userDetails.getTelegramId());
             //Tentativo lol por que no existe project todavia
-            existingUser.setProject(userDetails.getProject());
+            existingUser.setProjectId(userDetails.getProjectId());
             existingUser.setFirstName(userDetails.getFirstName());
             existingUser.setLastName(userDetails.getLastName());
             existingUser.setRole(userDetails.getRole());

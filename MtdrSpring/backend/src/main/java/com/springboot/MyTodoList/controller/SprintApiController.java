@@ -50,7 +50,7 @@ public class SprintApiController {
         if(sprint.isPresent()){
             SprintModel s = sprint.get();
 
-            if (s.getProject().getID() == project) {
+            if (s.getProjectId() == project) {
                 return new ResponseEntity<>(sprint.get(), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
