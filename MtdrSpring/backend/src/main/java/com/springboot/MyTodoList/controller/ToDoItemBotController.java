@@ -145,25 +145,27 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					try {
 						handleTaskDetails(chatId);
 					} catch (TelegramApiException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					return;
-					}
-					// Check for filter options
-					if (messageText.equals("⏰ My Tasks")) {
-						handleMyTasks(chatId, user);
-						return;
-					} else if (messageText.equals("⭕ Created Tasks")) {
-						handleTasksByStatus(chatId, "created");
-						return;
-					} else if (messageText.equals("📊 In progress Tasks")) {
-						handleTasksByStatus(chatId, "in_progress");
-						return;
-					} else if (messageText.equals("✅ Done Tasks")) {
-						handleTasksByStatus(chatId, "done");
-						return;
-					}
+				} else if (messageText.equals(BotLabels.HELP.getLabel())) {
+					handleHelp(chatId, "developer");
+					return;
+				}
+				// Check for filter options
+				if (messageText.equals("⏰ My Tasks")) {
+					handleMyTasks(chatId, user);
+					return;
+				} else if (messageText.equals("⭕ Created Tasks")) {
+					handleTasksByStatus(chatId, "created");
+					return;
+				} else if (messageText.equals("📊 In progress Tasks")) {
+					handleTasksByStatus(chatId, "in_progress");
+					return;
+				} else if (messageText.equals("✅ Done Tasks")) {
+					handleTasksByStatus(chatId, "done");
+					return;
+				}
 				// Show the main menu by default
 				showDeveloperMainMenu(chatId);
 				return;
@@ -194,7 +196,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					try {
 						handleTaskDetails(chatId);
 					} catch (TelegramApiException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					return;
@@ -203,6 +204,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					return;
 				} else if (messageText.equals(BotLabels.UPDATE_SPRINT.getLabel())) {
 					handleUpdateSprint(chatId);
+					return;
+				} else if (messageText.equals(BotLabels.HELP.getLabel())) {
+					handleHelp(chatId, "manager");
 					return;
 				}
 
@@ -1124,25 +1128,28 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
 			List<KeyboardRow> devKeyboard = new ArrayList<>();
 			
-			// First row - View tasks
+			// First row - View and Filter tasks
 			KeyboardRow firstRow = new KeyboardRow();
 			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
+			firstRow.add(BotLabels.FILTER_TASKS.getLabel());
 			devKeyboard.add(firstRow);
 			
-			// Second row - Filter and Add
+			// Second row - Add and Update tasks
 			KeyboardRow secondRow = new KeyboardRow();
-			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
 			secondRow.add(BotLabels.ADD_TASK.getLabel());
+			secondRow.add(BotLabels.UPDATE_TASK.getLabel());
 			devKeyboard.add(secondRow);
 
-			// Third row - Details and Update
+			// Third row - Details and Delete
 			KeyboardRow thirdRow = new KeyboardRow();
 			thirdRow.add(BotLabels.DETAILS.getLabel());
-			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
 			thirdRow.add(BotLabels.DELETE_TASK.getLabel());
 			devKeyboard.add(thirdRow);
 			
-			
+			// Fourth row - Help
+			KeyboardRow fourthRow = new KeyboardRow();
+			fourthRow.add(BotLabels.HELP.getLabel());
+			devKeyboard.add(fourthRow);
 			
 			// Configure keyboard
 			devKeyboardMarkup.setKeyboard(devKeyboard);
@@ -1152,7 +1159,16 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// Create and send message with keyboard
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Developer Menu - Please select an option:");
+			message.setText("👋 Welcome to TaskBot!\n\n" +
+						  "Here are your available options:\n" +
+						  "📋 View Tasks - See all your tasks\n" +
+						  "🔍 Filter Tasks - Filter tasks by status\n" +
+						  "➕ Add Task - Create a new task\n" +
+						  "✏️ Update Task - Modify existing tasks\n" +
+						  "ℹ️ Details - View task details\n" +
+						  "🗑️ Delete Task - Remove tasks\n" +
+						  "❓ Help - Get assistance\n\n" +
+						  "Please select an option:");
 			message.setReplyMarkup(devKeyboardMarkup);
 			
 			execute(message);
@@ -1163,43 +1179,54 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void showManagerMainMenu(long chatId) {
 		try {
-			// Create developer keyboard
-			ReplyKeyboardMarkup devKeyboardMarkup = new ReplyKeyboardMarkup();
+			// Create manager keyboard
+			ReplyKeyboardMarkup managerKeyboardMarkup = new ReplyKeyboardMarkup();
 			List<KeyboardRow> manKeyboard = new ArrayList<>();
 			
-			// First row - View tasks
+			// First row - View and Filter tasks
 			KeyboardRow firstRow = new KeyboardRow();
 			firstRow.add(BotLabels.VIEW_TASKS.getLabel());
+			firstRow.add(BotLabels.FILTER_TASKS.getLabel());
 			manKeyboard.add(firstRow);
 			
-			// Second row - Filter and Add
+			// Second row - Add and Update tasks
 			KeyboardRow secondRow = new KeyboardRow();
-			secondRow.add(BotLabels.FILTER_TASKS.getLabel());
 			secondRow.add(BotLabels.ADD_TASK.getLabel());
+			secondRow.add(BotLabels.UPDATE_TASK.getLabel());
 			manKeyboard.add(secondRow);
 
-			// Third row - Details and Update
+			// Third row - Details and Sprints
 			KeyboardRow thirdRow = new KeyboardRow();
 			thirdRow.add(BotLabels.DETAILS.getLabel());
-			thirdRow.add(BotLabels.UPDATE_TASK.getLabel());
+			thirdRow.add(BotLabels.CREATE_SPRINT.getLabel());
 			manKeyboard.add(thirdRow);
 			
-			// Fourth row - Sprints
+			// Fourth row - Sprint Management
 			KeyboardRow fourthRow = new KeyboardRow();
-			fourthRow.add(BotLabels.CREATE_SPRINT.getLabel());
 			fourthRow.add(BotLabels.UPDATE_SPRINT.getLabel());
+			fourthRow.add(BotLabels.HELP.getLabel());
 			manKeyboard.add(fourthRow);
 
 			// Configure keyboard
-			devKeyboardMarkup.setKeyboard(manKeyboard);
-			devKeyboardMarkup.setResizeKeyboard(true);
-			devKeyboardMarkup.setOneTimeKeyboard(false);
+			managerKeyboardMarkup.setKeyboard(manKeyboard);
+			managerKeyboardMarkup.setResizeKeyboard(true);
+			managerKeyboardMarkup.setOneTimeKeyboard(false);
 			
 			// Create and send message with keyboard
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Manager Menu - Please select an option:");
-			message.setReplyMarkup(devKeyboardMarkup);
+			message.setText("👋 Welcome to TaskBot Manager!\n\n" +
+						  "Here are your available options:\n" +
+						  "📋 View Tasks - See all project tasks\n" +
+						  "🔍 Filter Tasks - Filter tasks by status\n" +
+						  "➕ Add Task - Create new tasks\n" +
+						  "✏️ Update Task - Modify existing tasks\n" +
+						  "ℹ️ Details - View task details\n" +
+						  "📅 Create Sprint - Start a new sprint\n" +
+						  "🔄 Update Sprint - Manage current sprint\n" +
+						  "❓ Help - Get assistance\n\n" +
+						  "Please select an option:");
+			message.setReplyMarkup(managerKeyboardMarkup);
 			
 			execute(message);
 		} catch (TelegramApiException e) {
@@ -1295,6 +1322,60 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			execute(response);
 		} catch (Exception e) {
 			logger.error("Error handling task pagination: " + e.getMessage(), e);
+		}
+	}
+
+	private void handleHelp(long chatId, String role) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			
+			if (role.equals("developer")) {
+				message.setText("🤖 *TaskBot Help - Developer Guide*\n\n" +
+							  "Here's how to use TaskBot:\n\n" +
+							  "📋 *View Tasks*\n" +
+							  "See all your assigned tasks\n\n" +
+							  "🔍 *Filter Tasks*\n" +
+							  "Filter tasks by status (Created, In Progress, Done)\n\n" +
+							  "➕ *Add Task*\n" +
+							  "Create a new task by providing:\n" +
+							  "1. Task description\n" +
+							  "2. Estimated hours\n" +
+							  "3. Sprint number\n\n" +
+							  "✏️ *Update Task*\n" +
+							  "Modify existing tasks by:\n" +
+							  "1. Entering task ID\n" +
+							  "2. Selecting what to update\n" +
+							  "3. Providing new values\n\n" +
+							  "ℹ️ *Details*\n" +
+							  "View detailed information about a specific task\n\n" +
+							  "🗑️ *Delete Task*\n" +
+							  "Remove tasks by entering their ID\n\n" +
+							  "Need more help? Contact your manager.");
+			} else {
+				message.setText("🤖 *TaskBot Help - Manager Guide*\n\n" +
+							  "Here's how to use TaskBot:\n\n" +
+							  "📋 *View Tasks*\n" +
+							  "See all project tasks\n\n" +
+							  "🔍 *Filter Tasks*\n" +
+							  "Filter tasks by status (Created, In Progress, Done)\n\n" +
+							  "➕ *Add Task*\n" +
+							  "Create new tasks for developers\n\n" +
+							  "✏️ *Update Task*\n" +
+							  "Modify any task in the project\n\n" +
+							  "📅 *Sprint Management*\n" +
+							  "- Create new sprints\n" +
+							  "- Update sprint details\n" +
+							  "- Track sprint progress\n\n" +
+							  "ℹ️ *Details*\n" +
+							  "View detailed information about any task\n\n" +
+							  "Need more help? Contact system administrator.");
+			}
+			
+			message.enableMarkdown(true);
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error showing help", e);
 		}
 	}
 
