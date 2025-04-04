@@ -1,0 +1,72 @@
+package com.springboot.MyTodoList.controller;
+
+import com.springboot.MyTodoList.model.ProjectModel;
+import com.springboot.MyTodoList.service.ProjectService;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class ProjectApiControllerTest {
+
+    @Mock
+    private ProjectService projectService;
+
+    @InjectMocks
+    private ProjectApiController projectApiController;
+
+    public ProjectApiControllerTest() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testGetAllProjects() {
+        List<ProjectModel> mockProjects = Arrays.asList(new ProjectModel(), new ProjectModel());
+        when(projectService.findAll()).thenReturn(mockProjects);
+
+        List<ProjectModel> result = projectApiController.getAllProjects();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(projectService, times(1)).findAll();
+    }
+
+    @Test
+    void testAddProject() throws Exception {
+        ProjectModel mockProject = new ProjectModel();
+        mockProject.setID(1);
+        when(projectService.addProject(any(ProjectModel.class))).thenReturn(mockProject);
+
+        ResponseEntity response = projectApiController.addProject(mockProject);
+
+        // Assert status and headers
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+        HttpHeaders headers = response.getHeaders();
+        assertTrue(headers.containsKey("location"));
+        assertEquals("1", headers.getFirst("location"));
+        // Also assert that CORS header is present
+        assertEquals("location", headers.getFirst("Access-Control-Expose-Headers"));
+        verify(projectService, times(1)).addProject(mockProject);
+    }
+    
+    @Test
+    void testGetProjectByIdNotFound() {
+        // When the project is not found, our controller returns NOT_FOUND.
+        // Simulate by throwing an exception in the service.
+        when(projectService.getProjectById(anyInt())).thenThrow(new RuntimeException("Not found"));
+        
+        ResponseEntity<ProjectModel> response = projectApiController.getSprintById(999);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+}
