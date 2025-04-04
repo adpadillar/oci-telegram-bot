@@ -59,6 +59,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 			if (user == null) return;
 			
+			// Handle pagination events
+			if (messageText.equals("⏮️ First 5") || messageText.equals("⏭️ Next 5")) {
+				handleTaskPagination(chatId, messageText);
+				return;
+			}
+			
 			// Check if the user is in the state of waiting for task description
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			if ("waiting_for_update_selection".equals(lastMessage.getMessageType())) {
@@ -388,46 +394,63 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 	private void handleViewTasks(long chatId) {
 		try {
-			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
-			List<KeyboardRow> keyboardRows = new ArrayList<>();
-			KeyboardRow row = new KeyboardRow();
-			row.add("↩️ Back to Main Menu");
-			keyboardRows.add(row);
-			keyboard.setKeyboard(keyboardRows);
-			keyboard.setResizeKeyboard(true);
-			keyboard.setOneTimeKeyboard(false);
-	
 			// Get tasks from service
 			List<TaskModel> tasks = taskService.findAll();
 			// Sort tasks by ID
 			tasks.sort(Comparator.comparingInt(TaskModel::getID));
+			
+			// Create keyboard with pagination options
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			
+			// Add pagination buttons if there are more than 5 tasks
+			if (tasks.size() > 5) {
+				KeyboardRow paginationRow = new KeyboardRow();
+				paginationRow.add("⏮️ First 5");
+				paginationRow.add("⏭️ Next 5");
+				keyboardRows.add(paginationRow);
+			}
+			
+			KeyboardRow backRow = new KeyboardRow();
+			backRow.add("↩️ Back to Main Menu");
+			keyboardRows.add(backRow);
+			
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			keyboard.setOneTimeKeyboard(false);
+
+			// Show first 5 tasks by default
 			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
-	
-			if (tasks == null || tasks.isEmpty()) {
+			
+			if (tasks.isEmpty()) {
 				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
 			} else {
-				for (TaskModel task : tasks) {
+				int tasksToShow = Math.min(5, tasks.size());
+				for (int i = 0; i < tasksToShow; i++) {
+					TaskModel task = tasks.get(i);
 					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
 						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
 						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
 							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unknown").append("\n\n");
 				}
+				
+				if (tasks.size() > 5) {
+					message.append("\nShowing 1-5 of ").append(tasks.size()).append(" tasks. Use the buttons below to navigate.");
+				}
 			}
-	
+
 			SendMessage response = new SendMessage();
 			response.setChatId(chatId);
 			response.setText(message.toString());
 			response.enableMarkdown(true);
 			response.setReplyMarkup(keyboard);
-	
+
 			execute(response);
 		} catch (NullPointerException e) {
 			logger.error("TaskService not properly initialized or null reference", e);
-	
 		} catch (Exception e) {
 			logger.error("Error viewing tasks: " + e.getMessage(), e);
-	
 		}
 	}
 	
@@ -1181,6 +1204,97 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			execute(message);
 		} catch (TelegramApiException e) {
 			logger.error("Error showing Manager menu", e);
+		}
+	}
+
+	private void handleTaskPagination(long chatId, String action) {
+		try {
+			List<TaskModel> tasks = taskService.findAll();
+			tasks.sort(Comparator.comparingInt(TaskModel::getID));
+			
+			// Create keyboard with pagination options
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			
+			// Add pagination buttons if there are more than 5 tasks
+			if (tasks.size() > 5) {
+				KeyboardRow paginationRow = new KeyboardRow();
+				paginationRow.add("⏮️ First 5");
+				paginationRow.add("⏭️ Next 5");
+				keyboardRows.add(paginationRow);
+			}
+			
+			KeyboardRow backRow = new KeyboardRow();
+			backRow.add("↩️ Back to Main Menu");
+			keyboardRows.add(backRow);
+			
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			keyboard.setOneTimeKeyboard(false);
+
+			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
+			
+			if (tasks.isEmpty()) {
+				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
+			} else {
+				// Get the current page from the last message
+				MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+				int currentPage = 1; // Default to first page
+				
+				if (lastMessage != null && lastMessage.getMessageType().equals("task_pagination")) {
+					currentPage = Integer.parseInt(lastMessage.getContent());
+				}
+				
+				// Calculate start and end indices based on current page and action
+				if (action.equals("⏮️ First 5")) {
+					currentPage = 1;
+				} else if (action.equals("⏭️ Next 5")) {
+					currentPage++;
+				}
+				
+				int startIndex = (currentPage - 1) * 5;
+				int endIndex = Math.min(startIndex + 5, tasks.size());
+				
+				// If we're at the last page and trying to go next, stay on the last page
+				if (startIndex >= tasks.size()) {
+					currentPage--;
+					startIndex = (currentPage - 1) * 5;
+					endIndex = Math.min(startIndex + 5, tasks.size());
+				}
+				
+				// Save current page state
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("task_pagination");
+				stateMessage.setRole("assistant");
+				stateMessage.setContent(String.valueOf(currentPage));
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+				
+				for (int i = startIndex; i < endIndex; i++) {
+					TaskModel task = tasks.get(i);
+					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
+						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
+						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
+							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unknown").append("\n\n");
+				}
+				
+				if (tasks.size() > 5) {
+					message.append("\nShowing ").append(startIndex + 1).append("-").append(endIndex)
+						.append(" of ").append(tasks.size()).append(" tasks. Use the buttons below to navigate.");
+				}
+			}
+
+			SendMessage response = new SendMessage();
+			response.setChatId(chatId);
+			response.setText(message.toString());
+			response.enableMarkdown(true);
+			response.setReplyMarkup(keyboard);
+
+			execute(response);
+		} catch (Exception e) {
+			logger.error("Error handling task pagination: " + e.getMessage(), e);
 		}
 	}
 
