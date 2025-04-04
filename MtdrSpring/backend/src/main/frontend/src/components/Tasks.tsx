@@ -875,7 +875,10 @@ const Tasks: React.FC = () => {
 
   // Add some visual indicator for active filters
   const hasActiveFilters =
-    categoryFilter || statusFilter || assigneeFilter !== null || sprintFilter !== null;
+    categoryFilter ||
+    statusFilter ||
+    assigneeFilter !== null ||
+    sprintFilter !== null;
 
   return (
     <div className="p-6">
