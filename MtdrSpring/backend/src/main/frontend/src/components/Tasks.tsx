@@ -100,7 +100,8 @@ const Tasks: React.FC = () => {
       </div>
       <div className="flex flex-wrap gap-2 text-sm text-gray-600">
         <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-          {task.sprintId ?? "N/A"}
+          {sprints?.find((sprint) => sprint.id === task.sprintId)?.name ??
+            "N/A"}
         </span>
         <span>
           Created:{" "}
@@ -117,7 +118,10 @@ const Tasks: React.FC = () => {
               alt={`${task.assignedToId}'s avatar`}
               className="w-4 h-4 rounded-full"
             />
-            <span>{task.assignedToId}</span>
+            <span>
+              {users?.find((user) => user.id === task.assignedToId)
+                ?.firstName || "Unknown"}
+            </span>
           </span>
         )}
       </div>
@@ -707,7 +711,8 @@ const Tasks: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {task.sprintId ? (
-                      task.sprintId
+                      sprints?.find((sprint) => sprint.id === task.sprintId)
+                        ?.name ?? "N/A"
                     ) : (
                       <button
                         className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -728,7 +733,12 @@ const Tasks: React.FC = () => {
                           alt={`${task.assignedToId}'s avatar`}
                           className="w-5 h-5 rounded-full mr-2"
                         />
-                        <span>{task.assignedToId}</span>
+                        <span>
+                          {
+                            users?.find((user) => user.id === task.assignedToId)
+                              ?.firstName
+                          }
+                        </span>
                       </div>
                     ) : (
                       <button
