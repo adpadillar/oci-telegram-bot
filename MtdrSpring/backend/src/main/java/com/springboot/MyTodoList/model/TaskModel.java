@@ -78,11 +78,11 @@ public class TaskModel {
         this.category = category;
     }
     
-    public int getID() {
+    public Integer getID() {
         return ID;
     }
     
-    public void setID(int ID) {
+    public void setID(Integer ID) {
         this.ID = ID;
     }
     
