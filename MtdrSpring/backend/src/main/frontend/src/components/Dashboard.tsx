@@ -6,17 +6,18 @@ import {
   useLocation,
 } from "react-router-dom";
 import {
-  Users as UsersIcon,
-  ListTodo,
-  Bell,
   Layers,
-  LineChart,
   Bike,
+  ListTodo,
+  LineChart,
+  Users as UsersIcon,
+  Bell,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Developers from "./Developers";
 import Tasks from "./Tasks";
 import Sprints from "./Sprints";
+import KPIs from "./KPIs";
 
 // Create a wrapper component to access useLocation
 const DashboardContent = ({
@@ -26,13 +27,10 @@ const DashboardContent = ({
 }) => {
   const location = useLocation();
   const [activeNavItem, setActiveNavItem] = useState(() => {
-    // Get the current path without the leading slash
     const path = location.pathname.slice(1);
-    // If path is empty, return default, otherwise return current path
     return path || "developers";
   });
 
-  // Keep activeNavItem in sync with route changes
   useEffect(() => {
     const path = location.pathname.slice(1);
     if (path && navItems.some((item) => item.key === path)) {
@@ -46,19 +44,15 @@ const DashboardContent = ({
       <header className="bg-white border-b shadow-sm h-16 fixed w-full top-0 z-50">
         <div className="flex items-center justify-between h-full px-6">
           <div className="flex items-center">
-            {/* Replace with your actual logo */}
             <div className="flex items-center space-x-2">
               <Layers className="h-8 w-8 text-blue-500" />
               <span className="text-xl font-semibold">TaskFlow</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
             <button className="p-2 hover:bg-gray-100 rounded-full relative">
               <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            {/* Profile Picture */}
             <button className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
               <img
                 src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
@@ -79,14 +73,12 @@ const DashboardContent = ({
         />
         <div className="flex-grow p-6">
           <div className="container mx-auto">
-            <div className="bg-white shadow-md rounded-lg">
-              <Routes>
-                <Route path="/developers" element={<Developers />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/sprints" element={<Sprints />} />
-                {/* <Route path="/kpis" element={<KPIs />} /> */}
-              </Routes>
-            </div>
+            <Routes>
+              <Route path="/developers" element={<Developers />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/sprints" element={<Sprints />} />
+              <Route path="/kpis" element={<KPIs />} />
+            </Routes>
           </div>
         </div>
       </div>
