@@ -8,7 +8,7 @@ public class UserModel {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer ID;
+    private int ID;
 
     @Column(name = "TELEGRAM_ID", nullable = true, length = 255)
     private Long telegramId;

@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 public class TaskModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer ID;
+    private int ID;
     
     @Column(name = "PROJECT_ID", nullable = false)
     private Integer projectId ;
@@ -62,7 +62,7 @@ public class TaskModel {
     public TaskModel() {
     }
     
-    public TaskModel(Integer ID, Integer projectId, String description, OffsetDateTime createdAt, 
+    public TaskModel(int ID, Integer projectId, String description, OffsetDateTime createdAt, 
                 String status, Integer createdById, Integer assignedToId, Double estimateHours, 
                 Double realHours, Integer sprintId, String category) {
         this.ID = ID;
@@ -78,11 +78,11 @@ public class TaskModel {
         this.category = category;
     }
     
-    public Integer getID() {
+    public int getID() {
         return ID;
     }
     
-    public void setID(Integer ID) {
+    public void setID(int ID) {
         this.ID = ID;
     }
     

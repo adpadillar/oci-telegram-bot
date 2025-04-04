@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 public class SprintModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer ID;
+    private int ID;
     
     // // @ManyToOne
     // @JoinColumn(name = "PROJECT_ID", nullable = false)
@@ -37,7 +37,7 @@ public class SprintModel {
     public SprintModel() {
     }
     
-    public SprintModel(Integer ID, Integer projectId,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
+    public SprintModel(int ID, Integer projectId,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
         this.ID = ID;
         this.projectId = projectId;
         this.name = name;
