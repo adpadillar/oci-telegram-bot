@@ -8,14 +8,17 @@ public class UserModel {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int ID;
+    private Integer ID;
 
     @Column(name = "TELEGRAM_ID", nullable = true, length = 255)
     private Long telegramId;
 
-    @ManyToOne
-    @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private ProjectModel project;
+    // @ManyToOne
+    // @JoinColumn(name = "PROJECT_ID", nullable = false)
+    // private ProjectModel project;
+
+    @Column(name = "PROJECT_ID", nullable = false)
+    private Integer projectId ;
 
     @Column(name = "FIRST_NAME", length = 255, nullable = false)
     private String firstName;
@@ -31,9 +34,9 @@ public class UserModel {
 
     public UserModel() {}
 
-    public UserModel(Long telegramId, ProjectModel project, String firstName, String lastName, String role, String title) {
+    public UserModel(Long telegramId, Integer projectId, String firstName, String lastName, String role, String title) {
         this.telegramId = telegramId;
-        this.project = project;
+        this.projectId = projectId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
@@ -47,8 +50,8 @@ public class UserModel {
     public Long getTelegramId() { return telegramId; }
     public void setTelegramId(Long telegramId) { this.telegramId = telegramId; }
 
-    public ProjectModel getProject() { return project; }
-    public void setProject(ProjectModel project) { this.project = project; }
+    public Integer getProjectId() { return projectId; }
+    public void setProjectId(Integer projectId) { this.projectId = projectId; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -67,7 +70,7 @@ public class UserModel {
         return "UserModel{" +
                 "ID=" + ID +
                 ", telegramId=" + telegramId +
-                ", project=" + project +
+                ", project=" + projectId +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", role='" + role + '\'' +

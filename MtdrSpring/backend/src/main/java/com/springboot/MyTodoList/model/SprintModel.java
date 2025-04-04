@@ -2,7 +2,6 @@ package com.springboot.MyTodoList.model;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 /*
     representation of the TASKS table that exists in the database
@@ -12,12 +11,14 @@ import java.util.List;
 public class SprintModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int ID;
+    private Integer ID;
     
-    @ManyToOne
-    @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private ProjectModel project;
-    
+    // // @ManyToOne
+    // @JoinColumn(name = "PROJECT_ID", nullable = false)
+    // private ProjectModel project;
+    @Column(name = "PROJECT_ID", nullable = false)
+    private Integer projectId ;
+
     @Column(name = "NAME", length = 255, nullable = false)
     private String name;
     
@@ -30,15 +31,15 @@ public class SprintModel {
     @Column(name = "ENDS_AT", nullable = false)
     private OffsetDateTime endsAt;
 
-    @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
-    private List<TaskModel> tasks;
+    // @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
+    // private List<TaskModel> tasks;
     
     public SprintModel() {
     }
     
-    public SprintModel(int ID, ProjectModel project,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
+    public SprintModel(Integer ID, Integer projectId,  String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
         this.ID = ID;
-        this.project = project;
+        this.projectId = projectId;
         this.name = name;
         this.description = description;
         this.startedAt = startedAt;
@@ -53,12 +54,12 @@ public class SprintModel {
         this.ID = ID;
     }
     
-    public ProjectModel getProject() {
-        return project;
+    public Integer getProjectId() {
+        return projectId;
     }
     
-    public void setProject(ProjectModel project) {
-        this.project = project;
+    public void setProjectId(Integer projectId) {
+        this.projectId = projectId;
     }
     
     public String getName() {
@@ -93,19 +94,19 @@ public class SprintModel {
         this.endsAt = endsAt;
     }
 
-    public List<TaskModel> getTasks() {
-        return tasks;
-    }
+    // public List<TaskModel> getTasks() {
+    //     return tasks;
+    // }
 
-    public void setTasks(List<TaskModel> tasks) {
-        this.tasks = tasks;
-    }
+    // public void setTasks(List<TaskModel> tasks) {
+    //     this.tasks = tasks;
+    // }
     
     @Override
     public String toString() {
         return "Sprint{" +
                 "ID=" + ID +
-                ", project=" + project.toString() +
+                ", project=" + projectId.toString() +
                 ", name='" + name +
                 ", description='" + description + '\'' +
                 ", startedAt=" + startedAt + '\'' +

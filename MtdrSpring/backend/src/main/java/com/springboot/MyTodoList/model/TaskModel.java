@@ -11,11 +11,14 @@ import java.time.OffsetDateTime;
 public class TaskModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int ID;
+    private Integer ID;
     
-    @ManyToOne
-    @JoinColumn(name = "PROJECT_ID", nullable = false)
-    private ProjectModel project;
+    @Column(name = "PROJECT_ID", nullable = false)
+    private Integer projectId ;
+
+    // @ManyToOne
+    // @JoinColumn(name = "PROJECT_ID", nullable = false)
+    // private ProjectModel project;
     
     @Column(name = "DESCRIPTION", length = 4000, nullable = true)
     private String description;
@@ -26,13 +29,19 @@ public class TaskModel {
     @Column(name = "STATUS", length = 128, nullable = false)
     private String status;
     
-    @ManyToOne
-    @JoinColumn(name = "CREATED_BY", nullable = false)
-    private UserModel createdBy;
+    @Column(name = "CREATED_BY", nullable = false)
+    private Integer createdById ;
+
+    @Column(name = "ASSIGNED_TO", nullable = false)
+    private Integer assignedToId ;
+
+    // @ManyToOne
+    // @JoinColumn(name = "CREATED_BY", nullable = false)
+    // private UserModel createdBy;
     
-    @ManyToOne
-    @JoinColumn(name = "ASSIGNED_TO", nullable = true)
-    private UserModel assignedTo;
+    // @ManyToOne
+    // @JoinColumn(name = "ASSIGNED_TO", nullable = true)
+    // private UserModel assignedTo;
     
     @Column(name = "ESTIMATE_HOURS", nullable = true)
     private Double estimateHours;
@@ -40,9 +49,12 @@ public class TaskModel {
     @Column(name = "REAL_HOURS", nullable = true)
     private Double realHours;
     
-    @ManyToOne
-    @JoinColumn(name = "SPRINT_ID", nullable = true)
-    private SprintModel sprint;
+    // @ManyToOne
+    // @JoinColumn(name = "SPRINT_ID", nullable = true)
+    // private SprintModel sprint;
+
+    @Column(name = "SPRINT_ID", nullable = false)
+    private Integer sprintId ;
     
     @Column(name = "CATEGORY", length = 128, nullable = true)
     private String category;
@@ -50,19 +62,19 @@ public class TaskModel {
     public TaskModel() {
     }
     
-    public TaskModel(int ID, ProjectModel project, String description, OffsetDateTime createdAt, 
-                String status, UserModel createdBy, UserModel assignedTo, Double estimateHours, 
-                Double realHours, SprintModel sprint, String category) {
+    public TaskModel(Integer ID, Integer projectId, String description, OffsetDateTime createdAt, 
+                String status, Integer createdById, Integer assignedToId, Double estimateHours, 
+                Double realHours, Integer sprintId, String category) {
         this.ID = ID;
-        this.project = project;
+        this.projectId = projectId;
         this.description = description;
         this.createdAt = createdAt;
         this.status = status;
-        this.createdBy = createdBy;
-        this.assignedTo = assignedTo;
+        this.createdById = createdById;
+        this.assignedToId = assignedToId;
         this.estimateHours = estimateHours;
         this.realHours = realHours;
-        this.sprint = sprint;
+        this.sprintId = sprintId;
         this.category = category;
     }
     
@@ -74,12 +86,12 @@ public class TaskModel {
         this.ID = ID;
     }
     
-    public ProjectModel getProject() {
-        return project;
+    public Integer getProjectId() {
+        return projectId;
     }
     
-    public void setProject(ProjectModel project) {
-        this.project = project;
+    public void setProjectId(Integer projectId) {
+        this.projectId = projectId;
     }
     
     public String getDescription() {
@@ -106,20 +118,20 @@ public class TaskModel {
         this.status = status;
     }
     
-    public UserModel getCreatedBy() {
-        return createdBy;
+    public Integer getCreatedById() {
+        return createdById;
     }
     
-    public void setCreatedBy(UserModel createdBy) {
-        this.createdBy = createdBy;
+    public void setCreatedById(Integer createdById) {
+        this.createdById = createdById;
     }
     
-    public UserModel getAssignedTo() {
-        return assignedTo;
+    public Integer getAssignedToId() {
+        return assignedToId;
     }
     
-    public void setAssignedTo(UserModel assignedTo) {
-        this.assignedTo = assignedTo;
+    public void setAssignedTo(Integer assignedToId) {
+        this.assignedToId = assignedToId;
     }
     
     public Double getEstimateHours() {
@@ -138,12 +150,12 @@ public class TaskModel {
         this.realHours = realHours;
     }
     
-    public SprintModel getSprint() {
-        return sprint;
+    public Integer getSprintId() {
+        return sprintId;
     }
     
-    public void setSprint(SprintModel sprint) {
-        this.sprint = sprint;
+    public void setSprintId(Integer sprintId) {
+        this.sprintId = sprintId;
     }
     
     public String getCategory() {
@@ -158,15 +170,15 @@ public class TaskModel {
     public String toString() {
         return "ToDoItem{" +
                 "ID=" + ID +
-                ", project=" + (project != null ? project.getID() : null) +
+                ", project=" + (projectId != null ? projectId : null) +
                 ", description='" + description + '\'' +
                 ", createdAt=" + createdAt +
                 ", status='" + status + '\'' +
-                ", createdBy=" + (createdBy != null ? createdBy.getID() : null) +
-                ", assignedTo=" + (assignedTo != null ? assignedTo.getID() : null) +
+                ", createdBy=" + (createdById != null ? createdById : null) +
+                ", assignedTo=" + (assignedToId != null ? assignedToId : null) +
                 ", estimateHours=" + estimateHours +
                 ", realHours=" + realHours +
-                ", sprint=" + (sprint != null ? sprint.getID() : null) +
+                ", sprint=" + (sprintId != null ? sprintId : null) +
                 ", category='" + category + '\'' +
                 '}';
     }
