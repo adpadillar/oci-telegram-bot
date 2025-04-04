@@ -436,16 +436,37 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
 			
 			if (tasks.isEmpty()) {
-				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
+				message = new StringBuilder("📭 *No Tasks Found*\n\n" +
+										  "There are no tasks in the system yet.\n" +
+										  "Use the \"Add Task\" option to create new tasks.");
 			} else {
 				int tasksToShow = Math.min(5, tasks.size());
 				for (int i = 0; i < tasksToShow; i++) {
 					TaskModel task = tasks.get(i);
-					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+					UserModel assignedTo = task.getAssignedToId() != null ? 
+						userService.findUserById(task.getAssignedToId()) : null;
+					UserModel createdBy = userService.findUserById(task.getCreatedById());
+					
+					message.append("🔹 *Task #" + task.getID() + "*\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
-						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
-						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
-							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unknown").append("\n\n");
+						.append("📊 *Status:* ").append(getStatusEmoji(task.getStatus())).append(" ").append(task.getStatus()).append("\n")
+						.append("⏱️ *Hours:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append(" (est.)");
+					
+					if (task.getRealHours() != null) {
+						message.append(" / ").append(task.getRealHours()).append(" (real)");
+					}
+					
+					message.append("\n")
+						.append("📅 *Sprint:* ").append(task.getSprintId() != null ? task.getSprintId() : "Not set").append("\n");
+					
+					if (task.getCategory() != null) {
+						message.append("🏷️ *Category:* ").append(getCategoryEmoji(task.getCategory())).append(" ").append(task.getCategory()).append("\n");
+					}
+					
+					message.append("👤 *Assigned to:* ").append(assignedTo != null ? 
+						assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+						.append("👥 *Created by:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
+						.append("📅 *Created:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n");
 				}
 				
 				if (tasks.size() > 5) {
@@ -462,11 +483,55 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			execute(response);
 		} catch (NullPointerException e) {
 			logger.error("TaskService not properly initialized or null reference", e);
+			try {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Error al mostrar las tareas. Por favor, intenta nuevamente.");
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending error message", ex);
+			}
 		} catch (Exception e) {
 			logger.error("Error viewing tasks: " + e.getMessage(), e);
+			try {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Error al mostrar las tareas. Por favor, intenta nuevamente.");
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending error message", ex);
+			}
 		}
 	}
-	
+
+	private String getStatusEmoji(String status) {
+		if (status == null) return "❓";
+		switch (status.toLowerCase()) {
+			case "created":
+				return "⭕";
+			case "in_progress":
+				return "📊";
+			case "done":
+				return "✅";
+			default:
+				return "❓";
+		}
+	}
+
+	private String getCategoryEmoji(String category) {
+		if (category == null) return "🏷️";
+		switch (category.toLowerCase()) {
+			case "bug":
+				return "🐛";
+			case "issue":
+				return "📝";
+			case "feature":
+				return "✨";
+			default:
+				return "🏷️";
+		}
+	}
+
 	private void handleAddTask(long chatId) {
 		try {
 			// Enviar mensaje para solicitar la descripción de la tarea
@@ -674,7 +739,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			SendMessage confirmationMessage = new SendMessage();
 			confirmationMessage.setChatId(chatId);
 			confirmationMessage.setText("✅ *¡Tarea Creada Exitosamente!*\n\n" +
-									 "�� *Descripción:* " + taskDescription + "\n" +
+									 "📝 *Descripción:* " + taskDescription + "\n" +
 									 "⏱️ *Horas Estimadas:* " + estimateHours + "\n" +
 									 "📅 *Sprint:* " + sprintNumber + "\n" +
 									 "🏷️ *Categoría:* " + categoryDisplay + "\n\n" +
@@ -769,16 +834,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				message.setChatId(chatId);
 				message.setText("Please select the field you want to update for task (" + taskId + "):");
 
-				// // Create keyboard for update options
-				// ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
-				// List<KeyboardRow> keyboardRows = new ArrayList<>();
-				// KeyboardRow row1 = new KeyboardRow();
-				// row1.add("Description");
-				// row1.add("Status");
-				// keyboardRows.add(row1);
-				// keyboard.setKeyboard(keyboardRows);
-				// keyboard.setResizeKeyboard(true);
-
 				// Create keyboard for update options
 				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
 				List<KeyboardRow> keyboardRows = new ArrayList<>();
@@ -791,11 +846,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				
 				message.setReplyMarkup(keyboard);
 
-				// // Ask for new description
-				// SendMessage message = new SendMessage();
-				// message.setChatId(chatId);
-				// message.setText("Please enter the new task description of task (" + taskId + "):");
-				
 				// Save state for next message
 				MessageModel stateMessage = new MessageModel();
 				stateMessage.setMessageType("waiting_for_update_selection");
@@ -916,33 +966,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 
 				// Show the main menu after updating the task
 				showDeveloperMainMenu(chatId);
-
-				// Ask for new status
-				// SendMessage message = new SendMessage();
-				// message.setChatId(chatId);
-				// message.setText("Please select the new task status for task (" + task.getID() + "):");
-				
-				// Create keyboard for status options
-				// ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
-				// List<KeyboardRow> keyboardRows = new ArrayList<>();
-				// KeyboardRow row1 = new KeyboardRow();
-				// row1.add("created");
-				// row1.add("in progress");
-				// row1.add("done");
-				// keyboardRows.add(row1);
-				// keyboard.setKeyboard(keyboardRows);
-				// keyboard.setResizeKeyboard(true);
-				
-				// message.setReplyMarkup(keyboard);
-				
-				// Save state for next message
-				// MessageModel stateMessage = new MessageModel();
-				// stateMessage.setMessageType("waiting_for_new_status");
-				// stateMessage.setRole("assistant");
-				// stateMessage.setUserId(chatId);
-				// stateMessage.setCreatedAt(OffsetDateTime.now());
-				// messageService.saveMessage(stateMessage);
-				
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
@@ -973,8 +996,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if (taskOptional.isPresent()) {
 				TaskModel task = taskOptional.get();
 				task.setStatus(newStatus);
-				// String newDescription = messages.get(2).getContent();
-				// task.setDescription(newDescription);
 				taskService.save(task);
 				
 				SendMessage message = new SendMessage();
@@ -996,8 +1017,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					// Show the main menu after updating the task
 					showDeveloperMainMenu(chatId);
 				}
-
-				
 			} else {
 				SendMessage message = new SendMessage();
 				message.setChatId(chatId);
@@ -1194,14 +1213,35 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			StringBuilder message = new StringBuilder(title);
 			
 			if (tasks.isEmpty()) {
-				message.append("No tasks found in this category.");
+				message.append("📭 *No Tasks Found*\n\n" +
+							  "There are no tasks matching your criteria.\n" +
+							  "Try using different filters or create new tasks.");
 			} else {
 				for (TaskModel task : tasks) {
-					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+					UserModel assignedTo = task.getAssignedToId() != null ? 
+						userService.findUserById(task.getAssignedToId()) : null;
+					UserModel createdBy = userService.findUserById(task.getCreatedById());
+					
+					message.append("🔹 *Task #" + task.getID() + "*\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
-						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
-						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
-							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unassigned").append("\n\n");
+						.append("📊 *Status:* ").append(getStatusEmoji(task.getStatus())).append(" ").append(task.getStatus()).append("\n")
+						.append("⏱️ *Hours:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append(" (est.)");
+					
+					if (task.getRealHours() != null) {
+						message.append(" / ").append(task.getRealHours()).append(" (real)");
+					}
+					
+					message.append("\n")
+						.append("📅 *Sprint:* ").append(task.getSprintId() != null ? task.getSprintId() : "Not set").append("\n");
+					
+					if (task.getCategory() != null) {
+						message.append("🏷️ *Category:* ").append(getCategoryEmoji(task.getCategory())).append(" ").append(task.getCategory()).append("\n");
+					}
+					
+					message.append("👤 *Assigned to:* ").append(assignedTo != null ? 
+						assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+						.append("👥 *Created by:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
+						.append("📅 *Created:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n");
 				}
 			}
 
@@ -1223,7 +1263,14 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			execute(response);
 		} catch (Exception e) {
 			logger.error("Error sending task list", e);
-			
+			try {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Error al mostrar las tareas. Por favor, intenta nuevamente.");
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending error message", ex);
+			}
 		}
 	}
 
