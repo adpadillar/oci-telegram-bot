@@ -14,5 +14,5 @@ import javax.transaction.Transactional;
 @Transactional
 @EnableTransactionManagement
 public interface SprintRepository extends JpaRepository<SprintModel, Integer> {
-  List<SprintModel> findByProject_ID(int projectId);
+  List<SprintModel> findByProjectId(int projectId);
 }

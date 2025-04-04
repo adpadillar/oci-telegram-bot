@@ -12,9 +12,9 @@ import javax.transaction.Transactional;
 @Transactional
 @EnableTransactionManagement
 public interface TaskRepository extends JpaRepository<TaskModel,Integer> {
-  List<TaskModel> findByProject_ID(Integer projectId);
-  List<TaskModel> findByAssignedTo(Integer userId);
-  List<TaskModel> findByCreatedBy(Integer userId);
+  List<TaskModel> findByProjectId(Integer projectId);
+  List<TaskModel> findByAssignedToId(Integer userId);
+  List<TaskModel> findByCreatedById(Integer userId);
   List<TaskModel> findByStatus(String status);
-  List<TaskModel> findBySprint_ID(Integer sprintId);
+  List<TaskModel> findBySprintId(Integer sprintId);
 }

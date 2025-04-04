@@ -38,7 +38,7 @@ public class TaskService {
     }
 
     public List<TaskModel> findAllByProjectId(int projectId){
-        List<TaskModel> todoItems = toDoItemRepository.findByProject_ID(projectId);
+        List<TaskModel> todoItems = toDoItemRepository.findByProjectId(projectId);
         return todoItems;
     }
 
@@ -179,7 +179,7 @@ public class TaskService {
 
 
     public List<TaskModel> findByUserAssigned(Integer userId) {
-        return toDoItemRepository.findByAssignedTo(userId);
+        return toDoItemRepository.findByAssignedToId(userId);
     }
 
     public List<TaskModel> findByStatus(String status) {

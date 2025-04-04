@@ -33,7 +33,7 @@ public class UserService {
     }
 
     public List<UserModel> findUsersByProject(int projectId) {
-        return userRepository.findByProject_ID(projectId);
+        return userRepository.findByProjectId(projectId);
     }
 
     // public List<User> findUsersByProject(int projectId) {

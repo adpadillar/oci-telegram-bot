@@ -15,7 +15,7 @@ public class TestUtils {
     public static SprintModel createSprintModel() {
         SprintModel sprint = new SprintModel();
         sprint.setID(1); // Set a valid ID
-        sprint.setProject(createProjectModel()); // Associate with a valid ProjectModel
+        sprint.setProjectId(createProjectModel().getID()); // Associate with a valid ProjectModel ID
         sprint.setName("Sprint 1");
         sprint.setDescription("First sprint");
         return sprint;
@@ -24,14 +24,14 @@ public class TestUtils {
     public static TaskModel createTaskModel() {
         TaskModel task = new TaskModel();
         task.setID(1); // Set a valid ID
-        task.setProject(createProjectModel()); // Associate with a valid ProjectModel
+        task.setProjectId(createProjectModel().getID()); // Associate with a valid ProjectModel ID
         return task;
     }
 
     public static UserModel createUserModel() {
         UserModel user = new UserModel();
         user.setID(1); // Set a valid ID
-        user.setProject(createProjectModel()); // Associate with a valid ProjectModel
+        user.setProjectId(createProjectModel().getID()); // Associate with a valid ProjectModel ID
         return user;
     }
 }

@@ -13,6 +13,6 @@ import javax.transaction.Transactional;
 @Transactional
 @EnableTransactionManagement
 public interface UserRepository extends JpaRepository<UserModel, Integer> {
-    List<UserModel> findByProject_ID(int projectId);
+    List<UserModel> findByProjectId(int projectId);
     UserModel findByTelegramId(Long telegramId);
 }

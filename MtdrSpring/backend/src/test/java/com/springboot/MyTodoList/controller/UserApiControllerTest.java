@@ -34,7 +34,7 @@ class UserApiControllerTest {
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
         // Assert that project's id in the body matches
-        assertEquals(1, response.getBody().getProject().getID());
+        assertEquals(1, response.getBody().getProjectId());
         verify(userService, times(1)).findUserById(1);
     }
     

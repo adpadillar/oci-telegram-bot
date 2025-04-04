@@ -37,7 +37,7 @@ class TaskApiControllerTest {
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
         // Assert that the task belongs to the expected project
-        assertEquals(1, response.getBody().getProject().getID());
+        assertEquals(1, response.getBody().getProjectId());
         verify(taskService, times(1)).getItemById(1);
     }
     

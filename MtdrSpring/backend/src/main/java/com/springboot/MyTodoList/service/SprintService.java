@@ -27,7 +27,7 @@ public class SprintService {
     private TaskRepository taskRepository;
 
     public List<SprintModel> findByProjectId(int projectId){
-        List<SprintModel> sprints = sprintRepository.findByProject_ID(projectId);
+        List<SprintModel> sprints = sprintRepository.findByProjectId(projectId);
         return sprints;
     }
 
@@ -104,7 +104,7 @@ public class SprintService {
                 throw new RuntimeException("Sprint does not belong to project");
             }
             
-            return taskRepository.findBySprint_ID(sprintId);
+            return taskRepository.findBySprintId(sprintId);
             // assumes SprintModel.getTasks() returns List<TaskModel>
         } else {
             throw new RuntimeException("Sprint not found");
