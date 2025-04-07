@@ -68,7 +68,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.taskService = taskService;
 		this.sprintService = sprintService;
 		this.sprintRepository = sprintRepository;
-	}
+		}
 
 	/**
 	 * Main method that processes incoming Telegram updates
@@ -188,7 +188,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				handleSprintUpdateValue(chatId, messageText);
 				return;
 			}
-
+			
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
 				logger.info("This is a message from a developer");
@@ -224,27 +224,32 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				} else if (messageText.equals(BotLabels.HELP.getLabel())) {
 					handleHelp(chatId, "developer");
 					return;
-				}
-				// Check for filter options
-				if (messageText.equals("⏰ My Tasks")) {
-					handleMyTasks(chatId, user);
-					return;
-				} else if (messageText.equals("⭕ Created Tasks")) {
-					handleTasksByStatus(chatId, "created");
-					return;
-				} else if (messageText.equals("📊 In progress Tasks")) {
-					handleTasksByStatus(chatId, "in_progress");
-					return;
-				} else if (messageText.equals("✅ Done Tasks")) {
-					handleTasksByStatus(chatId, "done");
-					return;
-				}
+					}
+					// Check for filter options
+					if (messageText.equals("⏰ My Tasks")) {
+						handleMyTasks(chatId, user);
+						return;
+					} else if (messageText.equals("⭕ Created Tasks")) {
+						handleTasksByStatus(chatId, "created");
+						return;
+					} else if (messageText.equals("📊 In progress Tasks")) {
+						handleTasksByStatus(chatId, "in_progress");
+						return;
+					} else if (messageText.equals("✅ Done Tasks")) {
+						handleTasksByStatus(chatId, "done");
+						return;
+					}
 				// Show the main menu by default
 				showDeveloperMainMenu(chatId);
 				return;
 			}
 
 			if (user.getRole().equals("manager")) {
+				// Handle manager-specific commands
+				if (messageText.equals("📋 View Sprints")) {
+					handleViewSprints(chatId);
+					return;
+				}
 				// we will handle this here
 				logger.info("This is a message from a manager");
 				if (messageText.equals("↩️ Back to Main Menu")) {
@@ -683,18 +688,18 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				execute(errorMessage);
 				return;
 			}
-
+	
 			// Retrieve the task description saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String taskDescription = lastMessage.getContent();
-
+	
 			// Save the estimated hours and ask for the sprint number
 			SendMessage messageToTelegram = new SendMessage();
 			messageToTelegram.setChatId(chatId);
 			messageToTelegram.setText("📅 *Número de Sprint*\n\n" +
 									"¿En qué sprint deseas agregar esta tarea?\n" +
 									"Ingresa el número del sprint (por ejemplo: 1, 2, 3)");
-
+	
 			// Save the state of the user as "waiting_for_task_sprint"
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_task_sprint");
@@ -703,7 +708,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
-
+	
 			execute(messageToTelegram);
 		} catch (TelegramApiException e) {
 			logger.error("Error al solicitar el número del sprint: " + e.getMessage());
@@ -732,13 +737,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				execute(errorMessage);
 				return;
 			}
-
+	
 			// Retrieve the task description and estimated hours saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String[] taskData = lastMessage.getContent().split("\\|");
 			String taskDescription = taskData[0];
 			double estimateHours = Double.parseDouble(taskData[1]);
-
+	
 			// Save the current state with sprint number
 			MessageModel stateMessage = new MessageModel();
 			stateMessage.setMessageType("waiting_for_task_category");
@@ -984,7 +989,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				message.setText(currentTaskInfo.toString());
 				message.setReplyMarkup(keyboard);
 				message.enableMarkdown(true);
-
+				
 				// Save state for next message
 				MessageModel stateMessage = new MessageModel();
 				stateMessage.setMessageType("waiting_for_update_selection");
@@ -1172,10 +1177,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 					UserModel user = userService.findUserByChatId(chatId);
 					if (user != null) {
 						if (user.getRole().equals("developer")) {
-							showDeveloperMainMenu(chatId);
+					showDeveloperMainMenu(chatId);
 						} else {
 							showManagerMainMenu(chatId);
-						}
+				}
 					}
 				}
 			} else {
@@ -2024,12 +2029,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 			// Fourth row - Sprint Management
 			KeyboardRow fourthRow = new KeyboardRow();
-			fourthRow.add(BotLabels.UPDATE_SPRINT.getLabel());
+			fourthRow.add("✏️ Update Sprint");
 			fourthRow.add(BotLabels.DELETE_SPRINT.getLabel());
 			manKeyboard.add(fourthRow);
 
-			// Fifth row - Help
+			// Fifth row - View Sprints and Help
 			KeyboardRow fifthRow = new KeyboardRow();
+			fifthRow.add("📋 View Sprints");
 			fifthRow.add(BotLabels.HELP.getLabel());
 			manKeyboard.add(fifthRow);
 
@@ -2312,5 +2318,60 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	@Override
 	public String getBotUsername() {
 		return botName;
+	}
+
+	/**
+	 * Shows all sprints for the current project
+	 * @param chatId - Telegram chat ID of the user
+	 */
+	private void handleViewSprints(long chatId) {
+		try {
+			// Get the user's project ID
+			UserModel user = userService.findUserByChatId(chatId);
+			if (user != null) {
+				// Get all sprints for the project
+				List<SprintModel> sprints = sprintService.findByProjectId(user.getProjectId());
+				
+				if (sprints.isEmpty()) {
+					SendMessage message = new SendMessage();
+					message.setChatId(chatId);
+					message.setText("📭 *No Sprints Found*\n\n" +
+								  "There are no sprints in your project yet.\n" +
+								  "Use the \"Create Sprint\" option to add new sprints.");
+					message.enableMarkdown(true);
+					execute(message);
+					return;
+				}
+
+				// Create keyboard with back button
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				KeyboardRow row = new KeyboardRow();
+				row.add("↩️ Back to Main Menu");
+				keyboardRows.add(row);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+
+				// Format the message with all sprints
+				StringBuilder messageText = new StringBuilder();
+				messageText.append("📋 *All Sprints*\n\n");
+				
+				for (SprintModel sprint : sprints) {
+					messageText.append("🔹 *Sprint:* ").append(sprint.getName()).append("\n")
+							  .append("📝 *Description:* ").append(sprint.getDescription() != null ? sprint.getDescription() : "No description").append("\n")
+							  .append("📅 *Start Date:* ").append(sprint.getStartedAt()).append("\n")
+							  .append("📅 *End Date:* ").append(sprint.getEndsAt()).append("\n\n");
+				}
+
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText(messageText.toString());
+				message.setReplyMarkup(keyboard);
+				message.enableMarkdown(true);
+				execute(message);
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error showing sprints", e);
+		}
 	}
 }
