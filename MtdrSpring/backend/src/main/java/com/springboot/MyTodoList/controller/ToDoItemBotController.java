@@ -1493,7 +1493,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		try {
 			SendMessage message = new SendMessage();
 			message.setChatId(chatId);
-			message.setText("Por favor ingresa el nombre del nuevo sprint:");
+			message.setText("📅 *Crear Nuevo Sprint*\n\n" +
+						  "Por favor, ingresa un nombre descriptivo para el sprint.\n" +
+						  "Ejemplo: \"Sprint 1 - Implementación Inicial\"\n\n" +
+						  "💡 *Consejo:* Usa un nombre que refleje el objetivo principal del sprint.");
 
 			// Save state for next message
 			MessageModel stateMessage = new MessageModel();
@@ -1517,17 +1520,26 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 */
 	private void handleSetSprintName(long chatId, String sprintName) {
 		try {
-			// Guardar el nombre temporalmente y solicitar la fecha de inicio
-			
+			if (sprintName.trim().isEmpty()) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ El nombre del sprint no puede estar vacío. Por favor, ingresa un nombre válido.");
+				execute(errorMessage);
+				return;
+			}
+
 			SendMessage messageToTelegram = new SendMessage();
 			messageToTelegram.setChatId(chatId);
-			messageToTelegram.setText("Gracias. Ahora, ingresa la fecha de inicio (formato: YYYY-MM-DD):");
+			messageToTelegram.setText("📅 *Fecha de Inicio*\n\n" +
+									"Ahora, ingresa la fecha de inicio del sprint.\n" +
+									"Formato: YYYY-MM-DD\n" +
+									"Ejemplo: 2024-04-08\n\n" +
+									"💡 *Consejo:* La fecha debe ser posterior o igual a hoy.");
 
-			// Guardar el estado del usuario como "waiting_for_start_date"
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_start_date");
 			assistantMessage.setRole("assistant");
-			assistantMessage.setContent(sprintName); // Guardar el nombre temporalmente
+			assistantMessage.setContent(sprintName);
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
@@ -1545,40 +1557,36 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 */
 	private void handleSetSprintStartDate(long chatId, String sprintStartDate) {
 		try {
-			// Validar formato de fecha
 			if (!sprintStartDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
-				throw new IllegalArgumentException("Formato de fecha inválido");
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Formato de fecha inválido.\n\n" +
+								   "Por favor, ingresa la fecha en el formato YYYY-MM-DD\n" +
+								   "Ejemplo: 2024-04-08");
+				execute(errorMessage);
+				return;
 			}
 
-			// Retrieve the sprint name saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String sprintName = lastMessage.getContent();
 
-			// Save the sprintName and ask for the endDate
 			SendMessage messageToTelegram = new SendMessage();
 			messageToTelegram.setChatId(chatId);
-			messageToTelegram.setText("Gracias. Ahora, ingresa la fecha de finalización (formato: YYYY-MM-DD):");
+			messageToTelegram.setText("📅 *Fecha de Finalización*\n\n" +
+									"Ingresa la fecha de finalización del sprint.\n" +
+									"Formato: YYYY-MM-DD\n" +
+									"Ejemplo: 2024-04-22\n\n" +
+									"💡 *Consejo:* Un sprint típico dura entre 1 y 4 semanas.");
 
-			// Save the state of the user as "waiting_for_end_date"
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_end_date");
 			assistantMessage.setRole("assistant");
-			assistantMessage.setContent(sprintName + "|" + sprintStartDate); // Save sprintName and sprintStartDate
+			assistantMessage.setContent(sprintName + "|" + sprintStartDate);
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
 
 			execute(messageToTelegram);
-		} catch (IllegalArgumentException e) {
-			logger.error("Invalid date format", e);
-			SendMessage errorMessage = new SendMessage();
-			errorMessage.setChatId(chatId);
-			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
-			try {
-				execute(errorMessage);
-			} catch (TelegramApiException ex) {
-				logger.error("Error sending message", ex);
-			}
 		} catch (TelegramApiException e) {
 			logger.error("Error al solicitar la fecha de finalización: " + e.getMessage());
 		}
@@ -1591,55 +1599,59 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 */
 	private void handleSetSprintEndDate(long chatId, String sprintEndDate) {
 		try {
-			// Validate date format
 			if (!sprintEndDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
-				throw new IllegalArgumentException("Formato de fecha inválido");
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Formato de fecha inválido.\n\n" +
+								   "Por favor, ingresa la fecha en el formato YYYY-MM-DD\n" +
+								   "Ejemplo: 2024-04-22");
+				execute(errorMessage);
+				return;
 			}
 
-			// Retrieve the sprint data saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String[] sprintData = lastMessage.getContent().split("\\|");
 			String sprintName = sprintData[0];
 			String sprintStartDate = sprintData[1];
 
-			// Create a SprintDTO and set its properties
+			// Validate dates
+			OffsetDateTime startDate = OffsetDateTime.parse(sprintStartDate + "T00:00:00Z");
+			OffsetDateTime endDate = OffsetDateTime.parse(sprintEndDate + "T00:00:00Z");
+			
+			if (endDate.isBefore(startDate)) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ La fecha de finalización debe ser posterior a la fecha de inicio.\n\n" +
+								   "Fecha de inicio: " + sprintStartDate + "\n" +
+								   "Por favor, ingresa una fecha válida.");
+				execute(errorMessage);
+				return;
+			}
+
 			SprintDTO newSprint = new SprintDTO();
 			newSprint.setName(sprintName);
-			newSprint.setStartedAt(OffsetDateTime.parse(sprintStartDate + "T00:00:00Z"));
-			newSprint.setEndsAt(OffsetDateTime.parse(sprintEndDate + "T00:00:00Z"));
+			newSprint.setStartedAt(startDate);
+			newSprint.setEndsAt(endDate);
 
-			// Get the user's project ID
 			UserModel user = userService.findUserByChatId(chatId);
 			if (user != null) {
-				// Save the sprint to the database
 				sprintService.addSprintToProject(user.getProjectId(), newSprint);
 
-				// Confirm the creation of the sprint
 				SendMessage confirmationMessage = new SendMessage();
 				confirmationMessage.setChatId(chatId);
-				confirmationMessage.setText("✅ *Sprint Creado Exitosamente!*\n\n" +
-											"🏷️ *Nombre del Sprint:* " + sprintName + "\n" +
-											"📅 *Fecha de Inicio:* " + sprintStartDate + "\n" +
-											"📅 *Fecha de Finalización:* " + sprintEndDate);
+				confirmationMessage.setText("✅ *¡Sprint Creado Exitosamente!*\n\n" +
+										 "🏷️ *Nombre:* " + sprintName + "\n" +
+										 "📅 *Fecha de Inicio:* " + sprintStartDate + "\n" +
+										 "📅 *Fecha de Finalización:* " + sprintEndDate + "\n\n" +
+										 "Puedes ver y gestionar este sprint desde el menú principal.");
 				confirmationMessage.enableMarkdown(true);
 				execute(confirmationMessage);
 
-				// Show the main menu based on user role
 				if (user.getRole().equals("developer")) {
 					showDeveloperMainMenu(chatId);
 				} else {
 					showManagerMainMenu(chatId);
 				}
-			}
-		} catch (IllegalArgumentException e) {
-			logger.error("Invalid date format", e);
-			SendMessage errorMessage = new SendMessage();
-			errorMessage.setChatId(chatId);
-			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
-			try {
-				execute(errorMessage);
-			} catch (TelegramApiException ex) {
-				logger.error("Error sending message", ex);
 			}
 		} catch (TelegramApiException e) {
 			logger.error("Error al confirmar la creación del sprint: " + e.getMessage());
