@@ -50,8 +50,6 @@ public class TaskService {
             throw new RuntimeException("Project not found");
         }
 
-        // ProjectModel project = maybeProject.get();
-
         task.setProjectId(projectId);
         task.setDescription(taskDTO.getDescription());
         task.setStatus(taskDTO.getStatus());
@@ -71,7 +69,6 @@ public class TaskService {
             if (!maybeAssignedTo.isPresent()) {
                 throw new RuntimeException("User not found");
             }
-            // UserModel assignedTo = maybeAssignedTo.get();
             task.setAssignedTo(taskDTO.getAssignedTo());
         }
 
@@ -80,8 +77,6 @@ public class TaskService {
             if (!maybeSprint.isPresent()){
                 throw new RuntimeException("Sprint not found");
             }
-
-            // SprintModel sprint = maybeSprint.get();
             task.setSprintId(taskDTO.getSprint());
         }
 
