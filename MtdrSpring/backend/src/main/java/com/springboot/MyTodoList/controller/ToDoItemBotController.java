@@ -27,17 +27,38 @@ import com.springboot.MyTodoList.dto.TaskDTO;
 import com.springboot.MyTodoList.util.BotLabels;
 import com.springboot.MyTodoList.dto.SprintDTO;
 import com.springboot.MyTodoList.service.SprintService;
+import com.springboot.MyTodoList.model.SprintModel;
+import com.springboot.MyTodoList.repository.SprintRepository;
 
+/**
+ * ToDoItemBotController - Main controller class for the Telegram bot
+ * Handles all user interactions and commands through Telegram messages
+ */
 public class ToDoItemBotController extends TelegramLongPollingBot {
-
+	// Logger for tracking application events and errors
 	private static final Logger logger = LoggerFactory.getLogger(ToDoItemBotController.class);
+	
+	// Bot configuration and service dependencies
 	private String botName;
 	private MessageService messageService;
 	private UserService userService;
 	private TaskService taskService;
 	private SprintService sprintService;
+	private SprintRepository sprintRepository;
 
-	public ToDoItemBotController(String botToken, String botName, MessageService messageService, UserService userService, TaskService taskService, SprintService sprintService) {
+	/**
+	 * Constructor for ToDoItemBotController
+	 * @param botToken - Telegram bot token for authentication
+	 * @param botName - Name of the bot
+	 * @param messageService - Service for handling message persistence
+	 * @param userService - Service for user management
+	 * @param taskService - Service for task operations
+	 * @param sprintService - Service for sprint management
+	 * @param sprintRepository - Repository for sprint data access
+	 */
+	public ToDoItemBotController(String botToken, String botName, MessageService messageService, 
+							   UserService userService, TaskService taskService, 
+							   SprintService sprintService, SprintRepository sprintRepository) {
 		super(botToken);
 		logger.info("Bot Token: " + botToken);
 		logger.info("Bot name: " + botName);
@@ -46,11 +67,15 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.userService = userService;
 		this.taskService = taskService;
 		this.sprintService = sprintService;
+		this.sprintRepository = sprintRepository;
 	}
 
+	/**
+	 * Main method that processes incoming Telegram updates
+	 * Handles message routing based on user role and message content
+	 */
 	@Override
 	public void onUpdateReceived(Update update) {
-
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			UserModel user = runAuthMiddleware(update);
 			String messageText = update.getMessage().getText();
@@ -144,6 +169,26 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_sprint_delete_name".equals(lastMessage.getMessageType())) {
+				handleSprintDeletion(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_sprint_update_name".equals(lastMessage.getMessageType())) {
+				handleSprintUpdateName(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_sprint_update_selection".equals(lastMessage.getMessageType())) {
+				handleSprintUpdateSelection(chatId, messageText);
+				return;
+			}
+
+			if ("waiting_for_sprint_update_value".equals(lastMessage.getMessageType())) {
+				handleSprintUpdateValue(chatId, messageText);
+				return;
+			}
+
 			if (user.getRole().equals("developer")) {
 				// we will handle this here
 				logger.info("This is a message from a developer");
@@ -233,6 +278,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				} else if (messageText.equals(BotLabels.UPDATE_SPRINT.getLabel())) {
 					handleUpdateSprint(chatId);
 					return;
+				} else if (messageText.equals(BotLabels.DELETE_SPRINT.getLabel())) {
+					handleDeleteSprint(chatId);
+					return;
 				} else if (messageText.equals(BotLabels.HELP.getLabel())) {
 					handleHelp(chatId, "manager");
 					return;
@@ -244,11 +292,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-	@Override
-	public String getBotUsername() {		
-		return botName;
-	}
-
+	/**
+	 * Authentication middleware to verify user identity and handle new user registration
+	 * @param update - Telegram update containing user message
+	 * @return UserModel if authenticated, null otherwise
+	 */
 	public UserModel runAuthMiddleware(Update update) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			Message message = update.getMessage();
@@ -424,6 +472,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		return null;
 	}
 
+	/**
+	 * Displays all tasks with pagination support
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleViewTasks(long chatId) {
 		try {
 			// Get tasks from service
@@ -551,6 +603,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Initiates the task creation process
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleAddTask(long chatId) {
 		try {
 			// Enviar mensaje para solicitar la descripción de la tarea
@@ -575,6 +631,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
+	/**
+	 * Processes task description input and requests estimated hours
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 * @param taskDescription - Description of the new task
+	 */
 	private void handleTaskDescription(long chatId, UserModel user, String taskDescription) {
 		try {
 			// Guardar la descripción temporalmente y solicitar las horas estimadas
@@ -599,6 +661,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes estimated hours input and requests sprint assignment
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 * @param estimateHoursText - Estimated hours for the task
+	 */
 	private void handleTaskEstimateHours(long chatId, UserModel user, String estimateHoursText) {
 		try {
 			// Validate that the estimated hours are a number
@@ -642,6 +710,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes sprint assignment and requests task category
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 * @param sprintNumberText - Sprint number for the task
+	 */
 	private void handleTaskSprint(long chatId, UserModel user, String sprintNumberText) {
 		try {
 			// Validate that the sprint number is an integer
@@ -700,6 +774,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes task category selection and creates the task
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 * @param category - Selected category for the task
+	 */
 	private void handleTaskCategory(long chatId, UserModel user, String category) {
 		try {
 			// Validate category
@@ -780,6 +860,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
+	/**
+	 * Shows filter options for tasks
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleFilterTasks(long chatId) {
 		try {
 			// Get user to check role
@@ -822,7 +906,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
-	//menu command activator
+	/**
+	 * Initiates the task update process
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleUpdateTask(long chatId) {
 		try {
 			SendMessage message = new SendMessage();
@@ -843,6 +930,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes task ID input and shows update options
+	 * @param chatId - Telegram chat ID of the user
+	 * @param taskIdText - ID of the task to update
+	 */
 	private void handleTaskUpdate(long chatId, String taskIdText) {
 		try {
 			int taskId = Integer.parseInt(taskIdText);
@@ -851,7 +943,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			if (taskOptional.isPresent()) {
 				TaskModel task = taskOptional.get();
 				UserModel assignedTo = task.getAssignedToId() != null ? 
-					userService.findUserById(task.getAssignedToId()) : null;
+						userService.findUserById(task.getAssignedToId()) : null;
 				UserModel createdBy = userService.findUserById(task.getCreatedById());
 
 				// Show current task details
@@ -872,7 +964,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				}
 				
 				currentTaskInfo.append("👤 *Asignado a:* ").append(assignedTo != null ? 
-					assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+						assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
 					.append("👥 *Creado por:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
 					.append("📅 *Creado:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n")
 					.append("¿Qué campo deseas actualizar?");
@@ -931,6 +1023,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes update selection and requests new value
+	 * @param chatId - Telegram chat ID of the user
+	 * @param selection - Selected field to update
+	 */
 	private void handleUpdateTaskSelection(long chatId, String selection) {
 		try {
 			if (selection.equals("Edit Description")) {
@@ -993,6 +1090,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
+	/**
+	 * Processes new description input and updates the task
+	 * @param chatId - Telegram chat ID of the user
+	 * @param newDescription - New description for the task
+	 */
 	private void handleNewDescription(long chatId, String newDescription) {
 		try {
 			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
@@ -1032,7 +1134,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-
+	/**
+	 * Processes new status input and updates the task
+	 * @param chatId - Telegram chat ID of the user
+	 * @param newStatus - New status for the task
+	 */
 	private void handleNewStatus(long chatId, String newStatus) {
 		try {
 			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
@@ -1111,6 +1217,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes real hours input and updates the task
+	 * @param chatId - Telegram chat ID of the user
+	 * @param realHours - Actual hours spent on the task
+	 */
 	private void handleUpdateRealHours(long chatId, String realHours) {
 		try {
 			List<MessageModel> messages = messageService.findMessagesFromChat(chatId);
@@ -1149,6 +1260,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 	
+	/**
+	 * Shows task details for a specific task
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleTaskDetails(long chatId) throws TelegramApiException {
 		try {
 			SendMessage message = new SendMessage();
@@ -1196,6 +1311,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	
 
 
+	/**
+	 * Shows tasks assigned to the current user
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 */
 	private void handleMyTasks(long chatId, UserModel user) {
 		try {
 			List<TaskModel> tasks = taskService.findByUserAssigned(user.getID());
@@ -1206,6 +1326,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Initiates the task deletion process
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleDeleteTask(long chatId) {
 		try {
 			SendMessage message = new SendMessage();
@@ -1227,6 +1351,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 
+	/**
+	 * Processes task deletion request
+	 * @param chatId - Telegram chat ID of the user
+	 * @param taskIdText - ID of the task to delete
+	 */
 	private void handleTaskDeletion(long chatId, String taskIdText) {
 		try {
 			int taskId = Integer.parseInt(taskIdText);
@@ -1264,8 +1393,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 	/**
-	 * @param chatId
-	 * @param status
+	 * Shows tasks filtered by status
+	 * @param chatId - Telegram chat ID of the user
+	 * @param status - Status to filter tasks by
 	 */
 	private void handleTasksByStatus(long chatId, String status) {
 		/* try {
@@ -1283,6 +1413,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		} */
 	}
 
+	/**
+	 * Sends a formatted list of tasks to the user
+	 * @param chatId - Telegram chat ID of the user
+	 * @param tasks - List of tasks to display
+	 * @param title - Title for the task list
+	 */
 	private void sendTaskList(long chatId, List<TaskModel> tasks, String title) {
 		try {
 			StringBuilder message = new StringBuilder(title);
@@ -1349,7 +1485,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
-
+	/**
+	 * Initiates the sprint creation process
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleCreateSprint(long chatId) {
 		try {
 			SendMessage message = new SendMessage();
@@ -1371,9 +1510,15 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes sprint name input and requests start date
+	 * @param chatId - Telegram chat ID of the user
+	 * @param sprintName - Name of the new sprint
+	 */
 	private void handleSetSprintName(long chatId, String sprintName) {
 		try {
 			// Guardar el nombre temporalmente y solicitar la fecha de inicio
+			
 			SendMessage messageToTelegram = new SendMessage();
 			messageToTelegram.setChatId(chatId);
 			messageToTelegram.setText("Gracias. Ahora, ingresa la fecha de inicio (formato: YYYY-MM-DD):");
@@ -1393,6 +1538,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes start date input and requests end date
+	 * @param chatId - Telegram chat ID of the user
+	 * @param sprintStartDate - Start date for the sprint
+	 */
 	private void handleSetSprintStartDate(long chatId, String sprintStartDate) {
 		try {
 			// Validar formato de fecha
@@ -1434,6 +1584,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Processes end date input and creates the sprint
+	 * @param chatId - Telegram chat ID of the user
+	 * @param sprintEndDate - End date for the sprint
+	 */
 	private void handleSetSprintEndDate(long chatId, String sprintEndDate) {
 		try {
 			// Validate date format
@@ -1491,10 +1646,287 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Initiates the sprint update process
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void handleUpdateSprint(long chatId) {
-		// Implementation of handleUpdateSprint method
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Por favor ingresa el nombre del sprint que deseas actualizar:");
+
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_sprint_update_name");
+			stateMessage.setRole("assistant");
+			stateMessage.setContent("Por favor ingresa el nombre del sprint que deseas actualizar:");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error initiating sprint update", e);
+		}
 	}
 
+	/**
+	 * Processes sprint name input and shows update options
+	 * @param chatId - Telegram chat ID of the user
+	 * @param sprintName - Name of the sprint to update
+	 */
+	private void handleSprintUpdateName(long chatId, String sprintName) {
+		try {
+			// Get the user's project ID
+			UserModel user = userService.findUserByChatId(chatId);
+			if (user != null) {
+				// Find the sprint by name
+				SprintModel sprint = sprintRepository.findByProjectIdAndName(user.getProjectId(), sprintName);
+				
+				if (sprint != null) {
+					// Show current sprint details
+					StringBuilder currentSprintInfo = new StringBuilder();
+					currentSprintInfo.append("📋 *Estado Actual del Sprint*\n\n")
+						.append("🏷️ *Nombre:* ").append(sprint.getName()).append("\n")
+						.append("📝 *Descripción:* ").append(sprint.getDescription() != null ? sprint.getDescription() : "No hay descripción").append("\n")
+						.append("📅 *Fecha de Inicio:* ").append(sprint.getStartedAt()).append("\n")
+						.append("📅 *Fecha de Finalización:* ").append(sprint.getEndsAt()).append("\n\n")
+						.append("¿Qué campo deseas actualizar?");
+
+					// Create keyboard for update options
+					ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+					List<KeyboardRow> keyboardRows = new ArrayList<>();
+					KeyboardRow row1 = new KeyboardRow();
+					row1.add("Edit Name");
+					row1.add("Edit Description");
+					keyboardRows.add(row1);
+					KeyboardRow row2 = new KeyboardRow();
+					row2.add("Edit Start Date");
+					row2.add("Edit End Date");
+					keyboardRows.add(row2);
+					keyboard.setKeyboard(keyboardRows);
+					keyboard.setResizeKeyboard(true);
+
+					SendMessage message = new SendMessage();
+					message.setChatId(chatId);
+					message.setText(currentSprintInfo.toString());
+					message.setReplyMarkup(keyboard);
+					message.enableMarkdown(true);
+
+					// Save state for next message
+					MessageModel stateMessage = new MessageModel();
+					stateMessage.setMessageType("waiting_for_sprint_update_selection");
+					stateMessage.setRole("assistant");
+					stateMessage.setContent(sprintName); // Save sprint name for later use
+					stateMessage.setUserId(chatId);
+					stateMessage.setCreatedAt(OffsetDateTime.now());
+					messageService.saveMessage(stateMessage);
+
+					execute(message);
+				} else {
+					SendMessage message = new SendMessage();
+					message.setChatId(chatId);
+					message.setText("❌ No se encontró el sprint '" + sprintName + "'. Por favor, intenta con otro nombre.");
+					execute(message);
+					showManagerMainMenu(chatId);
+				}
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error showing sprint details", e);
+		}
+	}
+
+	/**
+	 * Processes update selection and requests new value
+	 * @param chatId - Telegram chat ID of the user
+	 * @param selection - Selected field to update
+	 */
+	private void handleSprintUpdateSelection(long chatId, String selection) {
+		try {
+			// Get the sprint name from the previous message
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String sprintName = lastMessage.getContent();
+
+			// Save the selection and ask for the new value
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			
+			String prompt = "";
+			switch (selection) {
+				case "Edit Name":
+					prompt = "Por favor ingresa el nuevo nombre del sprint:";
+					break;
+				case "Edit Description":
+					prompt = "Por favor ingresa la nueva descripción del sprint:";
+					break;
+				case "Edit Start Date":
+					prompt = "Por favor ingresa la nueva fecha de inicio (formato: YYYY-MM-DD):";
+					break;
+				case "Edit End Date":
+					prompt = "Por favor ingresa la nueva fecha de finalización (formato: YYYY-MM-DD):";
+					break;
+				default:
+					message.setText("❌ Selección inválida. Por favor, selecciona una opción válida.");
+					execute(message);
+					return;
+			}
+
+			message.setText(prompt);
+
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_sprint_update_value");
+			stateMessage.setRole("assistant");
+			stateMessage.setContent(sprintName + "|" + selection); // Save sprint name and selection
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error handling sprint update selection", e);
+		}
+	}
+
+	/**
+	 * Processes new value input and updates the sprint
+	 * @param chatId - Telegram chat ID of the user
+	 * @param newValue - New value for the selected field
+	 */
+	private void handleSprintUpdateValue(long chatId, String newValue) {
+		try {
+			// Get the sprint data from the previous message
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] sprintData = lastMessage.getContent().split("\\|");
+			String sprintName = sprintData[0];
+			String fieldToUpdate = sprintData[1];
+
+			// Get the user's project ID
+			UserModel user = userService.findUserByChatId(chatId);
+			if (user != null) {
+				// Find the sprint by name
+				SprintModel sprint = sprintRepository.findByProjectIdAndName(user.getProjectId(), sprintName);
+				
+				if (sprint != null) {
+					// Create a SprintDTO with the new value
+					SprintDTO sprintUpdate = new SprintDTO();
+					
+					switch (fieldToUpdate) {
+						case "Edit Name":
+							sprintUpdate.setName(newValue);
+							break;
+						case "Edit Description":
+							sprintUpdate.setDescription(newValue);
+							break;
+						case "Edit Start Date":
+							if (!newValue.matches("\\d{4}-\\d{2}-\\d{2}")) {
+								throw new IllegalArgumentException("Formato de fecha inválido");
+							}
+							sprintUpdate.setStartedAt(OffsetDateTime.parse(newValue + "T00:00:00Z"));
+							break;
+						case "Edit End Date":
+							if (!newValue.matches("\\d{4}-\\d{2}-\\d{2}")) {
+								throw new IllegalArgumentException("Formato de fecha inválido");
+							}
+							sprintUpdate.setEndsAt(OffsetDateTime.parse(newValue + "T00:00:00Z"));
+							break;
+					}
+
+					// Update the sprint
+					SprintModel updatedSprint = sprintService.patchSprintFromProject(sprint.getID(), user.getProjectId(), sprintUpdate);
+
+					// Show confirmation message
+					SendMessage message = new SendMessage();
+					message.setChatId(chatId);
+					message.setText("✅ *Sprint Actualizado Exitosamente!*\n\n" +
+								  "🏷️ *Nombre:* " + updatedSprint.getName() + "\n" +
+								  "📝 *Descripción:* " + (updatedSprint.getDescription() != null ? updatedSprint.getDescription() : "No hay descripción") + "\n" +
+								  "📅 *Fecha de Inicio:* " + updatedSprint.getStartedAt() + "\n" +
+								  "📅 *Fecha de Finalización:* " + updatedSprint.getEndsAt());
+					message.enableMarkdown(true);
+					execute(message);
+
+					// Show the main menu
+					showManagerMainMenu(chatId);
+				}
+			}
+		} catch (IllegalArgumentException e) {
+			SendMessage errorMessage = new SendMessage();
+			errorMessage.setChatId(chatId);
+			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
+			try {
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error updating sprint", e);
+		}
+	}
+
+	/**
+	 * Initiates the sprint deletion process
+	 * @param chatId - Telegram chat ID of the user
+	 */
+	private void handleDeleteSprint(long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("Por favor ingresa el nombre del sprint que deseas eliminar:");
+
+			// Save state for next message
+			MessageModel stateMessage = new MessageModel();
+			stateMessage.setMessageType("waiting_for_sprint_delete_name");
+			stateMessage.setRole("assistant");
+			stateMessage.setContent("Por favor ingresa el nombre del sprint que deseas eliminar:");
+			stateMessage.setUserId(chatId);
+			stateMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(stateMessage);
+
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error initiating sprint deletion", e);
+		}
+	}
+
+	/**
+	 * Processes sprint deletion request
+	 * @param chatId - Telegram chat ID of the user
+	 * @param sprintName - Name of the sprint to delete
+	 */
+	private void handleSprintDeletion(long chatId, String sprintName) {
+		try {
+			// Get the user's project ID
+			UserModel user = userService.findUserByChatId(chatId);
+			if (user != null) {
+				// Delete the sprint from the database
+				boolean isDeleted = sprintService.deleteSprintByName(user.getProjectId(), sprintName);
+
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				if (isDeleted) {
+					message.setText("✅ *Sprint Eliminado Exitosamente!*\n\n" +
+								  "El sprint '" + sprintName + "' ha sido eliminado.");
+				} else {
+					message.setText("❌ *Error al Eliminar Sprint*\n\n" +
+								  "No se encontró el sprint '" + sprintName + "' o no se pudo eliminar.");
+				}
+				message.enableMarkdown(true);
+				execute(message);
+
+				// Show the main menu
+				showManagerMainMenu(chatId);
+			}
+		} catch (TelegramApiException e) {
+			logger.error("Error deleting sprint", e);
+		}
+	}
+
+	/**
+	 * Shows the main menu for developers
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void showDeveloperMainMenu(long chatId) {
 		try {
 			// Create developer keyboard
@@ -1550,6 +1982,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Shows the main menu for managers
+	 * @param chatId - Telegram chat ID of the user
+	 */
 	private void showManagerMainMenu(long chatId) {
 		try {
 			// Create manager keyboard
@@ -1577,8 +2013,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// Fourth row - Sprint Management
 			KeyboardRow fourthRow = new KeyboardRow();
 			fourthRow.add(BotLabels.UPDATE_SPRINT.getLabel());
-			fourthRow.add(BotLabels.HELP.getLabel());
+			fourthRow.add(BotLabels.DELETE_SPRINT.getLabel());
 			manKeyboard.add(fourthRow);
+
+			// Fifth row - Help
+			KeyboardRow fifthRow = new KeyboardRow();
+			fifthRow.add(BotLabels.HELP.getLabel());
+			manKeyboard.add(fifthRow);
 
 			// Configure keyboard
 			managerKeyboardMarkup.setKeyboard(manKeyboard);
@@ -1597,6 +2038,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "📅 *Sprint Management*\n" +
 						  "- Create new sprints\n" +
 						  "- Update sprint details\n" +
+						  "- Delete sprints\n" +
 						  "- Track sprint progress\n\n" +
 						  "ℹ️ *Details*\n" +
 						  "View detailed information about any task\n\n" +
@@ -1609,6 +2051,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Handles task list pagination
+	 * @param chatId - Telegram chat ID of the user
+	 * @param action - Pagination action (First/Next)
+	 */
 	private void handleTaskPagination(long chatId, String action) {
 		try {
 			List<TaskModel> tasks = taskService.findAll();
@@ -1700,6 +2147,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Shows help information based on user role
+	 * @param chatId - Telegram chat ID of the user
+	 * @param role - User role (developer/manager)
+	 */
 	private void handleHelp(long chatId, String role) {
 		try {
 			SendMessage message = new SendMessage();
@@ -1754,6 +2206,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Shows detailed information about a specific task
+	 * @param chatId - Telegram chat ID of the user
+	 * @param taskIdText - ID of the task to show details for
+	 */
 	private void handleTaskDetailsResponse(long chatId, String taskIdText) {
 		try {
 			int taskId = Integer.parseInt(taskIdText);
@@ -1765,7 +2222,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				// Get user information
 				UserModel createdBy = userService.findUserById(task.getCreatedById());
 				UserModel assignedTo = task.getAssignedToId() != null ? 
-					userService.findUserById(task.getAssignedToId()) : null;
+						userService.findUserById(task.getAssignedToId()) : null;
 				
 				// Format the message with task details
 				StringBuilder messageText = new StringBuilder();
@@ -1836,4 +2293,12 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		}
 	}
 
+	/**
+	 * Returns the bot's username
+	 * @return String - Bot's username
+	 */
+	@Override
+	public String getBotUsername() {
+		return botName;
+	}
 }
