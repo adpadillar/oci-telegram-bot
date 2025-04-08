@@ -512,18 +512,26 @@ const KPIs = () => {
         >
           {hoveredCard === "completedTasks" && (
             <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
-              Number of tasks marked as 'done' and the percentage they represent of total tasks
+              Number of tasks currently in progress and in review
               <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Completed Tasks</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.completedTasks}</h3>
+              <p className="text-sm font-medium text-gray-500 mb-1">Tasks in Progress</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {tasks?.filter((task) => task.status === "in-progress").length}
+              </h3>
             </div>
-            <div className="bg-green-100 p-2 rounded-lg">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            <div className="bg-yellow-100 p-2 rounded-lg">
+              <ListChecks className="h-6 w-6 text-yellow-600" />
             </div>
+          </div>
+          <div className="mt-2 flex items-center text-sm">
+            <span className="text-gray-500">In Review:</span>
+            <span className="ml-1 font-medium text-gray-600">
+              {tasks?.filter((task) => task.status === "in-review").length}
+            </span>
           </div>
         </div>
 

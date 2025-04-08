@@ -99,6 +99,9 @@
 						<goals>
 							<goal>npm</goal>
 						</goals>
+						<configuration>
+							<arguments>install --force</arguments>
+						</configuration>
 					</execution>
 					<execution>
 						<id>npm run build</id>
