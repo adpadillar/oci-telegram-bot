@@ -302,16 +302,16 @@ const Developers = () => {
       )}
       {showAddModal && <AddDeveloperModal onClose={() => setShowAddModal(false)} />}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Users className="text-blue-500" />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <Users className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6" />
           Developers
           <span className="text-sm font-normal text-gray-500 ml-2">
             {developers.length} {developers.length === 1 ? "developer" : "developers"}
           </span>
         </h1>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-gray-400" />
             </div>
@@ -325,18 +325,19 @@ const Developers = () => {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-600 transition-colors whitespace-nowrap"
+            className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors whitespace-nowrap"
           >
             <UserPlus size={18} />
             <span className="hidden sm:inline">Add Developer</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
 
       {/* Developers List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Team Members</h2>
+        <div className="p-3 sm:p-4 border-b border-gray-100">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Team Members</h2>
         </div>
 
         {isLoading ? (
@@ -350,14 +351,14 @@ const Developers = () => {
         ) : (
           <div className="divide-y divide-gray-100">
             {filteredDevelopers.map((developer) => (
-              <div key={developer.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={developer.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <img
                         src={developer.profilePic || "/placeholder.svg"}
                         alt={developer.name}
-                        className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white shadow-sm"
                       />
                       {developer.pendingTasks > 0 && (
                         <span className="absolute -top-1 -right-1 bg-orange-500 text-white w-5 h-5 flex items-center justify-center rounded-full text-xs">
@@ -366,25 +367,26 @@ const Developers = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{developer.name}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">{developer.name}</h3>
                       <p className="text-gray-600 text-sm">{developer.role}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-auto">
                     <button
                       onClick={() => setSelectedDeveloper(developer)}
-                      className="px-3 py-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md flex items-center gap-1 transition-colors"
+                      className="px-2 sm:px-3 py-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md flex items-center gap-1 transition-colors"
                     >
                       <User size={16} />
-                      <span>Details</span>
+                      <span className="hidden sm:inline">Details</span>
+                      <span className="sm:hidden">View</span>
                     </button>
                     <button
                       onClick={() => navigate(`/tasks?developer=${developer.id}`)}
-                      className="px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md flex items-center gap-1 transition-colors"
+                      className="px-2 sm:px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md flex items-center gap-1 transition-colors"
                     >
                       <ListTodo size={16} />
-                      <span>Tasks</span>
-                      <ChevronRight size={16} />
+                      <span className="hidden sm:inline">Tasks</span>
+                      <ChevronRight size={16} className="sm:ml-1" />
                     </button>
                   </div>
                 </div>
@@ -397,24 +399,24 @@ const Developers = () => {
       {/* Pending Approval Users Section */}
       {pendingUsers && pendingUsers.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-yellow-50">
-            <h2 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
-              <Clock size={18} />
+          <div className="p-3 sm:p-4 border-b border-gray-100 bg-yellow-50">
+            <h2 className="text-base sm:text-lg font-semibold text-yellow-800 flex items-center gap-2">
+              <Clock size={16} />
               Pending Approval ({pendingUsers.length})
             </h2>
           </div>
           <div className="divide-y divide-gray-100">
             {pendingUsers.map((user) => (
-              <div key={user.id} className="p-4 bg-yellow-50/30 hover:bg-yellow-50/50 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={user.id} className="p-3 sm:p-4 bg-yellow-50/30 hover:bg-yellow-50/50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-3">
                     <img
                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.firstName}`}
                       alt={`${user.firstName} ${user.lastName}`}
-                      className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white shadow-sm"
                     />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                         {user.firstName} {user.lastName}
                       </h3>
                       <div className="flex items-center gap-2">
@@ -428,7 +430,7 @@ const Developers = () => {
                   <button
                     onClick={() => approveUser(user.id)}
                     disabled={updateUserStatusMutation.isPending}
-                    className="px-3 py-1.5 bg-green-500 text-white rounded-md flex items-center gap-1 hover:bg-green-600 disabled:bg-green-300 transition-colors ml-auto"
+                    className="px-2 sm:px-3 py-1.5 bg-green-500 text-white rounded-md flex items-center justify-center gap-1 hover:bg-green-600 disabled:bg-green-300 transition-colors ml-auto w-full sm:w-auto"
                   >
                     <CheckCircle size={16} />
                     <span>

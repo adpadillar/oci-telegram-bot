@@ -472,9 +472,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'totalTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Total number of tasks in the system across all sprints and their current completion status
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -498,9 +498,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'completedTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Number of tasks marked as 'done' and the percentage they represent of total tasks
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -524,9 +524,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'activeSprints' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Number of sprints currently in progress and total number of sprints
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -550,9 +550,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'missingEstimates' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Tasks that don't have time estimates set, which can affect sprint planning accuracy
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -583,9 +583,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'avgCompletionTime' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Average time taken to complete tasks, calculated from creation date to current date for completed tasks
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -608,9 +608,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'estimateAccuracy' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               How accurate task time estimates are compared to actual time spent. Over 100% means tasks took longer than estimated
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -646,9 +646,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'unassignedTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Tasks that haven't been assigned to any team member, which may delay project progress
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -676,9 +676,9 @@ const KPIs = () => {
           onMouseLeave={() => setHoveredCard(null)}
         >
           {hoveredCard === 'teamSize' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
               Number of active developers in the team and average number of tasks per developer
-              <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -1137,9 +1137,9 @@ const KPIs = () => {
               Efficiency Insights
             </h2>
             {hoveredCard === 'efficiencyInsights' && (
-              <div className="absolute z-10 w-72 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 left-full ml-2">
+              <div className="absolute z-10 w-72 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
                 Automatic analysis of your team's performance metrics, highlighting areas that need attention and celebrating achievements. These insights help you identify bottlenecks and improve team efficiency.
-                <div className="absolute -left-2 top-4 w-0 h-0 border-t-4 border-r-4 border-b-4 border-transparent border-r-gray-900"></div>
+                <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
               </div>
             )}
           </div>

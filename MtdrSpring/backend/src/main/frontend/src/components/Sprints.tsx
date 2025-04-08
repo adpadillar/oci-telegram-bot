@@ -197,11 +197,11 @@ const Sprints = () => {
   const completedSprints = sprints?.filter((sprint) => new Date(sprint.endsAt) < new Date()) || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {showAddModal && <AddSprintModal onClose={() => setShowAddModal(false)} />}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
           <CalendarDays className="text-blue-500" />
           Sprints
           <span className="text-sm font-normal text-gray-500 ml-2">
@@ -210,7 +210,7 @@ const Sprints = () => {
         </h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-600 transition-colors"
+          className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors"
         >
           <Plus size={18} />
           <span>Add Sprint</span>
@@ -220,49 +220,48 @@ const Sprints = () => {
       {/* Active Sprints */}
       {activeSprints.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-blue-50">
-            <h2 className="text-lg font-semibold text-blue-800">Active Sprints</h2>
+          <div className="p-3 sm:p-4 border-b border-gray-100 bg-blue-50">
+            <h2 className="text-base sm:text-lg font-semibold text-blue-800">Active Sprints</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {activeSprints.map((sprint) => (
-              <div key={sprint.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-grow">
+              <div key={sprint.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800">{sprint.name}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">{sprint.name}</h3>
                       <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                         Active
                       </span>
                     </div>
-                    {sprint.description && <p className="text-gray-600 mt-1">{sprint.description}</p>}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} className="text-gray-400" />
-                        <span>
-                          {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock size={14} className="text-gray-400" />
-                        <span>
-                          {getDaysRemaining(sprint.endsAt)} day{getDaysRemaining(sprint.endsAt) !== 1 ? "s" : ""}{" "}
-                          remaining
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <ListTodo size={14} className="text-gray-400" />
-                        <span>{getSprintTaskCount(sprint.id)} tasks</span>
-                      </div>
+                    <button
+                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-500" />
+                    </button>
+                  </div>
+                  {sprint.description && (
+                    <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{sprint.description}</p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} className="text-gray-400" />
+                      <span>
+                        {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock size={14} className="text-gray-400" />
+                      <span>
+                        {getDaysRemaining(sprint.endsAt)} day{getDaysRemaining(sprint.endsAt) !== 1 ? "s" : ""} remaining
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ListTodo size={14} className="text-gray-400" />
+                      <span>{getSprintTaskCount(sprint.id)} tasks</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/tasks?sprint=${sprint.id}`)}
-                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors"
-                  >
-                    <ListTodo size={16} />
-                    <span>View Tasks</span>
-                    <ChevronRight size={16} />
-                  </button>
                 </div>
               </div>
             ))}
@@ -273,42 +272,42 @@ const Sprints = () => {
       {/* Upcoming Sprints */}
       {upcomingSprints.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Upcoming Sprints</h2>
+          <div className="p-3 sm:p-4 border-b border-gray-100 bg-gray-50">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800">Upcoming Sprints</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {upcomingSprints.map((sprint) => (
-              <div key={sprint.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-grow">
+              <div key={sprint.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800">{sprint.name}</h3>
-                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">{sprint.name}</h3>
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                         Upcoming
                       </span>
                     </div>
-                    {sprint.description && <p className="text-gray-600 mt-1">{sprint.description}</p>}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} className="text-gray-400" />
-                        <span>
-                          {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock size={14} className="text-gray-400" />
-                        <span>Starts in {Math.abs(getDaysRemaining(sprint.startedAt))} days</span>
-                      </div>
+                    <button
+                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-500" />
+                    </button>
+                  </div>
+                  {sprint.description && (
+                    <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{sprint.description}</p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} className="text-gray-400" />
+                      <span>
+                        {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ListTodo size={14} className="text-gray-400" />
+                      <span>{getSprintTaskCount(sprint.id)} tasks</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/tasks?sprint=${sprint.id}`)}
-                    className="flex items-center gap-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-md transition-colors"
-                  >
-                    <ListTodo size={16} />
-                    <span>View Tasks</span>
-                    <ChevronRight size={16} />
-                  </button>
                 </div>
               </div>
             ))}
@@ -319,42 +318,42 @@ const Sprints = () => {
       {/* Completed Sprints */}
       {completedSprints.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Completed Sprints</h2>
+          <div className="p-3 sm:p-4 border-b border-gray-100 bg-gray-50">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800">Completed Sprints</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {completedSprints.map((sprint) => (
-              <div key={sprint.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-grow">
+              <div key={sprint.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800">{sprint.name}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">{sprint.name}</h3>
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
                         Completed
                       </span>
                     </div>
-                    {sprint.description && <p className="text-gray-600 mt-1">{sprint.description}</p>}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} className="text-gray-400" />
-                        <span>
-                          {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <ListTodo size={14} className="text-gray-400" />
-                        <span>{getSprintTaskCount(sprint.id)} tasks</span>
-                      </div>
+                    <button
+                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-500" />
+                    </button>
+                  </div>
+                  {sprint.description && (
+                    <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{sprint.description}</p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} className="text-gray-400" />
+                      <span>
+                        {formatDate(sprint.startedAt)} - {formatDate(sprint.endsAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ListTodo size={14} className="text-gray-400" />
+                      <span>{getSprintTaskCount(sprint.id)} tasks</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/tasks?sprint=${sprint.id}`)}
-                    className="flex items-center gap-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-md transition-colors"
-                  >
-                    <ListTodo size={16} />
-                    <span>View Tasks</span>
-                    <ChevronRight size={16} />
-                  </button>
                 </div>
               </div>
             ))}
