@@ -1170,28 +1170,8 @@ const KPIs = () => {
               </div>
             </div>
           )}
-          {summaryMetrics?.tasksWithoutEstimates && summaryMetrics.tasksWithoutEstimates > 0 && (
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <Clock className="text-blue-500 mt-0.5 flex-shrink-0" size={18} />
-              <div>
-                <p className="font-medium text-blue-800">Missing Estimates</p>
-                <p className="text-sm text-blue-700 mt-1">
-                  {summaryMetrics.tasksWithoutEstimates} tasks ({Math.round((summaryMetrics.tasksWithoutEstimates / summaryMetrics.totalTasks) * 100)}%) are missing time estimates. Adding estimates will improve sprint planning and resource allocation.
-                </p>
-              </div>
-            </div>
-          )}
-          {summaryMetrics?.tasksWithoutAssignees && summaryMetrics.tasksWithoutAssignees > 0 && (
-            <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-              <Users className="text-purple-500 mt-0.5 flex-shrink-0" size={18} />
-              <div>
-                <p className="font-medium text-purple-800">Unassigned Tasks</p>
-                <p className="text-sm text-purple-700 mt-1">
-                  {summaryMetrics.tasksWithoutAssignees} tasks ({Math.round((summaryMetrics.tasksWithoutAssignees / summaryMetrics.totalTasks) * 100)}%) are not assigned to any developer. Assigning tasks improves accountability and tracking.
-                </p>
-              </div>
-            </div>
-          )}
+
+
           {(!summaryMetrics?.tasksWithoutEstimates || summaryMetrics.tasksWithoutEstimates === 0) &&
             (!summaryMetrics?.tasksWithoutAssignees || summaryMetrics.tasksWithoutAssignees === 0) &&
             summaryMetrics?.completionRate &&
