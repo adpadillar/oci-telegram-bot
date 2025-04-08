@@ -39,6 +39,12 @@ fi
 # Start backend
 echo "Starting Spring Boot backend..."
 cd ../backend
+
+# Clean frontend build directory and static resources
+echo "Cleaning frontend build directory and static resources..."
+rm -rf ../frontend/build
+rm -rf target/classes/static
+
 $MVN_CMD spring-boot:run
 
 # Wait for any remaining background processes
