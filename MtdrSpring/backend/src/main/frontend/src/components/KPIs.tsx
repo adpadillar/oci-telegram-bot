@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { api } from "../utils/api/client"
 import {
@@ -40,11 +40,33 @@ import {
 // Register the chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement)
 
+// Custom hook for extra small screens (below sm breakpoint)
+const useExtraSmallScreen = () => {
+  const [isXs, setIsXs] = useState(false)
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsXs(window.innerWidth < 640)
+    }
+
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
+
+    return () => {
+      window.removeEventListener("resize", checkScreenSize)
+    }
+  }, [])
+
+  return isXs
+}
+
 const KPIs = () => {
   const [selectedSprint, setSelectedSprint] = useState<number | null>(null)
   const [selectedMetricView, setSelectedMetricView] = useState<"tasks" | "developers" | "sprints">("tasks")
   const [showTrends, setShowTrends] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+
+  const isXs = useExtraSmallScreen()
 
   // Use getDevelopers to fetch the complete list of developers (consistent with Developers.tsx)
   const { data: users, isLoading: usersLoading } = useQuery({
@@ -420,16 +442,16 @@ const KPIs = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
           <BarChart3 className="text-blue-500" />
           KPI Dashboard
         </h1>
-        <div className="flex items-center gap-3">
-          <div className="bg-gray-100 p-1 rounded-md flex">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="bg-gray-100 p-1 rounded-md flex flex-wrap w-full sm:w-auto">
             <button
               onClick={() => setSelectedMetricView("tasks")}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 selectedMetricView === "tasks" ? "bg-white shadow-sm text-blue-600" : "text-gray-600"
               }`}
             >
@@ -437,7 +459,7 @@ const KPIs = () => {
             </button>
             <button
               onClick={() => setSelectedMetricView("developers")}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 selectedMetricView === "developers" ? "bg-white shadow-sm text-blue-600" : "text-gray-600"
               }`}
             >
@@ -445,7 +467,7 @@ const KPIs = () => {
             </button>
             <button
               onClick={() => setSelectedMetricView("sprints")}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 selectedMetricView === "sprints" ? "bg-white shadow-sm text-blue-600" : "text-gray-600"
               }`}
             >
@@ -454,7 +476,7 @@ const KPIs = () => {
           </div>
           <button
             onClick={() => setShowTrends(!showTrends)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1 ${
               showTrends ? "bg-blue-100 text-blue-600 hover:bg-blue-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
@@ -465,16 +487,16 @@ const KPIs = () => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('totalTasks')}
+          onMouseEnter={() => setHoveredCard("totalTasks")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'totalTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "totalTasks" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Total number of tasks in the system across all sprints and their current completion status
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -492,15 +514,15 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('completedTasks')}
+          onMouseEnter={() => setHoveredCard("completedTasks")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'completedTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "completedTasks" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Number of tasks marked as 'done' and the percentage they represent of total tasks
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -518,15 +540,15 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('activeSprints')}
+          onMouseEnter={() => setHoveredCard("activeSprints")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'activeSprints' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "activeSprints" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Number of sprints currently in progress and total number of sprints
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -544,15 +566,15 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('missingEstimates')}
+          onMouseEnter={() => setHoveredCard("missingEstimates")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'missingEstimates' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "missingEstimates" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Tasks that don't have time estimates set, which can affect sprint planning accuracy
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -576,16 +598,16 @@ const KPIs = () => {
       </div>
 
       {/* Additional metrics cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('avgCompletionTime')}
+          onMouseEnter={() => setHoveredCard("avgCompletionTime")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'avgCompletionTime' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "avgCompletionTime" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Average time taken to complete tasks, calculated from creation date to current date for completed tasks
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -602,15 +624,16 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('estimateAccuracy')}
+          onMouseEnter={() => setHoveredCard("estimateAccuracy")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'estimateAccuracy' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
-              How accurate task time estimates are compared to actual time spent. Over 100% means tasks took longer than estimated
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+          {hoveredCard === "estimateAccuracy" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
+              How accurate task time estimates are compared to actual time spent. Over 100% means tasks took longer than
+              estimated
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -640,15 +663,15 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('unassignedTasks')}
+          onMouseEnter={() => setHoveredCard("unassignedTasks")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'unassignedTasks' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "unassignedTasks" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Tasks that haven't been assigned to any team member, which may delay project progress
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -670,15 +693,15 @@ const KPIs = () => {
           </div>
         </div>
 
-        <div 
+        <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard('teamSize')}
+          onMouseEnter={() => setHoveredCard("teamSize")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === 'teamSize' && (
-            <div className="absolute z-10 w-64 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
+          {hoveredCard === "teamSize" && (
+            <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
               Number of active developers in the team and average number of tasks per developer
-              <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+              <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
@@ -714,7 +737,7 @@ const KPIs = () => {
                 Tasks by Status
               </h2>
             </div>
-            <div className="h-80">
+            <div className="h-60 sm:h-70 md:h-80">
               {taskStatusData ? (
                 <Pie
                   data={taskStatusData}
@@ -722,10 +745,13 @@ const KPIs = () => {
                     responsive: true,
                     plugins: {
                       legend: {
-                        position: "bottom",
+                        position: isXs ? "right" : "bottom",
                         labels: {
-                          boxWidth: 12,
-                          padding: 15,
+                          boxWidth: isXs ? 8 : 12,
+                          padding: isXs ? 10 : 15,
+                          font: {
+                            size: isXs ? 10 : 12,
+                          },
                         },
                       },
                       tooltip: {
@@ -755,7 +781,7 @@ const KPIs = () => {
                 Tasks by Category
               </h2>
             </div>
-            <div className="h-80">
+            <div className="h-60 sm:h-70 md:h-80">
               {taskCategoryData ? (
                 <Pie
                   data={taskCategoryData}
@@ -763,10 +789,13 @@ const KPIs = () => {
                     responsive: true,
                     plugins: {
                       legend: {
-                        position: "bottom",
+                        position: isXs ? "right" : "bottom",
                         labels: {
-                          boxWidth: 12,
-                          padding: 15,
+                          boxWidth: isXs ? 8 : 12,
+                          padding: isXs ? 10 : 15,
+                          font: {
+                            size: isXs ? 10 : 12,
+                          },
                         },
                       },
                       tooltip: {
@@ -787,6 +816,72 @@ const KPIs = () => {
               )}
             </div>
           </div>
+
+          {/* Task completion trend line chart */}
+          {showTrends && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 col-span-1 lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-blue-500" />
+                  Task Completion Trend
+                </h2>
+              </div>
+              <div className="h-60 sm:h-70 md:h-80">
+                {tasks && (
+                  <Line
+                    data={{
+                      labels: tasks.map((_, index) => `Task ${index + 1}`),
+                      datasets: [
+                        {
+                          label: "Completion Time (days)",
+                          data: tasks
+                            .filter((task) => task.status === "done" && task.createdAt)
+                            .map((task) => {
+                              const createdDate = new Date(task.createdAt)
+                              const diffTime = Math.abs(new Date().getTime() - createdDate.getTime())
+                              return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                            }),
+                          borderColor: "rgba(54, 162, 235, 1)",
+                          backgroundColor: "rgba(54, 162, 235, 0.2)",
+                          tension: 0.3,
+                          fill: true,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                          labels: {
+                            boxWidth: isXs ? 8 : 12,
+                            padding: isXs ? 10 : 15,
+                            font: {
+                              size: isXs ? 10 : 12,
+                            },
+                          },
+                        },
+                        tooltip: {
+                          backgroundColor: "rgba(50, 50, 50, 0.8)",
+                          padding: 10,
+                        },
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          title: {
+                            display: true,
+                            text: "Days to Complete",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -801,7 +896,7 @@ const KPIs = () => {
                 Tasks per Developer
               </h2>
             </div>
-            <div className="h-80">
+            <div className="h-60 sm:h-70 md:h-80">
               {tasksPerDeveloperData ? (
                 <Pie
                   data={tasksPerDeveloperData}
@@ -809,10 +904,13 @@ const KPIs = () => {
                     responsive: true,
                     plugins: {
                       legend: {
-                        position: "bottom",
+                        position: isXs ? "right" : "bottom",
                         labels: {
-                          boxWidth: 12,
-                          padding: 15,
+                          boxWidth: isXs ? 8 : 12,
+                          padding: isXs ? 10 : 15,
+                          font: {
+                            size: isXs ? 10 : 12,
+                          },
                         },
                       },
                       tooltip: {
@@ -834,6 +932,72 @@ const KPIs = () => {
             </div>
           </div>
 
+          {/* Developer performance trend */}
+          {showTrends && developerPerformance && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-blue-500" />
+                  Developer Performance Trend
+                </h2>
+              </div>
+              <div className="h-60 sm:h-70 md:h-80">
+                <Line
+                  data={{
+                    labels: developerPerformance.map((dev) => dev.name),
+                    datasets: [
+                      {
+                        label: "Completion Rate (%)",
+                        data: developerPerformance.map((dev) => dev.completionRate),
+                        borderColor: "rgba(54, 162, 235, 1)",
+                        backgroundColor: "rgba(54, 162, 235, 0.2)",
+                        tension: 0.3,
+                        fill: true,
+                      },
+                      {
+                        label: "Estimate Accuracy (%)",
+                        data: developerPerformance.map((dev) => dev.estimateAccuracy),
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        backgroundColor: "rgba(75, 192, 192, 0.2)",
+                        tension: 0.3,
+                        fill: true,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                        labels: {
+                          boxWidth: isXs ? 8 : 12,
+                          padding: isXs ? 10 : 15,
+                          font: {
+                            size: isXs ? 10 : 12,
+                          },
+                        },
+                      },
+                      tooltip: {
+                        backgroundColor: "rgba(50, 50, 50, 0.8)",
+                        padding: 10,
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: "Percentage (%)",
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Developer performance table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-4 border-b border-gray-100">
@@ -842,8 +1006,8 @@ const KPIs = () => {
                 Developer Performance
               </h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto -mx-6 px-6">
+              <table className="min-w-full divide-y divide-gray-200 table-fixed sm:table-auto">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -927,7 +1091,7 @@ const KPIs = () => {
                 Hours per Sprint
               </h2>
             </div>
-            <div className="h-80">
+            <div className="h-60 sm:h-70 md:h-80">
               {hoursPerSprintData ? (
                 <Bar
                   data={hoursPerSprintData}
@@ -938,8 +1102,11 @@ const KPIs = () => {
                       legend: {
                         position: "bottom",
                         labels: {
-                          boxWidth: 12,
-                          padding: 15,
+                          boxWidth: isXs ? 8 : 12,
+                          padding: isXs ? 10 : 15,
+                          font: {
+                            size: isXs ? 10 : 12,
+                          },
                         },
                       },
                       tooltip: {
@@ -980,7 +1147,7 @@ const KPIs = () => {
                   Sprint Completion Trend
                 </h2>
               </div>
-              <div className="h-80">
+              <div className="h-60 sm:h-70 md:h-80">
                 {sprintCompletionTrendData ? (
                   <Line
                     data={sprintCompletionTrendData}
@@ -991,8 +1158,11 @@ const KPIs = () => {
                         legend: {
                           position: "bottom",
                           labels: {
-                            boxWidth: 12,
-                            padding: 15,
+                            boxWidth: isXs ? 8 : 12,
+                            padding: isXs ? 10 : 15,
+                            font: {
+                              size: isXs ? 10 : 12,
+                            },
                           },
                         },
                         tooltip: {
@@ -1038,8 +1208,8 @@ const KPIs = () => {
             </button>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+            <table className="min-w-full divide-y divide-gray-200 table-fixed sm:table-auto">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1131,46 +1301,52 @@ const KPIs = () => {
       {/* Efficiency insights */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <div className="relative cursor-help" onMouseEnter={() => setHoveredCard('efficiencyInsights')} onMouseLeave={() => setHoveredCard(null)}>
+          <div
+            className="relative cursor-help"
+            onMouseEnter={() => setHoveredCard("efficiencyInsights")}
+            onMouseLeave={() => setHoveredCard(null)}
+          >
             <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <Zap className="h-5 w-5 text-blue-500" />
               Efficiency Insights
             </h2>
-            {hoveredCard === 'efficiencyInsights' && (
-              <div className="absolute z-10 w-72 p-4 bg-gray-900 text-white text-sm rounded-lg shadow-lg -top-2 right-full mr-2">
-                Automatic analysis of your team's performance metrics, highlighting areas that need attention and celebrating achievements. These insights help you identify bottlenecks and improve team efficiency.
-                <div className="absolute -right-2 top-4 w-0 h-0 border-t-4 border-l-4 border-b-4 border-transparent border-l-gray-900"></div>
+            {hoveredCard === "efficiencyInsights" && (
+              <div className="fixed sm:absolute z-50 w-72 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
+                Automatic analysis of your team's performance metrics, highlighting areas that need attention and
+                celebrating achievements. These insights help you identify bottlenecks and improve team efficiency.
+                <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
               </div>
             )}
           </div>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4 text-sm sm:text-base">
           {summaryMetrics?.completionRate && summaryMetrics.completionRate < 50 && (
             <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
               <AlertCircle className="text-yellow-500 mt-0.5 flex-shrink-0" size={18} />
               <div>
                 <p className="font-medium text-yellow-800">Low Task Completion Rate</p>
                 <p className="text-sm text-yellow-700 mt-1">
-                  Only {summaryMetrics.completionRate}% of tasks are completed. Consider reviewing sprint planning and task allocation to improve completion rates.
+                  Only {summaryMetrics.completionRate}% of tasks are completed. Consider reviewing sprint planning and
+                  task allocation to improve completion rates.
                 </p>
               </div>
             </div>
           )}
-          {summaryMetrics?.estimateAccuracy && (summaryMetrics.estimateAccuracy < 80 || summaryMetrics.estimateAccuracy > 120) && (
-            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
-              <AlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={18} />
-              <div>
-                <p className="font-medium text-red-800">Estimate Accuracy Issues</p>
-                <p className="text-sm text-red-700 mt-1">
-                  {summaryMetrics.estimateAccuracy > 100
-                    ? `Tasks are taking ${summaryMetrics.estimateAccuracy - 100}% longer than estimated.`
-                    : `Tasks are being completed ${100 - summaryMetrics.estimateAccuracy}% faster than estimated.`}{" "}
-                  Consider adjusting your estimation process.
-                </p>
+          {summaryMetrics?.estimateAccuracy &&
+            (summaryMetrics.estimateAccuracy < 80 || summaryMetrics.estimateAccuracy > 120) && (
+              <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                <AlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={18} />
+                <div>
+                  <p className="font-medium text-red-800">Estimate Accuracy Issues</p>
+                  <p className="text-sm text-red-700 mt-1">
+                    {summaryMetrics.estimateAccuracy > 100
+                      ? `Tasks are taking ${summaryMetrics.estimateAccuracy - 100}% longer than estimated.`
+                      : `Tasks are being completed ${100 - summaryMetrics.estimateAccuracy}% faster than estimated.`}{" "}
+                    Consider adjusting your estimation process.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-
+            )}
 
           {(!summaryMetrics?.tasksWithoutEstimates || summaryMetrics.tasksWithoutEstimates === 0) &&
             (!summaryMetrics?.tasksWithoutAssignees || summaryMetrics.tasksWithoutAssignees === 0) &&
@@ -1184,7 +1360,9 @@ const KPIs = () => {
                 <div>
                   <p className="font-medium text-green-800">Excellent Team Performance</p>
                   <p className="text-sm text-green-700 mt-1">
-                    Your team is performing well with a {summaryMetrics.completionRate}% completion rate and {Math.abs(summaryMetrics.estimateAccuracy - 100)}% estimate accuracy. All tasks are properly assigned and estimated.
+                    Your team is performing well with a {summaryMetrics.completionRate}% completion rate and{" "}
+                    {Math.abs(summaryMetrics.estimateAccuracy - 100)}% estimate accuracy. All tasks are properly
+                    assigned and estimated.
                   </p>
                 </div>
               </div>
