@@ -9,7 +9,6 @@ import {
   PieChart,
   ArrowDown,
   ArrowUp,
-  Clock,
   ListChecks,
   Calendar,
   X,
@@ -347,20 +346,8 @@ const KPIs = () => {
     // Tasks without assignees
     const tasksWithoutAssignees = tasks.filter((task) => task.assignedToId === null).length
 
-    // Average task completion time (in days)
-    const completedTasksWithDates = tasks.filter((task) => task.status === "done" && task.createdAt)
-
-    const avgCompletionTime =
-      completedTasksWithDates.length > 0
-        ? Math.round(
-            completedTasksWithDates.reduce((sum, task) => {
-              const createdDate = new Date(task.createdAt)
-              const diffTime = Math.abs(new Date().getTime() - createdDate.getTime())
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-              return sum + diffDays
-            }, 0) / completedTasksWithDates.length,
-          )
-        : 0
+    // Average tasks per sprint
+    const avgTasksPerSprint = sprints.length > 0 ? Math.round(tasks.length / sprints.length) : 0
 
     // Estimate accuracy (ratio of real hours to estimated hours)
     const tasksWithBothHours = tasks.filter((task) => task.status === "done" && task.estimateHours && task.realHours)
@@ -381,7 +368,7 @@ const KPIs = () => {
       activeSprints,
       tasksWithoutEstimates,
       tasksWithoutAssignees,
-      avgCompletionTime,
+      avgTasksPerSprint,
       estimateAccuracy,
     }
   }, [tasks, sprints])
@@ -474,15 +461,17 @@ const KPIs = () => {
               Sprints
             </button>
           </div>
-          <button
-            onClick={() => setShowTrends(!showTrends)}
-            className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1 ${
-              showTrends ? "bg-blue-100 text-blue-600 hover:bg-blue-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            <TrendingUp size={16} />
-            <span>Trends</span>
-          </button>
+          {selectedMetricView === "sprints" && (
+            <button
+              onClick={() => setShowTrends(!showTrends)}
+              className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium flex items-center gap-1 ${
+                showTrends ? "bg-blue-100 text-blue-600 hover:bg-blue-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <TrendingUp size={16} />
+              <span>Trends</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -490,19 +479,21 @@ const KPIs = () => {
       <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard("totalTasks")}
+          onMouseEnter={() => setHoveredCard("taskOverview")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === "totalTasks" && (
+          {hoveredCard === "taskOverview" && (
             <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
-              Total number of tasks in the system across all sprints and their current completion status
+              Overview of total tasks in the system and their completion status.
               <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Total Tasks</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.totalTasks}</h3>
+              <p className="text-sm font-medium text-gray-500 mb-1">Task Overview</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {summaryMetrics?.totalTasks}
+              </h3>
             </div>
             <div className="bg-blue-100 p-2 rounded-lg">
               <ListChecks className="h-6 w-6 text-blue-600" />
@@ -534,10 +525,6 @@ const KPIs = () => {
               <CheckCircle2 className="h-6 w-6 text-green-600" />
             </div>
           </div>
-          <div className="mt-2 flex items-center text-sm">
-            <span className="text-gray-500">Total tasks:</span>
-            <span className="ml-1 font-medium text-gray-700">{summaryMetrics?.totalTasks}</span>
-          </div>
         </div>
 
         <div
@@ -547,7 +534,7 @@ const KPIs = () => {
         >
           {hoveredCard === "activeSprints" && (
             <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
-              Number of sprints currently in progress and total number of sprints
+              Number of sprints currently in progress or upcoming and total number of sprints
               <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
@@ -601,26 +588,26 @@ const KPIs = () => {
       <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
-          onMouseEnter={() => setHoveredCard("avgCompletionTime")}
+          onMouseEnter={() => setHoveredCard("avgTasksPerSprint")}
           onMouseLeave={() => setHoveredCard(null)}
         >
-          {hoveredCard === "avgCompletionTime" && (
+          {hoveredCard === "avgTasksPerSprint" && (
             <div className="fixed sm:absolute z-50 w-64 p-4 bg-gray-900 text-white text-xs sm:text-sm rounded-lg shadow-lg transform -translate-x-1/2 left-1/2 sm:translate-x-0 sm:left-0 top-20 sm:-top-2">
-              Average time taken to complete tasks, calculated from creation date to current date for completed tasks
+              Average number of tasks assigned per sprint, helping to understand task distribution and workload
               <div className="absolute left-1/2 -ml-2 -bottom-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 sm:left-4 sm:top-full"></div>
             </div>
           )}
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Avg. Completion Time</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.avgCompletionTime} days</h3>
+              <p className="text-sm font-medium text-gray-500 mb-1">Avg. Tasks per Sprint</p>
+              <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.avgTasksPerSprint}</h3>
             </div>
             <div className="bg-purple-100 p-2 rounded-lg">
-              <Clock className="h-6 w-6 text-purple-600" />
+              <ListChecks className="h-6 w-6 text-purple-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
-            <span className="text-gray-500">Based on {summaryMetrics?.completedTasks} completed tasks</span>
+            <span className="text-gray-500">Based on {sprints.length} sprints</span>
           </div>
         </div>
 
@@ -719,7 +706,8 @@ const KPIs = () => {
             <span className="text-gray-500">Tasks per developer:</span>
             <span className="ml-1 font-medium text-gray-700">
               {Math.round(
-                summaryMetrics?.totalTasks ?? 0 / (users.filter((user) => user.role === "developer").length || 1),
+                tasks.filter(task => task.assignedToId !== null).length / 
+                (users.filter(user => user.role === "developer").length || 1)
               )}
             </span>
           </div>
@@ -816,72 +804,6 @@ const KPIs = () => {
               )}
             </div>
           </div>
-
-          {/* Task completion trend line chart */}
-          {showTrends && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 col-span-1 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-blue-500" />
-                  Task Completion Trend
-                </h2>
-              </div>
-              <div className="h-60 sm:h-70 md:h-80">
-                {tasks && (
-                  <Line
-                    data={{
-                      labels: tasks.map((_, index) => `Task ${index + 1}`),
-                      datasets: [
-                        {
-                          label: "Completion Time (days)",
-                          data: tasks
-                            .filter((task) => task.status === "done" && task.createdAt)
-                            .map((task) => {
-                              const createdDate = new Date(task.createdAt)
-                              const diffTime = Math.abs(new Date().getTime() - createdDate.getTime())
-                              return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                            }),
-                          borderColor: "rgba(54, 162, 235, 1)",
-                          backgroundColor: "rgba(54, 162, 235, 0.2)",
-                          tension: 0.3,
-                          fill: true,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: "bottom",
-                          labels: {
-                            boxWidth: isXs ? 8 : 12,
-                            padding: isXs ? 10 : 15,
-                            font: {
-                              size: isXs ? 10 : 12,
-                            },
-                          },
-                        },
-                        tooltip: {
-                          backgroundColor: "rgba(50, 50, 50, 0.8)",
-                          padding: 10,
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          title: {
-                            display: true,
-                            text: "Days to Complete",
-                          },
-                        },
-                      },
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -931,72 +853,6 @@ const KPIs = () => {
               )}
             </div>
           </div>
-
-          {/* Developer performance trend */}
-          {showTrends && developerPerformance && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-blue-500" />
-                  Developer Performance Trend
-                </h2>
-              </div>
-              <div className="h-60 sm:h-70 md:h-80">
-                <Line
-                  data={{
-                    labels: developerPerformance.map((dev) => dev.name),
-                    datasets: [
-                      {
-                        label: "Completion Rate (%)",
-                        data: developerPerformance.map((dev) => dev.completionRate),
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        backgroundColor: "rgba(54, 162, 235, 0.2)",
-                        tension: 0.3,
-                        fill: true,
-                      },
-                      {
-                        label: "Estimate Accuracy (%)",
-                        data: developerPerformance.map((dev) => dev.estimateAccuracy),
-                        borderColor: "rgba(75, 192, 192, 1)",
-                        backgroundColor: "rgba(75, 192, 192, 0.2)",
-                        tension: 0.3,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: "bottom",
-                        labels: {
-                          boxWidth: isXs ? 8 : 12,
-                          padding: isXs ? 10 : 15,
-                          font: {
-                            size: isXs ? 10 : 12,
-                          },
-                        },
-                      },
-                      tooltip: {
-                        backgroundColor: "rgba(50, 50, 50, 0.8)",
-                        padding: 10,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: "Percentage (%)",
-                        },
-                      },
-                    },
-                  }}
-                />
-              </div>
-            </div>
-          )}
 
           {/* Developer performance table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
