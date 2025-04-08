@@ -9,7 +9,6 @@ import {
   PieChart,
   ArrowDown,
   ArrowUp,
-  ListChecks,
   Calendar,
   X,
   TrendingUp,
@@ -21,6 +20,13 @@ import {
   Zap,
   Target,
   Award,
+  ClipboardList,
+  Timer,
+  GitPullRequest,
+  BrainCircuit,
+  Scale,
+  UserX,
+  UsersRound,
 } from "lucide-react"
 import { Pie, Bar, Line } from "react-chartjs-2"
 import {
@@ -496,7 +502,7 @@ const KPIs = () => {
               </h3>
             </div>
             <div className="bg-blue-100 p-2 rounded-lg">
-              <ListChecks className="h-6 w-6 text-blue-600" />
+              <ClipboardList className="h-6 w-6 text-blue-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -524,7 +530,7 @@ const KPIs = () => {
               </h3>
             </div>
             <div className="bg-yellow-100 p-2 rounded-lg">
-              <ListChecks className="h-6 w-6 text-yellow-600" />
+              <GitPullRequest className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -552,7 +558,7 @@ const KPIs = () => {
               <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.activeSprints}</h3>
             </div>
             <div className="bg-yellow-100 p-2 rounded-lg">
-              <Calendar className="h-6 w-6 text-yellow-600" />
+              <Timer className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -578,7 +584,7 @@ const KPIs = () => {
               <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.tasksWithoutEstimates}</h3>
             </div>
             <div className="bg-red-100 p-2 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-red-600" />
+              <Scale className="h-6 w-6 text-red-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -611,7 +617,7 @@ const KPIs = () => {
               <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.avgTasksPerSprint}</h3>
             </div>
             <div className="bg-purple-100 p-2 rounded-lg">
-              <ListChecks className="h-6 w-6 text-purple-600" />
+              <BrainCircuit className="h-6 w-6 text-purple-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -675,7 +681,7 @@ const KPIs = () => {
               <h3 className="text-2xl font-bold text-gray-900">{summaryMetrics?.tasksWithoutAssignees}</h3>
             </div>
             <div className="bg-orange-100 p-2 rounded-lg">
-              <Users className="h-6 w-6 text-orange-600" />
+              <UserX className="h-6 w-6 text-orange-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -707,7 +713,7 @@ const KPIs = () => {
               </h3>
             </div>
             <div className="bg-teal-100 p-2 rounded-lg">
-              <Users className="h-6 w-6 text-teal-600" />
+              <UsersRound className="h-6 w-6 text-teal-600" />
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
@@ -1184,6 +1190,7 @@ const KPIs = () => {
           </div>
         </div>
         <div className="space-y-3 sm:space-y-4 text-sm sm:text-base">
+          {/* Task Completion Rate Insight */}
           {summaryMetrics?.completionRate && summaryMetrics.completionRate < 50 && (
             <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
               <AlertCircle className="text-yellow-500 mt-0.5 flex-shrink-0" size={18} />
@@ -1196,6 +1203,10 @@ const KPIs = () => {
               </div>
             </div>
           )}
+
+
+
+          {/* Estimate Accuracy Warning */}
           {summaryMetrics?.estimateAccuracy &&
             (summaryMetrics.estimateAccuracy < 80 || summaryMetrics.estimateAccuracy > 120) && (
               <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
@@ -1210,8 +1221,49 @@ const KPIs = () => {
                   </p>
                 </div>
               </div>
-            )}
+          )}
 
+          {/* High Task Load Warning */}
+          {tasks && users && (tasksPerDeveloperData?.datasets[0].data.some(count => count > 8)) && (
+            <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+              <AlertCircle className="text-yellow-500 mt-0.5 flex-shrink-0" size={18} />
+              <div>
+                <p className="font-medium text-yellow-800">High Task Load Detected</p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Some team members have more than 8 tasks assigned. Consider redistributing work to prevent burnout and maintain quality.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Positive: Good Sprint Distribution */}
+          {summaryMetrics?.avgTasksPerSprint && summaryMetrics.avgTasksPerSprint >= 3 && summaryMetrics.avgTasksPerSprint <= 7 && (
+            <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+              <CheckCircle2 className="text-green-500 mt-0.5 flex-shrink-0" size={18} />
+              <div>
+                <p className="font-medium text-green-800">Optimal Sprint Task Distribution</p>
+                <p className="text-sm text-green-700 mt-1">
+                  Average of {summaryMetrics.avgTasksPerSprint} tasks per sprint indicates a well-balanced workload distribution.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Positive: Good Team Balance */}
+          {tasksPerDeveloperData?.datasets?.[0]?.data && tasksPerDeveloperData.datasets[0].data.length > 0 && 
+           Math.max(...tasksPerDeveloperData.datasets[0].data) / Math.min(...tasksPerDeveloperData.datasets[0].data) < 2 && (
+            <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+              <CheckCircle2 className="text-green-500 mt-0.5 flex-shrink-0" size={18} />
+              <div>
+                <p className="font-medium text-green-800">Balanced Team Workload</p>
+                <p className="text-sm text-green-700 mt-1">
+                  Task distribution among team members is well balanced, with no significant overload on any individual.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Perfect Performance */}
           {(!summaryMetrics?.tasksWithoutEstimates || summaryMetrics.tasksWithoutEstimates === 0) &&
             (!summaryMetrics?.tasksWithoutAssignees || summaryMetrics.tasksWithoutAssignees === 0) &&
             summaryMetrics?.completionRate &&
@@ -1224,13 +1276,13 @@ const KPIs = () => {
                 <div>
                   <p className="font-medium text-green-800">Excellent Team Performance</p>
                   <p className="text-sm text-green-700 mt-1">
-                    Your team is performing well with a {summaryMetrics.completionRate}% completion rate and{" "}
+                    Your team is performing exceptionally well with a {summaryMetrics.completionRate}% completion rate and{" "}
                     {Math.abs(summaryMetrics.estimateAccuracy - 100)}% estimate accuracy. All tasks are properly
                     assigned and estimated.
                   </p>
                 </div>
               </div>
-            )}
+          )}
         </div>
       </div>
     </div>
