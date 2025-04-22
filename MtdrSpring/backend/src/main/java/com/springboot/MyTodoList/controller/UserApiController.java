@@ -3,7 +3,6 @@ package com.springboot.MyTodoList.controller;
 import com.springboot.MyTodoList.dto.UserDTO;
 import com.springboot.MyTodoList.model.UserModel;
 import com.springboot.MyTodoList.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,8 +11,13 @@ import java.util.List;
 @RestController
 public class UserApiController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final ToDoItemBotController botController;
+
+    public UserApiController(UserService userService, ToDoItemBotController botController) {
+        this.userService = userService;
+        this.botController = botController;
+    }
 
     @GetMapping("/api/{project}/users")
     public List<UserModel> getAllUsers(@PathVariable("project") int project) {
@@ -39,6 +43,19 @@ public class UserApiController {
 
     @PatchMapping("/api/{project}/users/{id}")
     public ResponseEntity<UserModel> updateUser(@PathVariable("project") int project, @PathVariable int id, @RequestBody UserDTO userDetails) {
+        UserModel user = userService.findUserById(id);
+
+        if (user.getProjectId() != project) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (user.getRole().equals("user-pending-activation") && !userDetails.getRole().equals("user-pending-activation")) {
+            // Notify user via Telegram when they are activated
+            if (user.getTelegramId() != null) {
+                botController.sendActivationNotification(user.getTelegramId());
+            }
+        }
+
         UserModel updatedUser = userService.patchUserOnProject(id, project, userDetails);
         return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
     }

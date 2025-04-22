@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   ListTodo,
@@ -16,47 +16,52 @@ import {
   Clock,
   Mail,
   Briefcase,
-} from "lucide-react"
-import { api, type UserResponse } from "../utils/api/client"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { queryClient } from "../utils/query/query-client"
+} from "lucide-react";
+import { api, type UserResponse } from "../utils/api/client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../utils/query/query-client";
 
 type DeveloperWithTasks = {
-  id: number
-  name: string
-  role: string
-  profilePic: string
-  pendingTasks: number
-  email: string
-  originalData: UserResponse
-}
+  id: number;
+  name: string;
+  role: string;
+  profilePic: string;
+  pendingTasks: number;
+  email: string;
+  originalData: UserResponse;
+};
 
 const Developers = () => {
-  const navigate = useNavigate()
-  const [selectedDeveloper, setSelectedDeveloper] = useState<DeveloperWithTasks | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const navigate = useNavigate();
+  const [selectedDeveloper, setSelectedDeveloper] =
+    useState<DeveloperWithTasks | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch all users with React Query
   const { data: allUsers, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: api.users.getDevelopers,
-  })
+  });
 
   // Get tasks to calculate pending tasks per developer
   const { data: tasks } = useQuery({
     queryKey: ["tasks"],
     queryFn: api.tasks.list,
-  })
+  });
 
   // Separate developers from pending users
-  const developers = allUsers?.filter((user) => user.role === "developer") || []
-  const pendingUsers = allUsers?.filter((user) => user.role === "user-pending-activation") || []
+  const developers =
+    allUsers?.filter((user) => user.role === "developer") || [];
+  const pendingUsers =
+    allUsers?.filter((user) => user.role === "user-pending-activation") || [];
 
   // Transform developers data to include pending tasks count
   const developersWithTasks: DeveloperWithTasks[] = developers.map((dev) => {
     const pendingTasksCount =
-      tasks?.filter((task) => task.assignedToId === dev.id && task.status !== "done").length || 0
+      tasks?.filter(
+        (task) => task.assignedToId === dev.id && task.status !== "done"
+      ).length || 0;
 
     return {
       id: dev.id,
@@ -67,74 +72,82 @@ const Developers = () => {
       email: `${dev.firstName.toLowerCase()}.${dev.lastName.toLowerCase()}@company.com`,
       // Original user data is preserved for reference
       originalData: dev,
-    }
-  })
+    };
+  });
 
   // Filter developers based on search term
   const filteredDevelopers = developersWithTasks.filter((dev) =>
-    dev.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+    dev.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Mutation for updating user status (approving users)
   const updateUserStatusMutation = useMutation({
-    mutationFn: ({ userId, status }: { userId: number; status: "developer" | "manager" }) => {
-      return api.users.updateStatus(userId, status)
+    mutationFn: ({
+      userId,
+      status,
+    }: {
+      userId: number;
+      status: "developer" | "manager";
+    }) => {
+      return api.users.updateStatus(userId, status);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {
-      console.error("Failed to update user status:", error)
+      console.error("Failed to update user status:", error);
     },
-  })
+  });
 
   // Handle approving pending users
   const approveUser = (userId: number) => {
-    updateUserStatusMutation.mutate({ userId, status: "developer" })
-  }
+    updateUserStatusMutation.mutate({ userId, status: "developer" });
+  };
 
   const AddDeveloperModal = ({ onClose }: { onClose: () => void }) => {
     const [formData, setFormData] = useState({
       firstName: "",
       lastName: "",
       title: "",
-    })
+    });
 
     const createUserMutation = useMutation({
       mutationFn: (userData: {
-        firstName: string
-        lastName: string
-        role: "developer" | "manager" | "user-pending-activation"
-        title: string | null
-        telegramId: string | null
+        firstName: string;
+        lastName: string;
+        role: "developer" | "manager" | "user-pending-activation";
+        title: string | null;
+        telegramId: string | null;
       }) => {
-        return api.users.patch(0, userData) // We're using patch as a workaround since createUser isn't available
+        return api.users.patch(0, userData); // We're using patch as a workaround since createUser isn't available
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["users"] })
-        onClose()
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        onClose();
       },
       onError: (error) => {
-        console.error("Failed to add developer:", error)
+        console.error("Failed to add developer:", error);
       },
-    })
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault()
+      e.preventDefault();
       createUserMutation.mutate({
         firstName: formData.firstName,
         lastName: formData.lastName,
         role: "developer",
         title: formData.title || null,
         telegramId: null,
-      })
-    }
+      });
+    };
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">Add New Developer</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Add New Developer
+            </h2>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500"
@@ -146,32 +159,44 @@ const Developers = () => {
           <form onSubmit={handleSubmit} className="p-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name
+                </label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name
+                </label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title/Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title/Role
+                </label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="e.g. Frontend Developer"
                 />
               </div>
@@ -206,21 +231,23 @@ const Developers = () => {
           </form>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const ViewDeveloperDetails = ({
     developer,
     onClose,
   }: {
-    developer: (typeof developersWithTasks)[0]
-    onClose: () => void
+    developer: (typeof developersWithTasks)[0];
+    onClose: () => void;
   }) => {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">Developer Details</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Developer Details
+            </h2>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500"
@@ -239,7 +266,9 @@ const Developers = () => {
                 />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-800">{developer.name}</h3>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {developer.name}
+                </h3>
                 <p className="text-gray-600">{developer.role}</p>
               </div>
             </div>
@@ -266,7 +295,8 @@ const Developers = () => {
                 <div>
                   <p className="text-xs text-gray-500">Tasks assigned</p>
                   <p className="font-medium text-gray-800">
-                    {developer.pendingTasks} pending task{developer.pendingTasks !== 1 ? "s" : ""}
+                    {developer.pendingTasks} pending task
+                    {developer.pendingTasks !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
@@ -275,8 +305,8 @@ const Developers = () => {
             <div className="mt-6">
               <button
                 onClick={() => {
-                  navigate(`/tasks?developer=${developer.id}`)
-                  onClose()
+                  navigate(`/tasks?assignee=${developer.id}`);
+                  onClose();
                 }}
                 className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
               >
@@ -292,22 +322,28 @@ const Developers = () => {
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
       {selectedDeveloper && (
-        <ViewDeveloperDetails developer={selectedDeveloper} onClose={() => setSelectedDeveloper(null)} />
+        <ViewDeveloperDetails
+          developer={selectedDeveloper}
+          onClose={() => setSelectedDeveloper(null)}
+        />
       )}
-      {showAddModal && <AddDeveloperModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && (
+        <AddDeveloperModal onClose={() => setShowAddModal(false)} />
+      )}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
           <Users className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6" />
           Developers
           <span className="text-sm font-normal text-gray-500 ml-2">
-            {developers.length} {developers.length === 1 ? "developer" : "developers"}
+            {developers.length}{" "}
+            {developers.length === 1 ? "developer" : "developers"}
           </span>
         </h1>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -337,7 +373,9 @@ const Developers = () => {
       {/* Developers List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-3 sm:p-4 border-b border-gray-100">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Team Members</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+            Team Members
+          </h2>
         </div>
 
         {isLoading ? (
@@ -346,12 +384,17 @@ const Developers = () => {
           </div>
         ) : filteredDevelopers.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            {searchTerm ? "No developers match your search" : "No developers found"}
+            {searchTerm
+              ? "No developers match your search"
+              : "No developers found"}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {filteredDevelopers.map((developer) => (
-              <div key={developer.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+              <div
+                key={developer.id}
+                className="p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -367,7 +410,9 @@ const Developers = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">{developer.name}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                        {developer.name}
+                      </h3>
                       <p className="text-gray-600 text-sm">{developer.role}</p>
                     </div>
                   </div>
@@ -381,7 +426,9 @@ const Developers = () => {
                       <span className="sm:hidden">View</span>
                     </button>
                     <button
-                      onClick={() => navigate(`/tasks?developer=${developer.id}`)}
+                      onClick={() =>
+                        navigate(`/tasks?assignee=${developer.id}`)
+                      }
                       className="px-2 sm:px-3 py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md flex items-center gap-1 transition-colors"
                     >
                       <ListTodo size={16} />
@@ -407,7 +454,10 @@ const Developers = () => {
           </div>
           <div className="divide-y divide-gray-100">
             {pendingUsers.map((user) => (
-              <div key={user.id} className="p-3 sm:p-4 bg-yellow-50/30 hover:bg-yellow-50/50 transition-colors">
+              <div
+                key={user.id}
+                className="p-3 sm:p-4 bg-yellow-50/30 hover:bg-yellow-50/50 transition-colors"
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-3">
                     <img
@@ -420,7 +470,9 @@ const Developers = () => {
                         {user.firstName} {user.lastName}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <p className="text-gray-600 text-sm">{user.title || "Developer"}</p>
+                        <p className="text-gray-600 text-sm">
+                          {user.title || "Developer"}
+                        </p>
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           Pending
                         </span>
@@ -434,7 +486,8 @@ const Developers = () => {
                   >
                     <CheckCircle size={16} />
                     <span>
-                      {updateUserStatusMutation.isPending && user.id === updateUserStatusMutation.variables?.userId
+                      {updateUserStatusMutation.isPending &&
+                      user.id === updateUserStatusMutation.variables?.userId
                         ? "Approving..."
                         : "Approve"}
                     </span>
@@ -446,7 +499,7 @@ const Developers = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Developers
+export default Developers;

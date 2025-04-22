@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	private SprintService sprintService;
 	private SprintRepository sprintRepository;
 
+	// Cache to store login codes with timestamps (code -> timestamp)
+	private final Map<String, OffsetDateTime> loginCodes = new ConcurrentHashMap<>();
+
 	/**
 	 * Constructor for ToDoItemBotController
 	 * @param botToken - Telegram bot token for authentication
@@ -69,6 +74,60 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.sprintService = sprintService;
 		this.sprintRepository = sprintRepository;
 		}
+
+	/**
+	 * Sends a login code to a user via Telegram
+	 * @param chatId - Telegram chat ID of the user
+	 * @param code - The login code to send
+	 * @return boolean - Whether the code was sent successfully
+	 */
+	public boolean sendLoginCode(Long chatId, String code) {
+		try {
+			// Store the code with expiration time (5 minutes from now)
+			loginCodes.put(code, OffsetDateTime.now().plusMinutes(5));
+
+			SendMessage loginMessage = new SendMessage();
+			loginMessage.setChatId(chatId);
+			loginMessage.setText("🔐 *Login Code*\n\n" + code);
+			loginMessage.enableMarkdown(true);
+			execute(loginMessage);
+			return true;
+		} catch (TelegramApiException e) {
+			logger.error("Error sending login code: " + e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Validates a login code
+	 * @param code - The code to validate
+	 * @return boolean - Whether the code is valid and not expired
+	 */
+	public boolean validateLoginCode(String code) {
+		OffsetDateTime expiryTime = loginCodes.get(code);
+		if (expiryTime == null) {
+			return false;
+		}
+
+		if (expiryTime.isBefore(OffsetDateTime.now())) {
+			loginCodes.remove(code);
+			return false;  
+		}
+
+		loginCodes.remove(code); // Remove after successful use
+		return true;
+	}
+
+	public void sendActivationNotification(Long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("✅ Your account has been activated by your manager. You can now use the bot.");
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error sending activation notification: " + e.getMessage());
+		}
+	}
 
 	/**
 	 * Main method that processes incoming Telegram updates
@@ -224,7 +283,10 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				} else if (messageText.equals(BotLabels.HELP.getLabel())) {
 					handleHelp(chatId, "developer");
 					return;
-					}
+				} else if (messageText.equals("📊 KPIs")) {
+					handleDeveloperKPIs(chatId, user);
+					return;
+				}
 					// Check for filter options
 					if (messageText.equals("⏰ My Tasks")) {
 						handleMyTasks(chatId, user);
@@ -1968,8 +2030,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			thirdRow.add(BotLabels.DELETE_TASK.getLabel());
 			devKeyboard.add(thirdRow);
 			
-			// Fourth row - Help
+			// Fourth row - KPIs and Help
 			KeyboardRow fourthRow = new KeyboardRow();
+			fourthRow.add("📊 KPIs");
 			fourthRow.add(BotLabels.HELP.getLabel());
 			devKeyboard.add(fourthRow);
 			
@@ -1989,6 +2052,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "✏️ Update Task - Modify existing tasks\n" +
 						  "ℹ️ Details - View task details\n" +
 						  "🗑️ Delete Task - Remove tasks\n" +
+						  "📊 KPIs - View your performance metrics\n" +
 						  "❓ Help - Get assistance\n\n" +
 						  "Please select an option:");
 			message.setReplyMarkup(devKeyboardMarkup);
@@ -2056,7 +2120,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "📅 *Sprint Management*\n" +
 						  "- Create new sprints\n" +
 						  "- Update sprint details\n" +
-						  "- Delete sprints\n" +
 						  "- Track sprint progress\n\n" +
 						  "ℹ️ *Details*\n" +
 						  "View detailed information about any task\n\n" +
@@ -2372,6 +2435,95 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			}
 		} catch (TelegramApiException e) {
 			logger.error("Error showing sprints", e);
+		}
+	}
+
+	/**
+	 * Shows KPIs for the developer
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 */
+	private void handleDeveloperKPIs(long chatId, UserModel user) {
+		try {
+			// Get all tasks for the developer
+			List<TaskModel> tasks = taskService.findByUserAssigned(user.getID());
+			
+			// Calculate KPIs
+			int totalTasks = tasks.size();
+			int completedTasks = (int) tasks.stream()
+				.filter(task -> "done".equals(task.getStatus()))
+				.count();
+			int inProgressTasks = (int) tasks.stream()
+				.filter(task -> "in_progress".equals(task.getStatus()))
+				.count();
+			int pendingTasks = (int) tasks.stream()
+				.filter(task -> "created".equals(task.getStatus()))
+				.count();
+			
+			double totalEstimatedHours = tasks.stream()
+				.filter(task -> task.getEstimateHours() != null)
+				.mapToDouble(TaskModel::getEstimateHours)
+				.sum();
+			
+			double totalRealHours = tasks.stream()
+				.filter(task -> task.getRealHours() != null)
+				.mapToDouble(TaskModel::getRealHours)
+				.sum();
+			
+			double completionRate = totalTasks > 0 ? 
+				((double) completedTasks / totalTasks) * 100 : 0;
+			
+			double efficiencyRate = totalEstimatedHours > 0 ? 
+				(totalEstimatedHours / totalRealHours) * 100 : 0;
+			
+			// Create keyboard with back button
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("↩️ Back to Main Menu");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			
+			// Format the message with KPIs
+			StringBuilder messageText = new StringBuilder();
+			messageText.append("📊 *Your Performance Metrics*\n\n")
+					  .append("📋 *Task Overview*\n")
+					  .append("Total Tasks: ").append(totalTasks).append("\n")
+					  .append("Completed: ").append(completedTasks).append("\n")
+					  .append("In Progress: ").append(inProgressTasks).append("\n")
+					  .append("Pending: ").append(pendingTasks).append("\n\n")
+					  
+					  .append("⏱️ *Time Management*\n")
+					  .append("Total Estimated Hours: ").append(String.format("%.1f", totalEstimatedHours)).append("\n")
+					  .append("Total Real Hours: ").append(String.format("%.1f", totalRealHours)).append("\n\n")
+					  
+					  .append("📈 *Performance Indicators*\n")
+					  .append("Completion Rate: ").append(String.format("%.1f", completionRate)).append("%\n")
+					  .append("Efficiency Rate: ").append(String.format("%.1f", efficiencyRate)).append("%\n\n")
+					  
+					  .append("💡 *Tips*\n")
+					  .append("- Aim for a completion rate above 80%\n")
+					  .append("- Try to maintain an efficiency rate close to 100%\n")
+					  .append("- Keep pending tasks to a minimum");
+			
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText(messageText.toString());
+			message.setReplyMarkup(keyboard);
+			message.enableMarkdown(true);
+			
+			execute(message);
+		} catch (Exception e) {
+			logger.error("Error showing developer KPIs", e);
+			try {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Error al mostrar tus KPIs. Por favor, intenta nuevamente.");
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending error message", ex);
+			}
 		}
 	}
 }

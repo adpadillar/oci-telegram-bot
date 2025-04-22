@@ -1,31 +1,95 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, Filter, Bug, Sparkles, LayoutGrid, List, Pencil, Trash2, Loader2, X, Search, Clock, Calendar, User, Tag } from 'lucide-react';
+import {
+  Plus,
+  Filter,
+  Bug,
+  Sparkles,
+  LayoutGrid,
+  List,
+  Pencil,
+  Trash2,
+  Loader2,
+  X,
+  Search,
+  Clock,
+  Calendar,
+  User,
+  Tag,
+} from "lucide-react";
 import { api, TaskRequest, TaskResponse } from "../utils/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../utils/query/query-client";
 import { useSearchParams } from "react-router-dom";
 
 const Tasks: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("table");
   const [taskToEdit, setTaskToEdit] = useState<TaskResponse | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Add filter state
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [assigneeFilter, setAssigneeFilter] = useState<number | null>(null);
-  const [sprintFilter, setSprintFilter] = useState<number | null>(null);
+  // Initialize search term from URL parameters
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
 
-  // Read developer ID from URL and set it as the initial assignee filter
+  // Initialize state from URL parameters
+  const [viewMode, setViewMode] = useState<"kanban" | "table">(() => {
+    return (searchParams.get("view") as "kanban" | "table") || "table";
+  });
+  const [categoryFilter, setCategoryFilter] = useState<string>(() => searchParams.get("category") || "");
+  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "");
+  const [assigneeFilter, setAssigneeFilter] = useState<number | null>(() => {
+    const assignee = searchParams.get("assignee");
+    return assignee ? Number(assignee) : null;
+  });
+  const [sprintFilter, setSprintFilter] = useState<number | null>(() => {
+    const sprint = searchParams.get("sprint");
+    return sprint ? Number(sprint) : null;
+  });
+
+  // Update URL when filters, view mode, or search term change
   useEffect(() => {
-    const developerId = searchParams.get("developer");
-    if (developerId) {
-      setAssigneeFilter(Number(developerId));
+    const params = new URLSearchParams(searchParams);
+    
+    // Update search term in URL
+    if (searchTerm) {
+      params.set("search", searchTerm);
+    } else {
+      params.delete("search");
     }
-  }, [searchParams]);
+
+    // Update view mode in URL
+    if (viewMode) {
+      params.set("view", viewMode);
+    } else {
+      params.delete("view");
+    }
+
+    // Update filters in URL
+    if (categoryFilter) {
+      params.set("category", categoryFilter);
+    } else {
+      params.delete("category");
+    }
+
+    if (statusFilter) {
+      params.set("status", statusFilter);
+    } else {
+      params.delete("status");
+    }
+
+    if (assigneeFilter !== null) {
+      params.set("assignee", assigneeFilter.toString());
+    } else {
+      params.delete("assignee");
+    }
+
+    if (sprintFilter !== null) {
+      params.set("sprint", sprintFilter.toString());
+    } else {
+      params.delete("sprint");
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [viewMode, categoryFilter, statusFilter, assigneeFilter, sprintFilter, setSearchParams, searchParams, searchTerm]);
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryFn: api.tasks.list,
@@ -48,7 +112,10 @@ const Tasks: React.FC = () => {
 
     return tasks.filter((task) => {
       // Search term filter
-      if (searchTerm && !task.description.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (
+        searchTerm &&
+        !task.description.toLowerCase().includes(searchTerm.toLowerCase())
+      ) {
         return false;
       }
 
@@ -76,12 +143,19 @@ const Tasks: React.FC = () => {
 
       return true;
     });
-  }, [tasks, categoryFilter, statusFilter, assigneeFilter, sprintFilter, searchTerm]);
+  }, [
+    tasks,
+    categoryFilter,
+    statusFilter,
+    assigneeFilter,
+    sprintFilter,
+    searchTerm,
+  ]);
 
   // Get counts for each status
   const statusCounts = useMemo(() => {
     if (!filteredTasks) return {};
-    
+
     return filteredTasks.reduce((acc, task) => {
       acc[task.status] = (acc[task.status] || 0) + 1;
       return acc;
@@ -124,7 +198,8 @@ const Tasks: React.FC = () => {
         <div className="flex flex-wrap gap-2 mb-2">
           <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex items-center gap-1">
             <Calendar size={12} />
-            {sprints?.find((sprint) => sprint.id === task.sprintId)?.name ?? "N/A"}
+            {sprints?.find((sprint) => sprint.id === task.sprintId)?.name ??
+              "N/A"}
           </span>
           {task.estimateHours && (
             <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -155,7 +230,7 @@ const Tasks: React.FC = () => {
               </span>
             </div>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
-              <button 
+              <button
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -217,7 +292,9 @@ const Tasks: React.FC = () => {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">Add New Task</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Add New Task
+            </h2>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500"
@@ -228,7 +305,9 @@ const Tasks: React.FC = () => {
           <form onSubmit={handleSubmit} className="p-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Task Description
+                </label>
                 <input
                   type="text"
                   value={description}
@@ -237,10 +316,12 @@ const Tasks: React.FC = () => {
                   required
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
                   <select
                     value={category || ""}
                     onChange={(e) =>
@@ -256,9 +337,11 @@ const Tasks: React.FC = () => {
                     <option value="">None</option>
                   </select>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
                   <select
                     value={status}
                     onChange={(e) =>
@@ -281,9 +364,11 @@ const Tasks: React.FC = () => {
                   </select>
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sprint</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sprint
+                </label>
                 <select
                   value={sprint === null ? "" : sprint}
                   onChange={(e) =>
@@ -299,10 +384,12 @@ const Tasks: React.FC = () => {
                   ))}
                 </select>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimate (hours)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estimate (hours)
+                  </label>
                   <input
                     type="number"
                     value={estimateHours === null ? "" : estimateHours}
@@ -314,26 +401,34 @@ const Tasks: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Real (hours)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Real (hours)
+                  </label>
                   <input
                     type="number"
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
-                      setRealHours(e.target.value ? Number(e.target.value) : null)
+                      setRealHours(
+                        e.target.value ? Number(e.target.value) : null
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assigned To
+                </label>
                 <select
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
-                    setAssignedTo(e.target.value ? Number(e.target.value) : null)
+                    setAssignedTo(
+                      e.target.value ? Number(e.target.value) : null
+                    )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
@@ -346,7 +441,7 @@ const Tasks: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex justify-end mt-6">
               <button
                 type="button"
@@ -452,7 +547,9 @@ const Tasks: React.FC = () => {
           <form onSubmit={handleSubmit} className="p-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Task Description
+                </label>
                 <input
                   type="text"
                   value={description}
@@ -461,10 +558,12 @@ const Tasks: React.FC = () => {
                   required
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
                   <select
                     value={category || ""}
                     onChange={(e) =>
@@ -480,9 +579,11 @@ const Tasks: React.FC = () => {
                     <option value="">None</option>
                   </select>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
                   <select
                     value={status}
                     onChange={(e) =>
@@ -505,9 +606,11 @@ const Tasks: React.FC = () => {
                   </select>
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sprint</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sprint
+                </label>
                 <select
                   value={sprint === null ? "" : sprint}
                   onChange={(e) =>
@@ -523,10 +626,12 @@ const Tasks: React.FC = () => {
                   ))}
                 </select>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimate (hours)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estimate (hours)
+                  </label>
                   <input
                     type="number"
                     value={estimateHours === null ? "" : estimateHours}
@@ -538,26 +643,34 @@ const Tasks: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Real (hours)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Real (hours)
+                  </label>
                   <input
                     type="number"
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
-                      setRealHours(e.target.value ? Number(e.target.value) : null)
+                      setRealHours(
+                        e.target.value ? Number(e.target.value) : null
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assigned To
+                </label>
                 <select
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
-                    setAssignedTo(e.target.value ? Number(e.target.value) : null)
+                    setAssignedTo(
+                      e.target.value ? Number(e.target.value) : null
+                    )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
@@ -570,7 +683,7 @@ const Tasks: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex justify-end mt-6">
               <button
                 type="button"
@@ -642,7 +755,9 @@ const Tasks: React.FC = () => {
         </div>
         <div className="p-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Category
+            </label>
             <select
               value={tempCategoryFilter}
               onChange={(e) => setTempCategoryFilter(e.target.value)}
@@ -655,7 +770,9 @@ const Tasks: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Status
+            </label>
             <select
               value={tempStatusFilter}
               onChange={(e) => setTempStatusFilter(e.target.value)}
@@ -691,7 +808,9 @@ const Tasks: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Sprint</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Sprint
+            </label>
             <select
               value={tempSprintFilter === null ? "" : tempSprintFilter}
               onChange={(e) =>
@@ -820,7 +939,7 @@ const Tasks: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 max-w-[40vw] md:max-w-[32rem] truncate py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {task.description}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -882,7 +1001,15 @@ const Tasks: React.FC = () => {
                         {task.estimateHours ?? "-"}h
                       </span>
                       <span className="text-gray-400 mx-1">/</span>
-                      <span className={`font-medium ${task.realHours && task.estimateHours && task.realHours > task.estimateHours ? "text-red-600" : "text-green-600"}`}>
+                      <span
+                        className={`font-medium ${
+                          task.realHours &&
+                          task.estimateHours &&
+                          task.realHours > task.estimateHours
+                            ? "text-red-600"
+                            : "text-green-600"
+                        }`}
+                      >
                         {task.realHours ?? "-"}h
                       </span>
                     </div>
@@ -987,35 +1114,35 @@ const Tasks: React.FC = () => {
 
   const KanbanView = ({ tasks }: { tasks: TaskResponse[] }) => (
     <div className="flex gap-6 mt-6 overflow-x-auto pb-4 h-[calc(100vh-220px)]">
-      <TaskGroup 
-        title="Created" 
-        tasks={tasks} 
-        status="created" 
-        count={statusCounts['created'] || 0} 
+      <TaskGroup
+        title="Created"
+        tasks={tasks}
+        status="created"
+        count={statusCounts["created"] || 0}
       />
-      <TaskGroup 
-        title="In Progress" 
-        tasks={tasks} 
-        status="in-progress" 
-        count={statusCounts['in-progress'] || 0} 
+      <TaskGroup
+        title="In Progress"
+        tasks={tasks}
+        status="in-progress"
+        count={statusCounts["in-progress"] || 0}
       />
-      <TaskGroup 
-        title="In Review" 
-        tasks={tasks} 
-        status="in-review" 
-        count={statusCounts['in-review'] || 0} 
+      <TaskGroup
+        title="In Review"
+        tasks={tasks}
+        status="in-review"
+        count={statusCounts["in-review"] || 0}
       />
-      <TaskGroup 
-        title="Testing" 
-        tasks={tasks} 
-        status="testing" 
-        count={statusCounts['testing'] || 0} 
+      <TaskGroup
+        title="Testing"
+        tasks={tasks}
+        status="testing"
+        count={statusCounts["testing"] || 0}
       />
-      <TaskGroup 
-        title="Done" 
-        tasks={tasks} 
-        status="done" 
-        count={statusCounts['done'] || 0} 
+      <TaskGroup
+        title="Done"
+        tasks={tasks}
+        status="done"
+        count={statusCounts["done"] || 0}
       />
     </div>
   );
@@ -1035,7 +1162,8 @@ const Tasks: React.FC = () => {
             <Tag className="text-blue-500 h-5 w-5 sm:h-6 sm:w-6" />
             Tasks
             <span className="text-sm font-normal text-gray-500 ml-2">
-              {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}
+              {filteredTasks.length}{" "}
+              {filteredTasks.length === 1 ? "task" : "tasks"}
             </span>
           </h1>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -1056,7 +1184,9 @@ const Tasks: React.FC = () => {
                 <button
                   onClick={() => setViewMode("kanban")}
                   className={`p-2 rounded-md flex items-center transition-colors ${
-                    viewMode === "kanban" ? "bg-white shadow-sm text-blue-500" : "text-gray-500 hover:text-gray-700"
+                    viewMode === "kanban"
+                      ? "bg-white shadow-sm text-blue-500"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                   title="Kanban view"
                 >
@@ -1065,7 +1195,9 @@ const Tasks: React.FC = () => {
                 <button
                   onClick={() => setViewMode("table")}
                   className={`p-2 rounded-md flex items-center transition-colors ${
-                    viewMode === "table" ? "bg-white shadow-sm text-blue-500" : "text-gray-500 hover:text-gray-700"
+                    viewMode === "table"
+                      ? "bg-white shadow-sm text-blue-500"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                   title="Table view"
                 >
@@ -1082,13 +1214,15 @@ const Tasks: React.FC = () => {
                   }`}
                 >
                   <Filter size={16} />
-                  <span className="hidden sm:inline">{hasActiveFilters ? "Filters" : "Filter"}</span>
+                  <span className="hidden sm:inline">
+                    {hasActiveFilters ? "Filters" : "Filter"}
+                  </span>
                   {hasActiveFilters && (
                     <span className="bg-blue-100 text-blue-800 w-5 h-5 flex items-center justify-center rounded-full text-xs">
-                      {(categoryFilter ? 1 : 0) + 
-                       (statusFilter ? 1 : 0) + 
-                       (assigneeFilter !== null ? 1 : 0) + 
-                       (sprintFilter !== null ? 1 : 0)}
+                      {(categoryFilter ? 1 : 0) +
+                        (statusFilter ? 1 : 0) +
+                        (assigneeFilter !== null ? 1 : 0) +
+                        (sprintFilter !== null ? 1 : 0)}
                     </span>
                   )}
                 </button>
@@ -1105,16 +1239,18 @@ const Tasks: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Active filters display */}
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-gray-50 rounded-md">
-            <span className="text-xs font-medium text-gray-500">Active filters:</span>
+            <span className="text-xs font-medium text-gray-500">
+              Active filters:
+            </span>
             {categoryFilter && (
               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-xs flex items-center gap-1">
                 <Tag size={12} />
                 Category: {categoryFilter}
-                <button 
+                <button
                   onClick={() => setCategoryFilter("")}
                   className="ml-1 text-blue-500 hover:text-blue-700"
                 >
@@ -1125,7 +1261,7 @@ const Tasks: React.FC = () => {
             {statusFilter && (
               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-xs flex items-center gap-1">
                 Status: {statusFilter}
-                <button 
+                <button
                   onClick={() => setStatusFilter("")}
                   className="ml-1 text-blue-500 hover:text-blue-700"
                 >
@@ -1136,8 +1272,10 @@ const Tasks: React.FC = () => {
             {assigneeFilter !== null && (
               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-xs flex items-center gap-1">
                 <User size={12} />
-                Assignee: {users?.find((user) => user.id === assigneeFilter)?.firstName || "Unknown"}
-                <button 
+                Assignee:{" "}
+                {users?.find((user) => user.id === assigneeFilter)?.firstName ||
+                  "Unknown"}
+                <button
                   onClick={() => setAssigneeFilter(null)}
                   className="ml-1 text-blue-500 hover:text-blue-700"
                 >
@@ -1148,8 +1286,10 @@ const Tasks: React.FC = () => {
             {sprintFilter !== null && (
               <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md text-xs flex items-center gap-1">
                 <Calendar size={12} />
-                Sprint: {sprints?.find((sprint) => sprint.id === sprintFilter)?.name || "Unknown"}
-                <button 
+                Sprint:{" "}
+                {sprints?.find((sprint) => sprint.id === sprintFilter)?.name ||
+                  "Unknown"}
+                <button
                   onClick={() => setSprintFilter(null)}
                   className="ml-1 text-blue-500 hover:text-blue-700"
                 >
@@ -1157,7 +1297,7 @@ const Tasks: React.FC = () => {
                 </button>
               </span>
             )}
-            <button 
+            <button
               onClick={() => {
                 setCategoryFilter("");
                 setStatusFilter("");
@@ -1170,7 +1310,7 @@ const Tasks: React.FC = () => {
             </button>
           </div>
         )}
-        
+
         {tasksLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -1184,7 +1324,6 @@ const Tasks: React.FC = () => {
             )}
           </>
         )}
-        
       </div>
 
       {showAddModal && <AddTaskModal onClose={() => setShowAddModal(false)} />}

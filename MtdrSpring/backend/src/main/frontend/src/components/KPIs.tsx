@@ -70,6 +70,7 @@ const KPIs = () => {
   const [selectedMetricView, setSelectedMetricView] = useState<"tasks" | "developers" | "sprints">("tasks")
   const [showTrends, setShowTrends] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [selectedSprintFilter, setSelectedSprintFilter] = useState<number | null>(null)
 
   const isXs = useExtraSmallScreen()
 
@@ -411,6 +412,52 @@ const KPIs = () => {
       })
       .sort((a, b) => b.completedTasks - a.completedTasks)
   }, [users, tasks])
+
+  // Calculate team metrics per sprint
+  const teamMetricsPerSprint = useMemo(() => {
+    if (!tasks || !sprints) return null
+
+    return sprints.map(sprint => {
+      const sprintTasks = tasks.filter(task => task.sprintId === sprint.id)
+      const completedTasks = sprintTasks.filter(task => task.status === "done")
+      const totalHours = completedTasks.reduce((sum, task) => sum + (task.realHours || 0), 0)
+
+      return {
+        sprintId: sprint.id,
+        sprintName: sprint.name,
+        totalTasks: sprintTasks.length,
+        completedTasks: completedTasks.length,
+        totalHours,
+        completionRate: sprintTasks.length > 0 ? (completedTasks.length / sprintTasks.length) * 100 : 0
+      }
+    })
+  }, [tasks, sprints])
+
+  // Calculate developer metrics per sprint
+  const developerMetricsPerSprint = useMemo(() => {
+    if (!users || !tasks || !sprints) return null
+
+    const developers = users.filter(user => user.role === "developer")
+    const selectedSprint = sprints.find(s => s.id === selectedSprintFilter)
+
+    return developers.map(dev => {
+      const devTasks = selectedSprintFilter
+        ? tasks.filter(task => task.assignedToId === dev.id && task.sprintId === selectedSprintFilter)
+        : tasks.filter(task => task.assignedToId === dev.id)
+
+      const completedTasks = devTasks.filter(task => task.status === "done")
+      const totalHours = completedTasks.reduce((sum, task) => sum + (task.realHours || 0), 0)
+
+      return {
+        id: dev.id,
+        name: `${dev.firstName} ${dev.lastName}`,
+        totalTasks: devTasks.length,
+        completedTasks: completedTasks.length,
+        totalHours,
+        completionRate: devTasks.length > 0 ? (completedTasks.length / devTasks.length) * 100 : 0
+      }
+    })
+  }, [users, tasks, sprints, selectedSprintFilter])
 
   // Loading state
   if (usersLoading || tasksLoading || sprintsLoading) {
@@ -824,47 +871,22 @@ const KPIs = () => {
       {/* Developer metrics view */}
       {selectedMetricView === "developers" && (
         <div className="grid grid-cols-1 gap-6">
-          {/* Tasks per developer pie chart */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
-                Tasks per Developer
-              </h2>
-            </div>
-            <div className="h-60 sm:h-70 md:h-80">
-              {tasksPerDeveloperData ? (
-                <Pie
-                  data={tasksPerDeveloperData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: isXs ? "right" : "bottom",
-                        labels: {
-                          boxWidth: isXs ? 8 : 12,
-                          padding: isXs ? 10 : 15,
-                          font: {
-                            size: isXs ? 10 : 12,
-                          },
-                        },
-                      },
-                      tooltip: {
-                        backgroundColor: "rgba(50, 50, 50, 0.8)",
-                        padding: 10,
-                        bodyFont: {
-                          size: 12,
-                        },
-                        titleFont: {
-                          size: 14,
-                        },
-                      },
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-full text-gray-500">No data available</div>
-              )}
+          {/* Sprint filter for developer metrics */}
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-700">Filter by Sprint</h3>
+              <select
+                value={selectedSprintFilter || ""}
+                onChange={(e) => setSelectedSprintFilter(e.target.value ? Number(e.target.value) : null)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value="">All Sprints</option>
+                {sprints?.map(sprint => (
+                  <option key={sprint.id} value={sprint.id}>
+                    {sprint.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -890,15 +912,15 @@ const KPIs = () => {
                       Completed
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Completion Rate
+                      Hours Worked
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estimate Accuracy
+                      Completion Rate
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {developerPerformance?.map((dev) => (
+                  {developerMetricsPerSprint?.map((dev) => (
                     <tr key={dev.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -912,6 +934,7 @@ const KPIs = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dev.totalTasks}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dev.completedTasks}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dev.totalHours}h</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
@@ -920,26 +943,8 @@ const KPIs = () => {
                               style={{ width: `${dev.completionRate}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-gray-900">{dev.completionRate}%</span>
+                          <span className="text-sm text-gray-900">{Math.round(dev.completionRate)}%</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            Math.abs(dev.estimateAccuracy - 100) <= 10
-                              ? "bg-green-100 text-green-800"
-                              : dev.estimateAccuracy > 100
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {dev.estimateAccuracy}%
-                          {dev.estimateAccuracy > 100 ? (
-                            <ArrowUp className="ml-1 w-3 h-3" />
-                          ) : dev.estimateAccuracy < 100 ? (
-                            <ArrowDown className="ml-1 w-3 h-3" />
-                          ) : null}
-                        </span>
                       </td>
                     </tr>
                   ))}
@@ -953,6 +958,62 @@ const KPIs = () => {
       {/* Sprint metrics view */}
       {selectedMetricView === "sprints" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Team metrics per sprint */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                Team Metrics per Sprint
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sprint
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Tasks
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completed
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Hours Worked
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Completion Rate
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {teamMetricsPerSprint?.map((sprint) => (
+                    <tr key={sprint.sprintId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {sprint.sprintName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sprint.totalTasks}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sprint.completedTasks}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sprint.totalHours}h</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
+                            <div
+                              className="bg-blue-600 h-2.5 rounded-full"
+                              style={{ width: `${sprint.completionRate}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-900">{Math.round(sprint.completionRate)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Hours per sprint bar chart */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-4">
@@ -1203,8 +1264,6 @@ const KPIs = () => {
               </div>
             </div>
           )}
-
-
 
           {/* Estimate Accuracy Warning */}
           {summaryMetrics?.estimateAccuracy &&
