@@ -1,49 +1,44 @@
-import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+// vite.config.ts
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-
 export default defineConfig(({ command }) => {
-  if (command === "serve") {
-    return {
-      plugins: [react(), tailwindcss()],
-      build: {
-        outDir: "./build",
+  const baseConfig = {
+    plugins: [react(), tailwindcss()],
+    build: {
+      outDir: './build',
+    },
+    server: {
+      watch: {
+        usePolling: true,
       },
-      server: {
-        watch: {
-          usePolling: true,
-        },
-        hmr: {
-          overlay: true,
-        },
-        proxy: {
-          "/api": "http://localhost:8081",
-        },
+      hmr: {
+        overlay: true,
       },
-      optimizeDeps: {
-        force: true,
-      },
-    };
-  } else {
-    // command === 'build'
-    return {
-      plugins: [react(), tailwindcss()],
-      build: {
-        outDir: "./build",
-      },
-      server: {
-        watch: {
-          usePolling: true,
-        },
-        hmr: {
-          overlay: true,
-        },
-      },
-      optimizeDeps: {
-        force: true,
-      },
-    };
+    },
+    optimizeDeps: {
+      force: true,
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './vitest.setup.ts',
+    },
   }
-});
+
+  if (command === 'serve') {
+    return {
+      ...baseConfig,
+      server: {
+        ...baseConfig.server,
+        proxy: {
+          '/api': 'http://localhost:8081',
+        },
+      },
+    }
+  }
+
+  return baseConfig
+})

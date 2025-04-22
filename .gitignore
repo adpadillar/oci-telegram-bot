@@ -55,3 +55,4 @@ frontend/yarn-error.log*
 # ignore wallet directory and any files in it
 wallet/
 .env
+node_modules
