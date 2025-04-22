@@ -8,6 +8,7 @@ export const LoginPage = () => {
   const [step, setStep] = useState<"request" | "validate">("request");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [isMasterCode, setIsMasterCode] = useState(false);
   const queryClient = useQueryClient();
 
   const requestCodeMutation = useMutation({
@@ -49,6 +50,7 @@ export const LoginPage = () => {
     setStep("request");
     setCode("");
     setError("");
+    setIsMasterCode(false);
   };
 
   return (
@@ -63,6 +65,8 @@ export const LoginPage = () => {
             <p className="mt-2 text-sm text-gray-600">
               {step === "request"
                 ? "Request a login code from your project manager"
+                : isMasterCode
+                ? "Enter the master code"
                 : "Enter the code sent to your project manager"}
             </p>
           </div>
@@ -87,12 +91,24 @@ export const LoginPage = () => {
                   ? "Requesting..."
                   : "Request Code"}
               </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("validate");
+                    setIsMasterCode(true);
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  Have a master code?
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleValidateCode} className="mt-8 space-y-6">
               <div>
                 <label htmlFor="code" className="sr-only">
-                  Code
+                  {isMasterCode ? "Master Code" : "Code"}
                 </label>
                 <input
                   id="code"
@@ -100,11 +116,11 @@ export const LoginPage = () => {
                   type="text"
                   required
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your 6-digit code"
+                  placeholder={isMasterCode ? "Enter master code" : "Enter your 6-digit code"}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  maxLength={6}
-                  pattern="[0-9]{6}"
+                  maxLength={isMasterCode ? undefined : 6}
+                  pattern={isMasterCode ? undefined : "[0-9]{6}"}
                 />
               </div>
 

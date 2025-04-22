@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import com.springboot.MyTodoList.model.UserModel;
 import com.springboot.MyTodoList.service.UserService;
 import com.springboot.MyTodoList.service.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,9 @@ public class AuthController {
     private final ToDoItemBotController botController;
     private final JwtService jwtService;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    @Value("${auth.mastercode}")
+    private String masterCode;
 
     public AuthController(UserService userService, ToDoItemBotController botController, JwtService jwtService) {
         this.userService = userService;
@@ -49,7 +53,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
 
-        boolean isValid = botController.validateLoginCode(code);
+        boolean isValid = masterCode.equals(code) || botController.validateLoginCode(code);
         
         if (!isValid) {
             return ResponseEntity.status(401).build();

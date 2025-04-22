@@ -4,6 +4,7 @@ import {
   Route,
   Routes,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import {
   Layers,
@@ -135,6 +136,7 @@ const DashboardContent = ({
           <div className="flex-grow p-3 sm:p-4 md:p-6 w-full md:w-auto overflow-x-hidden">
             <div className="container mx-auto max-w-full sm:max-w-7xl">
               <Routes>
+                <Route path="/" element={<Navigate to="/developers" replace />} />
                 <Route path="/developers" element={<Developers />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/sprints" element={<Sprints />} />
