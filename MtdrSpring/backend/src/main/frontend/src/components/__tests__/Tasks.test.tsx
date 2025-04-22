@@ -1,15 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import { describe, it, vi, expect } from "vitest"
 import "@testing-library/jest-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter } from "react-router-dom"
-import KPIs from "../KPIs"
+import Tasks from "../Tasks"
 import * as client from "../../utils/api/client"
 
-// Mock HTMLCanvasElement
-HTMLCanvasElement.prototype.getContext = vi.fn()
-
-// ✅ Mocks dentro del vi.mock, para evitar hoisting error
+// Mock the API client
 vi.mock("../../utils/api/client", async () => {
   const original = await vi.importActual<typeof client>("../../utils/api/client")
 
@@ -63,9 +60,12 @@ vi.mock("../../utils/api/client", async () => {
     api: {
       tasks: {
         list: vi.fn().mockResolvedValue(mockTasks),
+        create: vi.fn().mockResolvedValue({ ...mockTasks[0], id: 3 }),
+        patch: vi.fn().mockResolvedValue({ ...mockTasks[0], description: "Updated task" }),
+        delete: vi.fn().mockResolvedValue({}),
       },
       users: {
-        getDevelopers: vi.fn().mockResolvedValue(mockUsers),
+        getUsers: vi.fn().mockResolvedValue(mockUsers),
       },
       sprints: {
         getSprints: vi.fn().mockResolvedValue(mockSprints),
@@ -75,57 +75,65 @@ vi.mock("../../utils/api/client", async () => {
 })
 
 // Render helper
-function renderKPIs() {
+function renderTasks() {
   const queryClient = new QueryClient()
   return render(
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
-        <KPIs />
+        <Tasks />
       </QueryClientProvider>
     </MemoryRouter>
   )
 }
 
-describe("KPIs Component", () => {
-  it("renders the KPI Dashboard title", async () => {
-    renderKPIs()
+describe("Tasks Component", () => {
+  it("renders the Tasks title", async () => {
+    renderTasks()
     await waitFor(() => {
-      expect(screen.getByText("KPI Dashboard")).toBeInTheDocument()
+      expect(screen.getByText("Tasks")).toBeInTheDocument()
     })
   })
 
-  it("renders task status chart with data", async () => {
-    renderKPIs()
+  it("displays the correct number of tasks", async () => {
+    renderTasks()
     await waitFor(() => {
-      expect(screen.getByText("Tasks by Status")).toBeInTheDocument()
+      expect(screen.getByText("2 tasks")).toBeInTheDocument()
     })
   })
 
-  it("displays total tasks and completion rate", async () => {
-    renderKPIs()
+  it("renders task cards with correct information", async () => {
+    renderTasks()
     await waitFor(() => {
-      expect(screen.getByText("Task Overview")).toBeInTheDocument()
-      expect(screen.getByText("50%")).toBeInTheDocument()
+      expect(screen.getByText("Fix login bug")).toBeInTheDocument()
+      expect(screen.getByText("Implement UI")).toBeInTheDocument()
     })
   })
 
-  it("displays developer metrics including task count", async () => {
-    renderKPIs()
+  it("searches tasks by description", async () => {
+    renderTasks()
     await waitFor(() => {
-      expect(screen.getByText("Team Size")).toBeInTheDocument()
+      const searchInput = screen.getByPlaceholderText("Search tasks...")
+      fireEvent.change(searchInput, { target: { value: "login" } })
+      
+      expect(screen.getByText("Fix login bug")).toBeInTheDocument()
+      expect(screen.queryByText("Implement UI")).not.toBeInTheDocument()
     })
-    // Check for text "2" (developers), ideally refine this if there's conflict
-    const twos = screen.getAllByText("2")
-    expect(twos.length).toBeGreaterThan(0)
   })
 
-  it("displays bar chart of hours per sprint", async () => {
-    renderKPIs()
+  it("displays task status correctly", async () => {
+    renderTasks()
     await waitFor(() => {
-      screen.getByText("Sprints").click()
+      expect(screen.getByText("Done")).toBeInTheDocument()
+      expect(screen.getByText("In Progress")).toBeInTheDocument()
     })
+  })
+
+  it("shows task estimates and actual hours", async () => {
+    renderTasks()
     await waitFor(() => {
-      expect(screen.getByText("Hours per Sprint")).toBeInTheDocument()
+      expect(screen.getByText("4h")).toBeInTheDocument()
+      expect(screen.getByText("5h")).toBeInTheDocument()
+      expect(screen.getByText("6h")).toBeInTheDocument()
     })
   })
 })
