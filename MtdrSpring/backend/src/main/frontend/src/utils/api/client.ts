@@ -16,6 +16,10 @@ export const userRequestValidator = z.object({
   title: z.string().nullable(),
 });
 
+export const authResponseValidator = z.object({
+  token: z.string(),
+});
+
 export type UserResponse = z.infer<typeof userResponseValidator>;
 export type UserRequest = z.infer<typeof userRequestValidator>;
 
@@ -237,9 +241,49 @@ function createApiClient(baseUrl: string) {
     }
   }
 
+  async function requestLoginCode() {
+    const response = await fetch(`${urlWithProject}/request-code`, {
+      method: "POST",
+    });
+    return response.ok;
+  }
+
+  async function validateLoginCode(code: string) {
+    const response = await fetch(`${urlWithProject}/validate-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Invalid code");
+    }
+
+    const result = await response.json();
+    const safeParsed = authResponseValidator.safeParse(result);
+
+    if (!safeParsed.success) {
+      throw new Error("Invalid response format");
+    }
+
+    return safeParsed.data;
+  }
+
+  async function logout() {
+    const response = await fetch(`${baseUrl}/logout`, {
+      method: "POST",
+    });
+    return response.ok;
+  }
+
   return {
     auth: {
       check: checkAuth,
+      requestCode: requestLoginCode,
+      validateCode: validateLoginCode,
+      logout,
     },
     tasks: {
       list: listTasks,

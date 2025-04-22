@@ -11,10 +11,10 @@ import {
   ListTodo,
   LineChart,
   UsersIcon,
-  Bell,
   Search,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Developers from "./Developers";
@@ -23,6 +23,7 @@ import Sprints from "./Sprints";
 import KPIs from "./KPIs";
 import { LoggedIn } from "./auth/LoggedIn";
 import { LoginPage } from "./auth/LoginPage";
+import { api } from "../utils/api/client"; // Corrected API import
 
 // Create a wrapper component to access useLocation
 const DashboardContent = ({
@@ -44,6 +45,12 @@ const DashboardContent = ({
       setActiveNavItem(path);
     }
   }, [location, navItems]);
+
+  const handleLogout = async () => {
+    await api.auth.logout();
+    // Reload the page to trigger re-authentication
+    window.location.reload();
+  };
 
   return (
     <LoggedIn>
@@ -91,11 +98,11 @@ const DashboardContent = ({
                 </button>
               )}
               <button
-                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 relative"
-                aria-label="Notifications"
+                onClick={handleLogout}
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
+                aria-label="Logout"
               >
-                <Bell size={18} />
-                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                <LogOut size={18} />
               </button>
               <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
                 <img

@@ -1,7 +1,56 @@
 import { LoggedOut } from "./LoggedOut";
 import { Layers } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { api } from "../../utils/api/client";
 
 export const LoginPage = () => {
+  const [step, setStep] = useState<"request" | "validate">("request");
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
+
+  const requestCodeMutation = useMutation({
+    mutationFn: () => api.auth.requestCode(),
+    onSuccess: () => {
+      setStep("validate");
+      setError("");
+    },
+    onError: () => {
+      setError("Failed to request code. Please try again.");
+    },
+  });
+
+  const validateCodeMutation = useMutation({
+    mutationFn: (code: string) => api.auth.validateCode(code),
+    onSuccess: () => {
+      // Invalidate the auth query to trigger a re-fetch
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      setError("");
+    },
+    onError: () => {
+      setError("Invalid code. Please try again.");
+    },
+  });
+
+  const handleRequestCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    requestCodeMutation.mutate();
+  };
+
+  const handleValidateCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.trim()) {
+      validateCodeMutation.mutate(code);
+    }
+  };
+
+  const handleBack = () => {
+    setStep("request");
+    setCode("");
+    setError("");
+  };
+
   return (
     <LoggedOut>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -12,36 +61,73 @@ export const LoginPage = () => {
             </div>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">TaskFlow</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Project Manager Sign In
+              {step === "request"
+                ? "Request a login code from your project manager"
+                : "Enter the code sent to your project manager"}
             </p>
           </div>
-          <form className="mt-8 space-y-6">
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="project-identifier" className="sr-only">
-                  Project Identifier
-                </label>
-                <input
-                  id="project-identifier"
-                  name="project-identifier"
-                  type="text"
-                  autoComplete="off"
-                  required
-                  className="appearance-none  relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Project Identifier"
-                />
-              </div>
-            </div>
 
-            <div>
+          {error && (
+            <div
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+
+          {step === "request" ? (
+            <form onSubmit={handleRequestCode} className="mt-8 space-y-6">
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={requestCodeMutation.isPending}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
               >
-                Sign in
+                {requestCodeMutation.isPending
+                  ? "Requesting..."
+                  : "Request Code"}
               </button>
-            </div>
-          </form>
+            </form>
+          ) : (
+            <form onSubmit={handleValidateCode} className="mt-8 space-y-6">
+              <div>
+                <label htmlFor="code" className="sr-only">
+                  Code
+                </label>
+                <input
+                  id="code"
+                  name="code"
+                  type="text"
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your 6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={validateCodeMutation.isPending || !code.trim()}
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+                >
+                  {validateCodeMutation.isPending
+                    ? "Validating..."
+                    : "Validate Code"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </LoggedOut>

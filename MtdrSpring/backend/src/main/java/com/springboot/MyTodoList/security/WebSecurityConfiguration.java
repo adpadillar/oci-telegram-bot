@@ -1,5 +1,6 @@
 package com.springboot.MyTodoList.security;
 
+import com.springboot.MyTodoList.service.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,9 +13,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     
+    private final JwtService jwtService;
+
+    public WebSecurityConfiguration(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
+    
     @Bean
     public BearerTokenFilter bearerTokenFilter() {
-        return new BearerTokenFilter();
+        return new BearerTokenFilter(jwtService);
     }
 
     @Override
@@ -23,8 +30,9 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeRequests(requests -> requests
-                .antMatchers("/api/**").authenticated()  // Require authentication for API endpoints
-                .anyRequest().permitAll())  // Allow all other requests
+                .antMatchers("/api/*/request-code", "/api/*/validate-code").permitAll()
+                .antMatchers("/api/**").authenticated()
+                .anyRequest().permitAll())
             .addFilterBefore(bearerTokenFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 }

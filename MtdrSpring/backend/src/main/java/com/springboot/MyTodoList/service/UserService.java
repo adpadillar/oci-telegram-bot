@@ -36,13 +36,13 @@ public class UserService {
         return userRepository.findByProjectId(projectId);
     }
 
-    // public List<User> findUsersByProject(int projectId) {
-    //     return userRepository.findByProjectId(projectId);
-    // }
-
-    // public User findUserByTelegramId(int telegramId) {
-    //     return userRepository.findByTelegramId(telegramId);
-    // }
+    public UserModel findManagerByProject(int projectId) {
+        List<UserModel> users = userRepository.findByProjectId(projectId);
+        return users.stream()
+                .filter(user -> "manager".equals(user.getRole()))
+                .findFirst()
+                .orElse(null);
+    }
 
     public UserModel createUser(UserDTO userDTO, int projectId) throws RuntimeException {
         // Find project by ID

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	private SprintService sprintService;
 	private SprintRepository sprintRepository;
 
+	// Cache to store login codes with timestamps (code -> timestamp)
+	private final Map<String, OffsetDateTime> loginCodes = new ConcurrentHashMap<>();
+
 	/**
 	 * Constructor for ToDoItemBotController
 	 * @param botToken - Telegram bot token for authentication
@@ -69,6 +74,49 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		this.sprintService = sprintService;
 		this.sprintRepository = sprintRepository;
 		}
+
+	/**
+	 * Sends a login code to a user via Telegram
+	 * @param chatId - Telegram chat ID of the user
+	 * @param code - The login code to send
+	 * @return boolean - Whether the code was sent successfully
+	 */
+	public boolean sendLoginCode(Long chatId, String code) {
+		try {
+			// Store the code with expiration time (5 minutes from now)
+			loginCodes.put(code, OffsetDateTime.now().plusMinutes(5));
+
+			SendMessage loginMessage = new SendMessage();
+			loginMessage.setChatId(chatId);
+			loginMessage.setText("🔐 *Login Code*\n\n" + code);
+			loginMessage.enableMarkdown(true);
+			execute(loginMessage);
+			return true;
+		} catch (TelegramApiException e) {
+			logger.error("Error sending login code: " + e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Validates a login code
+	 * @param code - The code to validate
+	 * @return boolean - Whether the code is valid and not expired
+	 */
+	public boolean validateLoginCode(String code) {
+		OffsetDateTime expiryTime = loginCodes.get(code);
+		if (expiryTime == null) {
+			return false;
+		}
+
+		if (expiryTime.isBefore(OffsetDateTime.now())) {
+			loginCodes.remove(code);
+			return false;  
+		}
+
+		loginCodes.remove(code); // Remove after successful use
+		return true;
+	}
 
 	/**
 	 * Main method that processes incoming Telegram updates
@@ -2056,7 +2104,6 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "📅 *Sprint Management*\n" +
 						  "- Create new sprints\n" +
 						  "- Update sprint details\n" +
-						  "- Delete sprints\n" +
 						  "- Track sprint progress\n\n" +
 						  "ℹ️ *Details*\n" +
 						  "View detailed information about any task\n\n" +
