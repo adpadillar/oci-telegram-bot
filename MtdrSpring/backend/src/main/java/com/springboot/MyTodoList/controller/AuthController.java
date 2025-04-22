@@ -68,10 +68,10 @@ public class AuthController {
         // Generate JWT
         String token = jwtService.generateToken(manager.getID(), projectId);
         
-        // Create a secure cookie
+        // Create a cookie
         Cookie cookie = new Cookie("auth_token", token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true); // Enable in production
+        cookie.setSecure(false); // Temporarily disable for non-HTTPS environments
         cookie.setPath("/");
         cookie.setMaxAge(24 * 60 * 60); // 24 hours
         
@@ -89,7 +89,7 @@ public class AuthController {
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("auth_token", null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(false); // Temporarily disable for non-HTTPS environments
         cookie.setPath("/");
         cookie.setMaxAge(0); // Immediately expire the cookie
         
