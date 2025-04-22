@@ -22,26 +22,74 @@ import { queryClient } from "../utils/query/query-client";
 import { useSearchParams } from "react-router-dom";
 
 const Tasks: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("table");
   const [taskToEdit, setTaskToEdit] = useState<TaskResponse | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Add filter state
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [assigneeFilter, setAssigneeFilter] = useState<number | null>(null);
-  const [sprintFilter, setSprintFilter] = useState<number | null>(null);
+  // Initialize search term from URL parameters
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
 
-  // Read developer ID from URL and set it as the initial assignee filter
+  // Initialize state from URL parameters
+  const [viewMode, setViewMode] = useState<"kanban" | "table">(() => {
+    return (searchParams.get("view") as "kanban" | "table") || "table";
+  });
+  const [categoryFilter, setCategoryFilter] = useState<string>(() => searchParams.get("category") || "");
+  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "");
+  const [assigneeFilter, setAssigneeFilter] = useState<number | null>(() => {
+    const assignee = searchParams.get("assignee");
+    return assignee ? Number(assignee) : null;
+  });
+  const [sprintFilter, setSprintFilter] = useState<number | null>(() => {
+    const sprint = searchParams.get("sprint");
+    return sprint ? Number(sprint) : null;
+  });
+
+  // Update URL when filters, view mode, or search term change
   useEffect(() => {
-    const developerId = searchParams.get("developer");
-    if (developerId) {
-      setAssigneeFilter(Number(developerId));
+    const params = new URLSearchParams(searchParams);
+    
+    // Update search term in URL
+    if (searchTerm) {
+      params.set("search", searchTerm);
+    } else {
+      params.delete("search");
     }
-  }, [searchParams]);
+
+    // Update view mode in URL
+    if (viewMode) {
+      params.set("view", viewMode);
+    } else {
+      params.delete("view");
+    }
+
+    // Update filters in URL
+    if (categoryFilter) {
+      params.set("category", categoryFilter);
+    } else {
+      params.delete("category");
+    }
+
+    if (statusFilter) {
+      params.set("status", statusFilter);
+    } else {
+      params.delete("status");
+    }
+
+    if (assigneeFilter !== null) {
+      params.set("assignee", assigneeFilter.toString());
+    } else {
+      params.delete("assignee");
+    }
+
+    if (sprintFilter !== null) {
+      params.set("sprint", sprintFilter.toString());
+    } else {
+      params.delete("sprint");
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [viewMode, categoryFilter, statusFilter, assigneeFilter, sprintFilter, setSearchParams, searchParams, searchTerm]);
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryFn: api.tasks.list,
