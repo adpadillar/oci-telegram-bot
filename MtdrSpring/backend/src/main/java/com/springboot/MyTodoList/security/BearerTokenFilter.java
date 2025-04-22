@@ -1,6 +1,9 @@
 package com.springboot.MyTodoList.security;
 
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +28,12 @@ public class BearerTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        // If we have a bearer token, continue with the request
+        // Extract token and create authentication
+        String token = authHeader.substring(7);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            token, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         filterChain.doFilter(request, response);
     }
 }

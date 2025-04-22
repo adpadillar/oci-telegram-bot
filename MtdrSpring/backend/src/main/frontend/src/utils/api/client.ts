@@ -228,7 +228,19 @@ function createApiClient(baseUrl: string) {
     });
   }
 
+  async function checkAuth() {
+    try {
+      const response = await fetch(`${baseUrl}/me`);
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  }
+
   return {
+    auth: {
+      check: checkAuth,
+    },
     tasks: {
       list: listTasks,
       create: createTask,
