@@ -118,6 +118,17 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 		return true;
 	}
 
+	public void sendActivationNotification(Long chatId) {
+		try {
+			SendMessage message = new SendMessage();
+			message.setChatId(chatId);
+			message.setText("✅ Your account has been activated by your manager. You can now use the bot.");
+			execute(message);
+		} catch (TelegramApiException e) {
+			logger.error("Error sending activation notification: " + e.getMessage());
+		}
+	}
+
 	/**
 	 * Main method that processes incoming Telegram updates
 	 * Handles message routing based on user role and message content
