@@ -5,7 +5,7 @@ WORKDIR /app
 COPY src/main/frontend/package*.json ./
 # Install dependencies with clean npm cache
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps
+    npm install
 # Copy the rest of the frontend files
 COPY src/main/frontend ./
 # Build the frontend
@@ -18,7 +18,7 @@ WORKDIR /app
 COPY pom.xml .
 # Copy source code
 COPY src ./src
-# Copy the built frontend assets
+# Copy the built frontend assets to Spring Boot's static directory
 COPY --from=frontend-builder /app/build/ ./src/main/resources/static/
 # Build the application
 RUN mvn clean package -DskipTests
