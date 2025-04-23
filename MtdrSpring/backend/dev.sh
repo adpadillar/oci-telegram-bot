@@ -36,16 +36,33 @@ else
     echo "Maven not found, using ./mvnw."
 fi
 
+# Start frontend in background
+echo "Starting Vite development server..."
+cd src/main/frontend
+npm install
+npm run dev &
+FRONTEND_PID=$!
+echo "Frontend server started with PID: $FRONTEND_PID"
+
 # Start backend
 echo "Starting Spring Boot backend..."
-cd ../backend
+cd ../../..
+$MVN_CMD spring-boot:run &
+BACKEND_PID=$!
+echo "Backend server started with PID: $BACKEND_PID"
 
-# Clean frontend build directory and static resources
-echo "Cleaning frontend build directory and static resources..."
-rm -rf ../frontend/build
-rm -rf target/classes/static
+# Function to handle Ctrl+C
+handle_interrupt() {
+    echo "Shutting down servers..."
+    kill $FRONTEND_PID 2>/dev/null
+    kill $BACKEND_PID 2>/dev/null
+    cleanup
+}
 
-$MVN_CMD spring-boot:run
+trap handle_interrupt INT
 
-# Wait for any remaining background processes
-wait
+# Wait for either process to exit
+wait -n $FRONTEND_PID $BACKEND_PID
+# If we get here, one of the processes died, kill the other one
+kill $FRONTEND_PID 2>/dev/null
+kill $BACKEND_PID 2>/dev/null
