@@ -1,6 +1,7 @@
 package com.springboot.MyTodoList.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.OffsetDateTime;
 
 @Schema(
     description = "Data Transfer Object for creating and updating tasks"
@@ -61,6 +62,14 @@ public class TaskDTO {
     )
     private String category;
 
+    @Schema(
+        description = "Due date for the task completion",
+        example = "2024-05-30T23:59:59Z",
+        type = "string",
+        format = "date-time"
+    )
+    private OffsetDateTime dueDate;
+
     public TaskDTO() {}
 
     public TaskDTO(String description, String status, Integer createdBy, Integer assignedTo, Double estimateHours, Double realHours, Integer sprint, String category) {
@@ -97,4 +106,7 @@ public class TaskDTO {
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+
+    public OffsetDateTime getDueDate() { return dueDate; }
+    public void setDueDate(OffsetDateTime dueDate) { this.dueDate = dueDate; }
 }

@@ -15,6 +15,7 @@ import {
   Calendar,
   User,
   Tag,
+  CalendarCheck,
 } from "lucide-react";
 import { api, TaskRequest, TaskResponse } from "../utils/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -105,6 +106,32 @@ const Tasks: React.FC = () => {
     queryFn: api.sprints.getSprints,
     queryKey: ["sprints"],
   });
+
+  // Helper function to format date
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return "No due date";
+    return new Date(date).toLocaleDateString("en-MX", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Helper function to check if a due date is approaching or past
+  const getDueDateStatus = (date: Date | null | undefined) => {
+    if (!date) return "none";
+    
+    const dueDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    
+    if (daysDiff < 0) return "overdue";
+    if (daysDiff <= 3) return "soon";
+    return "ok";
+  };
 
   // Filter tasks using the defined filters and search term
   const filteredTasks = useMemo(() => {
@@ -207,6 +234,21 @@ const Tasks: React.FC = () => {
               {task.estimateHours}h est.
             </span>
           )}
+          {task.dueDate && (
+            <span 
+              className={`px-2 py-0.5 rounded-full flex items-center gap-1
+                ${getDueDateStatus(task.dueDate) === "overdue" 
+                  ? "bg-red-100 text-red-800" 
+                  : getDueDateStatus(task.dueDate) === "soon"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-green-100 text-green-700"
+                }
+              `}
+            >
+              <CalendarCheck size={12} />
+              {formatDate(task.dueDate)}
+            </span>
+          )}
         </div>
         <div className="text-gray-500 text-xs">
           Created:{" "}
@@ -260,6 +302,7 @@ const Tasks: React.FC = () => {
     >("created");
     const [estimateHours, setEstimateHours] = useState<number | null>(null);
     const [realHours, setRealHours] = useState<number | null>(null);
+    const [dueDate, setDueDate] = useState<string>("");
 
     const createTaskMutation = useMutation({
       mutationFn: (taskData: Omit<TaskRequest, "createdBy">) => {
@@ -285,6 +328,7 @@ const Tasks: React.FC = () => {
         realHours,
         sprint,
         category,
+        dueDate: dueDate ? new Date(dueDate) : null,
       });
     };
 
@@ -363,6 +407,18 @@ const Tasks: React.FC = () => {
                     <option value="done">Done</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -502,8 +558,14 @@ const Tasks: React.FC = () => {
     const [estimateHours, setEstimateHours] = useState<number | null>(
       task.estimateHours
     );
-
     const [realHours, setRealHours] = useState<number | null>(task.realHours);
+    
+    // Format date for input element (YYYY-MM-DD)
+    const [dueDate, setDueDate] = useState<string>(
+      task.dueDate 
+        ? new Date(task.dueDate).toISOString().split('T')[0] 
+        : ""
+    );
 
     const updateTaskMutation = useMutation({
       mutationFn: (taskData: Partial<TaskRequest>) => {
@@ -529,6 +591,7 @@ const Tasks: React.FC = () => {
         realHours,
         sprint,
         category,
+        dueDate: dueDate ? new Date(dueDate) : null,
       });
     };
 
@@ -605,6 +668,18 @@ const Tasks: React.FC = () => {
                     <option value="done">Done</option>
                   </select>
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -715,7 +790,6 @@ const Tasks: React.FC = () => {
       </div>
     );
   };
-
   const FilterMenu = () => {
     const [tempCategoryFilter, setTempCategoryFilter] =
       useState(categoryFilter);
@@ -881,6 +955,7 @@ const Tasks: React.FC = () => {
     </div>
   );
 
+
   const TableView = ({ tasks }: { tasks: TaskResponse[] }) => {
     return (
       <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
@@ -909,6 +984,12 @@ const Tasks: React.FC = () => {
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Sprint
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Due Date
                 </th>
                 <th
                   scope="col"
@@ -991,6 +1072,31 @@ const Tasks: React.FC = () => {
                         onClick={() => setTaskToEdit(task)}
                       >
                         <Plus size={16} />
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {task.dueDate ? (
+                      <span
+                        className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full
+                        ${getDueDateStatus(task.dueDate) === "overdue" 
+                          ? "bg-red-100 text-red-800" 
+                          : getDueDateStatus(task.dueDate) === "soon"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        <CalendarCheck size={12} className="mr-1" />
+                        {formatDate(task.dueDate)}
+                      </span>
+                    ) : (
+                      <button
+                        className="text-gray-400 hover:text-gray-600 flex items-center text-xs border border-dashed border-gray-300 rounded-full px-2 py-1 transition-colors"
+                        title="Set due date"
+                        onClick={() => setTaskToEdit(task)}
+                      >
+                        <CalendarCheck size={12} className="mr-1" />
+                        <span>Set date</span>
                       </button>
                     )}
                   </td>
