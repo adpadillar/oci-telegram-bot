@@ -26,6 +26,10 @@ jobs:
         node-version: '20'
         cache: 'npm'
         cache-dependency-path: MtdrSpring/backend/src/main/frontend/package-lock.json
+
+    - name: Install node modules
+      working-directory: MtdrSpring/backend/src/main/frontend
+      run: npm install
     
     - name: Run backend tests
       working-directory: MtdrSpring/backend
