@@ -1,52 +1,78 @@
 package com.springboot.MyTodoList.dto;
 
 import java.time.OffsetDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(
+    description = "Data Transfer Object for creating and updating sprints"
+)
 public class SprintDTO {
-  private String name;
-  private String description;
-  private OffsetDateTime startedAt;
-  private OffsetDateTime endsAt;
+    @Schema(
+        description = "Name of the sprint",
+        example = "Sprint 1 - Authentication",
+        required = true
+    )
+    private String name;
 
-  public SprintDTO() {
-  }
+    @Schema(
+        description = "Detailed description of sprint goals",
+        example = "Implement core authentication features including login, registration, and password reset"
+    )
+    private String description;
 
-  public SprintDTO(String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
-    this.name = name;
-    this.description = description;
-    this.startedAt = startedAt;
-    this.endsAt = endsAt;
-  }
+    @Schema(
+        description = "Start date and time of the sprint",
+        example = "2025-01-01T00:00:00Z",
+        required = true
+    )
+    private OffsetDateTime startedAt;
 
-  public String getName() {
-    return name;
-  }
+    @Schema(
+        description = "End date and time of the sprint",
+        example = "2025-01-14T23:59:59Z",
+        required = true
+    )
+    private OffsetDateTime endsAt;
 
-  public void setName(String name) {
-    this.name = name;
-  }
+    public SprintDTO() {
+    }
 
-  public String getDescription() {
-    return description;
-  }
+    public SprintDTO(String name, String description, OffsetDateTime startedAt, OffsetDateTime endsAt) {
+        this.name = name;
+        this.description = description;
+        this.startedAt = startedAt;
+        this.endsAt = endsAt;
+    }
 
-  public void setDescription(String description) {
-    this.description = description;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public OffsetDateTime getStartedAt() {
-    return startedAt;
-  }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-  public void setStartedAt(OffsetDateTime startedAt) {
-    this.startedAt = startedAt;
-  }
+    public String getDescription() {
+        return description;
+    }
 
-  public OffsetDateTime getEndsAt() {
-    return endsAt;
-  }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-  public void setEndsAt(OffsetDateTime endsAt) {
-    this.endsAt = endsAt;
-  }
+    public OffsetDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public void setStartedAt(OffsetDateTime startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public OffsetDateTime getEndsAt() {
+        return endsAt;
+    }
+
+    public void setEndsAt(OffsetDateTime endsAt) {
+        this.endsAt = endsAt;
+    }
 }

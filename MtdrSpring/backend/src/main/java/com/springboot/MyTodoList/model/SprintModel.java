@@ -3,32 +3,58 @@ package com.springboot.MyTodoList.model;
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /*
     representation of the TASKS table that exists in the database
  */
 @Entity
 @Table(name = "SPRINTS")
+@Schema(
+    description = "Represents a time-boxed iteration of work containing multiple tasks. " +
+                 "Typically spans 1-4 weeks and helps track team progress and velocity."
+)
 public class SprintModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier for the sprint", example = "1")
     private int ID;
     
-    // // @ManyToOne
-    // @JoinColumn(name = "PROJECT_ID", nullable = false)
-    // private ProjectModel project;
     @Column(name = "PROJECT_ID", nullable = false)
-    private Integer projectId ;
+    @Schema(description = "ID of the project this sprint belongs to", example = "1", required = true)
+    private Integer projectId;
 
     @Column(name = "NAME", length = 255, nullable = false)
+    @Schema(
+        description = "Name of the sprint. Often includes a number or theme",
+        example = "Sprint 1 - Authentication Implementation",
+        maxLength = 255,
+        required = true
+    )
     private String name;
     
     @Column(name = "DESCRIPTION", length = 4000, nullable = true)
+    @Schema(
+        description = "Detailed description of the sprint's goals and objectives",
+        example = "Implement core authentication features including login, registration, and password reset",
+        maxLength = 4000
+    )
     private String description;
 
     @Column(name = "STARTED_AT", nullable = false)
+    @Schema(
+        description = "Start date and time of the sprint",
+        example = "2025-01-01T00:00:00Z",
+        required = true
+    )
     private OffsetDateTime startedAt;
     
     @Column(name = "ENDS_AT", nullable = false)
+    @Schema(
+        description = "End date and time of the sprint",
+        example = "2025-01-14T23:59:59Z",
+        required = true
+    )
     private OffsetDateTime endsAt;
 
     // @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)

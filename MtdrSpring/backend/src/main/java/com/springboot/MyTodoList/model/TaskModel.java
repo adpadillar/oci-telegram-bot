@@ -3,60 +3,83 @@ package com.springboot.MyTodoList.model;
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /*
     representation of the TASKS table that exists in the database
  */
 @Entity
 @Table(name = "TASKS")
+@Schema(description = "Represents a work item that can be assigned to team members and tracked through various stages")
 public class TaskModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier for the task", example = "1")
     private int ID;
     
     @Column(name = "PROJECT_ID", nullable = false)
-    private Integer projectId ;
-
-    // @ManyToOne
-    // @JoinColumn(name = "PROJECT_ID", nullable = false)
-    // private ProjectModel project;
+    @Schema(description = "ID of the project this task belongs to", example = "1", required = true)
+    private Integer projectId;
     
     @Column(name = "DESCRIPTION", length = 4000, nullable = true)
+    @Schema(
+        description = "Detailed description of what needs to be done",
+        example = "Implement user authentication using JWT tokens",
+        maxLength = 4000
+    )
     private String description;
     
     @Column(name = "CREATED_AT", nullable = false)
+    @Schema(
+        description = "Timestamp when the task was created",
+        example = "2025-01-01T10:00:00Z",
+        required = true
+    )
     private OffsetDateTime createdAt;
     
     @Column(name = "STATUS", length = 128, nullable = false)
+    @Schema(
+        description = "Current status of the task",
+        example = "in-progress",
+        allowableValues = {"created", "in-progress", "in-review", "testing", "done"},
+        required = true
+    )
     private String status;
     
     @Column(name = "CREATED_BY", nullable = false)
-    private Integer createdById ;
+    @Schema(description = "ID of the user who created the task", example = "1", required = true)
+    private Integer createdById;
 
     @Column(name = "ASSIGNED_TO", nullable = false)
-    private Integer assignedToId ;
-
-    // @ManyToOne
-    // @JoinColumn(name = "CREATED_BY", nullable = false)
-    // private UserModel createdBy;
-    
-    // @ManyToOne
-    // @JoinColumn(name = "ASSIGNED_TO", nullable = true)
-    // private UserModel assignedTo;
+    @Schema(description = "ID of the user assigned to complete the task", example = "2")
+    private Integer assignedToId;
     
     @Column(name = "ESTIMATE_HOURS", nullable = true)
+    @Schema(
+        description = "Estimated hours to complete the task",
+        example = "8.0",
+        minimum = "0"
+    )
     private Double estimateHours;
     
     @Column(name = "REAL_HOURS", nullable = true)
+    @Schema(
+        description = "Actual hours spent on the task",
+        example = "6.5",
+        minimum = "0"
+    )
     private Double realHours;
-    
-    // @ManyToOne
-    // @JoinColumn(name = "SPRINT_ID", nullable = true)
-    // private SprintModel sprint;
 
     @Column(name = "SPRINT_ID", nullable = true)
-    private Integer sprintId ;
+    @Schema(description = "ID of the sprint this task is assigned to", example = "1")
+    private Integer sprintId;
     
     @Column(name = "CATEGORY", length = 128, nullable = true)
+    @Schema(
+        description = "Category of the task",
+        example = "feature",
+        allowableValues = {"bug", "feature", "issue"}
+    )
     private String category;
     
     public TaskModel() {

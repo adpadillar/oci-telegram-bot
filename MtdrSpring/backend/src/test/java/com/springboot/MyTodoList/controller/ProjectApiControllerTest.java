@@ -46,7 +46,7 @@ class ProjectApiControllerTest {
         mockProject.setID(1);
         when(projectService.addProject(any(ProjectModel.class))).thenReturn(mockProject);
 
-        ResponseEntity response = projectApiController.addProject(mockProject);
+        ResponseEntity<Object> response = projectApiController.addProject(mockProject);
 
         // Assert status and headers
         assertNotNull(response);
@@ -61,7 +61,7 @@ class ProjectApiControllerTest {
         // Simulate by throwing an exception in the service.
         when(projectService.getProjectById(anyInt())).thenThrow(new RuntimeException("Not found"));
         
-        ResponseEntity<ProjectModel> response = projectApiController.getSprintById(999);
+        ResponseEntity<ProjectModel> response = projectApiController.getProjectById(999);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

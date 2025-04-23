@@ -6,6 +6,12 @@ import com.springboot.MyTodoList.model.UserModel;
 import com.springboot.MyTodoList.service.UserService;
 import com.springboot.MyTodoList.service.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +19,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
 @RestController
+@Tag(
+    name = "Authentication",
+    description = "Authentication APIs for project managers and team members using Telegram-based two-factor authentication"
+)
 public class AuthController {
     
     private final UserService userService;
@@ -29,8 +39,29 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
+    @Operation(
+        summary = "Request login verification code",
+        description = "Sends a 6-digit verification code to the project manager's Telegram account for two-factor authentication",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Verification code sent successfully"
+            ),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Project manager not found or Telegram ID not configured"
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Error sending verification code through Telegram"
+            )
+        }
+    )
     @PostMapping("/api/{project}/request-code")
-    public ResponseEntity<Void> requestLoginCode(@PathVariable("project") int projectId) {
+    public ResponseEntity<Void> requestLoginCode(
+        @Parameter(description = "Project ID to authenticate for", required = true, example = "1")
+        @PathVariable("project") int projectId
+    ) {
         UserModel manager = userService.findManagerByProject(projectId);
         if (manager == null || manager.getTelegramId() == null) {
             return ResponseEntity.notFound().build();
@@ -42,12 +73,42 @@ public class AuthController {
         return sent ? ResponseEntity.ok().build() : ResponseEntity.internalServerError().build();
     }
 
+    @Operation(
+        summary = "Validate login code",
+        description = "Validates the provided verification code and issues a JWT token upon successful authentication",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Code validated successfully, returns JWT token",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(
+                        example = "{\"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"}"
+                    )
+                )
+            ),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Invalid or missing verification code"
+            ),
+            @ApiResponse(
+                responseCode = "401",
+                description = "Invalid verification code or project manager not found"
+            )
+        }
+    )
     @PostMapping("/api/{project}/validate-code")
     public ResponseEntity<Map<String, String>> validateCode(
-            @PathVariable("project") int projectId,
-            @RequestBody Map<String, String> payload,
-            HttpServletResponse response) {
-        
+        @Parameter(description = "Project ID to authenticate for", required = true, example = "1")
+        @PathVariable("project") int projectId,
+        @Parameter(
+            description = "Verification code received via Telegram",
+            required = true,
+            schema = @Schema(example = "{\"code\": \"123456\"}")
+        )
+        @RequestBody Map<String, String> payload,
+        HttpServletResponse response
+    ) {
         String code = payload.get("code");
         if (code == null || code.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -85,6 +146,16 @@ public class AuthController {
         return ResponseEntity.ok(responseBody);
     }
 
+    @Operation(
+        summary = "Logout user",
+        description = "Invalidates the user's authentication by clearing their auth cookie",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Successfully logged out"
+            )
+        }
+    )
     @PostMapping("/api/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("auth_token", null);
@@ -97,11 +168,33 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Get current user info",
+        description = "Retrieves information about the currently authenticated user based on their JWT token",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "User information retrieved successfully",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(
+                        example = "{\"userId\": 1, \"projectId\": 1, \"role\": \"manager\"}"
+                    )
+                )
+            ),
+            @ApiResponse(
+                responseCode = "401",
+                description = "Invalid or expired token, or user not found"
+            )
+        }
+    )
     @GetMapping("/api/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(
-            @CookieValue(name = "auth_token", required = false) String token,
-            @RequestHeader(name = "Authorization", required = false) String authHeader) {
-        
+        @Parameter(description = "Authentication token from cookie", required = false)
+        @CookieValue(name = "auth_token", required = false) String token,
+        @Parameter(description = "Authentication token from Authorization header", required = false)
+        @RequestHeader(name = "Authorization", required = false) String authHeader
+    ) {
         // Try to get token from cookie first, then from Authorization header
         String jwtToken = token;
         if (jwtToken == null && authHeader != null && authHeader.startsWith("Bearer ")) {
