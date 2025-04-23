@@ -1,5 +1,8 @@
 # oci-react-samples
 
+## MOMO
+Ok lol me ovy a matar saludos desde venezuela
+
 A repository for full stack Cloud Native applications with a React JS frontend and various backends (Java, Python, DotNet, and so on) on the Oracle Cloud Infrastructure.
 
 ## Quick Start
