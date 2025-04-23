@@ -27,6 +27,7 @@ import {
   Scale,
   UserX,
   UsersRound,
+  Download,
 } from "lucide-react"
 import { Pie, Bar, Line } from "react-chartjs-2"
 import {
@@ -41,6 +42,7 @@ import {
   PointElement,
   LineElement,
 } from "chart.js"
+import { generateTaskReport } from "../utils/reports/pdf-generator"
 
 // Register the chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement)
@@ -89,6 +91,24 @@ const KPIs = () => {
     queryKey: ["sprints"],
     queryFn: api.sprints.getSprints,
   })
+
+  const handleDownloadReport = async () => {
+    try {
+      if (!users || !tasks || !sprints) {
+        throw new Error("Required data not loaded");
+      }
+      
+      const pdf = await generateTaskReport({
+        users,
+        tasks,
+        sprints,
+        date: new Date().toLocaleDateString(),
+      });
+      pdf.save("task-report.pdf");
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
+  }
 
   // Generate data for the tasks per DEVELOPER pie chart
   const tasksPerDeveloperData = useMemo(() => {
@@ -488,6 +508,13 @@ const KPIs = () => {
           KPI Dashboard
         </h1>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <button
+            onClick={handleDownloadReport}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            <Download size={16} />
+            Download Report
+          </button>
           <div className="bg-gray-100 p-1 rounded-md flex flex-wrap w-full sm:w-auto">
             <button
               onClick={() => setSelectedMetricView("tasks")}

@@ -34,7 +34,11 @@ jobs:
     - name: Run backend tests
       working-directory: MtdrSpring/backend
       run: ./mvnw test
-    
+
+    - name: Install frontend dependencies
+      working-directory: MtdrSpring/backend/src/main/frontend
+      run: npm install
+  
     - name: Run frontend tests
       working-directory: MtdrSpring/backend/src/main/frontend
       run: npm test 
