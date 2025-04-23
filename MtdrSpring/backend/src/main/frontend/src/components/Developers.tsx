@@ -60,7 +60,7 @@ const Developers = () => {
   const developersWithTasks: DeveloperWithTasks[] = developers.map((dev) => {
     const pendingTasksCount =
       tasks?.filter(
-        (task) => task.assignedToId === dev.id && task.status !== "done"
+        (task) => task.assignedToId === dev.id && task.status !== "done",
       ).length || 0;
 
     return {
@@ -77,7 +77,7 @@ const Developers = () => {
 
   // Filter developers based on search term
   const filteredDevelopers = developersWithTasks.filter((dev) =>
-    dev.name.toLowerCase().includes(searchTerm.toLowerCase())
+    dev.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Mutation for updating user status (approving users)

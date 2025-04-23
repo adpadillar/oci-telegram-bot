@@ -29,14 +29,20 @@ const Tasks: React.FC = () => {
   const [taskToEdit, setTaskToEdit] = useState<TaskResponse | null>(null);
 
   // Initialize search term from URL parameters
-  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("search") || "",
+  );
 
   // Initialize state from URL parameters
   const [viewMode, setViewMode] = useState<"kanban" | "table">(() => {
     return (searchParams.get("view") as "kanban" | "table") || "table";
   });
-  const [categoryFilter, setCategoryFilter] = useState<string>(() => searchParams.get("category") || "");
-  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "");
+  const [categoryFilter, setCategoryFilter] = useState<string>(
+    () => searchParams.get("category") || "",
+  );
+  const [statusFilter, setStatusFilter] = useState<string>(
+    () => searchParams.get("status") || "",
+  );
   const [assigneeFilter, setAssigneeFilter] = useState<number | null>(() => {
     const assignee = searchParams.get("assignee");
     return assignee ? Number(assignee) : null;
@@ -49,7 +55,7 @@ const Tasks: React.FC = () => {
   // Update URL when filters, view mode, or search term change
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
-    
+
     // Update search term in URL
     if (searchTerm) {
       params.set("search", searchTerm);
@@ -90,7 +96,16 @@ const Tasks: React.FC = () => {
     }
 
     setSearchParams(params, { replace: true });
-  }, [viewMode, categoryFilter, statusFilter, assigneeFilter, sprintFilter, setSearchParams, searchParams, searchTerm]);
+  }, [
+    viewMode,
+    categoryFilter,
+    statusFilter,
+    assigneeFilter,
+    sprintFilter,
+    setSearchParams,
+    searchParams,
+    searchTerm,
+  ]);
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryFn: api.tasks.list,
@@ -120,14 +135,14 @@ const Tasks: React.FC = () => {
   // Helper function to check if a due date is approaching or past
   const getDueDateStatus = (date: Date | null | undefined) => {
     if (!date) return "none";
-    
+
     const dueDate = new Date(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = timeDiff / (1000 * 3600 * 24);
-    
+
     if (daysDiff < 0) return "overdue";
     if (daysDiff <= 3) return "soon";
     return "ok";
@@ -183,10 +198,13 @@ const Tasks: React.FC = () => {
   const statusCounts = useMemo(() => {
     if (!filteredTasks) return {};
 
-    return filteredTasks.reduce((acc, task) => {
-      acc[task.status] = (acc[task.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return filteredTasks.reduce(
+      (acc, task) => {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }, [filteredTasks]);
 
   const TaskCard = ({ task }: { task: TaskResponse }) => (
@@ -202,8 +220,8 @@ const Tasks: React.FC = () => {
             task.category === "bug"
               ? "bg-red-100 text-red-800"
               : task.category === "issue"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-purple-100 text-purple-800"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-purple-100 text-purple-800"
           }
         `}
         >
@@ -217,8 +235,8 @@ const Tasks: React.FC = () => {
           {task.category === "bug"
             ? "Bug"
             : task.category === "issue"
-            ? "Issue"
-            : "Feature"}
+              ? "Issue"
+              : "Feature"}
         </span>
       </div>
       <div className="space-y-2 text-sm">
@@ -235,13 +253,14 @@ const Tasks: React.FC = () => {
             </span>
           )}
           {task.dueDate && (
-            <span 
+            <span
               className={`px-2 py-0.5 rounded-full flex items-center gap-1
-                ${getDueDateStatus(task.dueDate) === "overdue" 
-                  ? "bg-red-100 text-red-800" 
-                  : getDueDateStatus(task.dueDate) === "soon"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-green-100 text-green-700"
+                ${
+                  getDueDateStatus(task.dueDate) === "overdue"
+                    ? "bg-red-100 text-red-800"
+                    : getDueDateStatus(task.dueDate) === "soon"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-green-100 text-green-700"
                 }
               `}
             >
@@ -370,7 +389,7 @@ const Tasks: React.FC = () => {
                     value={category || ""}
                     onChange={(e) =>
                       setCategory(
-                        e.target.value as "bug" | "feature" | "issue" | null
+                        e.target.value as "bug" | "feature" | "issue" | null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -395,7 +414,7 @@ const Tasks: React.FC = () => {
                           | "in-progress"
                           | "in-review"
                           | "testing"
-                          | "done"
+                          | "done",
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -451,7 +470,7 @@ const Tasks: React.FC = () => {
                     value={estimateHours === null ? "" : estimateHours}
                     onChange={(e) =>
                       setEstimateHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -467,7 +486,7 @@ const Tasks: React.FC = () => {
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
                       setRealHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -483,7 +502,7 @@ const Tasks: React.FC = () => {
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
                     setAssignedTo(
-                      e.target.value ? Number(e.target.value) : null
+                      e.target.value ? Number(e.target.value) : null,
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -543,7 +562,7 @@ const Tasks: React.FC = () => {
     >(task.category as "bug" | "feature" | "issue" | null);
     const [sprint, setSprint] = useState<number | null>(task.sprintId || null);
     const [assignedTo, setAssignedTo] = useState<number | null>(
-      task.assignedToId || null
+      task.assignedToId || null,
     );
     const [status, setStatus] = useState<
       "created" | "in-progress" | "in-review" | "testing" | "done"
@@ -553,18 +572,16 @@ const Tasks: React.FC = () => {
         | "in-progress"
         | "in-review"
         | "testing"
-        | "done"
+        | "done",
     );
     const [estimateHours, setEstimateHours] = useState<number | null>(
-      task.estimateHours
+      task.estimateHours,
     );
     const [realHours, setRealHours] = useState<number | null>(task.realHours);
-    
+
     // Format date for input element (YYYY-MM-DD)
     const [dueDate, setDueDate] = useState<string>(
-      task.dueDate 
-        ? new Date(task.dueDate).toISOString().split('T')[0] 
-        : ""
+      task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
     );
 
     const updateTaskMutation = useMutation({
@@ -631,7 +648,7 @@ const Tasks: React.FC = () => {
                     value={category || ""}
                     onChange={(e) =>
                       setCategory(
-                        e.target.value as "bug" | "feature" | "issue" | null
+                        e.target.value as "bug" | "feature" | "issue" | null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -656,7 +673,7 @@ const Tasks: React.FC = () => {
                           | "in-progress"
                           | "in-review"
                           | "testing"
-                          | "done"
+                          | "done",
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -669,7 +686,7 @@ const Tasks: React.FC = () => {
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Due Date
@@ -712,7 +729,7 @@ const Tasks: React.FC = () => {
                     value={estimateHours === null ? "" : estimateHours}
                     onChange={(e) =>
                       setEstimateHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -728,7 +745,7 @@ const Tasks: React.FC = () => {
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
                       setRealHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -744,7 +761,7 @@ const Tasks: React.FC = () => {
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
                     setAssignedTo(
-                      e.target.value ? Number(e.target.value) : null
+                      e.target.value ? Number(e.target.value) : null,
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -795,10 +812,10 @@ const Tasks: React.FC = () => {
       useState(categoryFilter);
     const [tempStatusFilter, setTempStatusFilter] = useState(statusFilter);
     const [tempAssigneeFilter, setTempAssigneeFilter] = useState<number | null>(
-      assigneeFilter
+      assigneeFilter,
     );
     const [tempSprintFilter, setTempSprintFilter] = useState<number | null>(
-      sprintFilter
+      sprintFilter,
     );
 
     const applyFilters = () => {
@@ -868,7 +885,7 @@ const Tasks: React.FC = () => {
               value={tempAssigneeFilter === null ? "" : tempAssigneeFilter}
               onChange={(e) =>
                 setTempAssigneeFilter(
-                  e.target.value ? Number(e.target.value) : null
+                  e.target.value ? Number(e.target.value) : null,
                 )
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -889,7 +906,7 @@ const Tasks: React.FC = () => {
               value={tempSprintFilter === null ? "" : tempSprintFilter}
               onChange={(e) =>
                 setTempSprintFilter(
-                  e.target.value ? Number(e.target.value) : null
+                  e.target.value ? Number(e.target.value) : null,
                 )
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -954,7 +971,6 @@ const Tasks: React.FC = () => {
       </div>
     </div>
   );
-
 
   const TableView = ({ tasks }: { tasks: TaskResponse[] }) => {
     return (
@@ -1031,8 +1047,8 @@ const Tasks: React.FC = () => {
                         task.category === "bug"
                           ? "bg-red-100 text-red-800"
                           : task.category === "issue"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-purple-100 text-purple-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-purple-100 text-purple-800"
                       }`}
                       >
                         {task.category === "bug" ? (
@@ -1045,8 +1061,8 @@ const Tasks: React.FC = () => {
                         {task.category === "bug"
                           ? "Bug"
                           : task.category === "issue"
-                          ? "Issue"
-                          : "Feature"}
+                            ? "Issue"
+                            : "Feature"}
                       </span>
                     ) : (
                       <button
@@ -1079,11 +1095,12 @@ const Tasks: React.FC = () => {
                     {task.dueDate ? (
                       <span
                         className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full
-                        ${getDueDateStatus(task.dueDate) === "overdue" 
-                          ? "bg-red-100 text-red-800" 
-                          : getDueDateStatus(task.dueDate) === "soon"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-green-100 text-green-700"
+                        ${
+                          getDueDateStatus(task.dueDate) === "overdue"
+                            ? "bg-red-100 text-red-800"
+                            : getDueDateStatus(task.dueDate) === "soon"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-700"
                         }`}
                       >
                         <CalendarCheck size={12} className="mr-1" />
@@ -1152,23 +1169,23 @@ const Tasks: React.FC = () => {
                         task.status === "created"
                           ? "bg-gray-100 text-gray-800"
                           : task.status === "in-progress"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : task.status === "in-review"
-                          ? "bg-blue-100 text-blue-800"
-                          : task.status === "testing"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-green-100 text-green-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : task.status === "in-review"
+                              ? "bg-blue-100 text-blue-800"
+                              : task.status === "testing"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-green-100 text-green-800"
                       }`}
                     >
                       {task.status === "created"
                         ? "Created"
                         : task.status === "in-progress"
-                        ? "In Progress"
-                        : task.status === "in-review"
-                        ? "In Review"
-                        : task.status === "testing"
-                        ? "Testing"
-                        : "Done"}
+                          ? "In Progress"
+                          : task.status === "in-review"
+                            ? "In Review"
+                            : task.status === "testing"
+                              ? "Testing"
+                              : "Done"}
                     </span>
                   </td>
                   <td className="px-6 py-4 flex space-x-2 whitespace-nowrap text-sm text-gray-500">

@@ -66,8 +66,8 @@ export const LoginPage = () => {
               {step === "request"
                 ? "Request a login code from your project manager!"
                 : isMasterCode
-                ? "Enter the master code"
-                : "Enter the code sent to your project manager"}
+                  ? "Enter the master code"
+                  : "Enter the code sent to your project manager"}
             </p>
           </div>
 
@@ -116,7 +116,11 @@ export const LoginPage = () => {
                   type="text"
                   required
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder={isMasterCode ? "Enter master code" : "Enter your 6-digit code"}
+                  placeholder={
+                    isMasterCode
+                      ? "Enter master code"
+                      : "Enter your 6-digit code"
+                  }
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   maxLength={isMasterCode ? undefined : 6}

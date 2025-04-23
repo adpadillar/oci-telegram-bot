@@ -1,19 +1,21 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react"
-import { describe, it, vi, expect } from "vitest"
-import "@testing-library/jest-dom"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { MemoryRouter } from "react-router-dom"
-import Tasks from "../Tasks"
-import * as client from "../../utils/api/client"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { describe, it, vi, expect } from "vitest";
+import "@testing-library/jest-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
+import Tasks from "../Tasks";
+import * as client from "../../utils/api/client";
 
 // Mock the API client
 vi.mock("../../utils/api/client", async () => {
-  const original = await vi.importActual<typeof client>("../../utils/api/client")
+  const original = await vi.importActual<typeof client>(
+    "../../utils/api/client",
+  );
 
   const mockUsers = [
     { id: 1, firstName: "Ana", lastName: "Ramírez", role: "developer" },
     { id: 2, firstName: "Luis", lastName: "Hernández", role: "developer" },
-  ]
+  ];
 
   const mockTasks = [
     {
@@ -42,7 +44,7 @@ vi.mock("../../utils/api/client", async () => {
       createdAt: new Date().toISOString(),
       category: "feature",
     },
-  ]
+  ];
 
   const mockSprints = [
     {
@@ -53,7 +55,7 @@ vi.mock("../../utils/api/client", async () => {
       endsAt: new Date("2024-03-07").toISOString(),
       projectId: 1,
     },
-  ]
+  ];
 
   return {
     ...original,
@@ -61,7 +63,9 @@ vi.mock("../../utils/api/client", async () => {
       tasks: {
         list: vi.fn().mockResolvedValue(mockTasks),
         create: vi.fn().mockResolvedValue({ ...mockTasks[0], id: 3 }),
-        patch: vi.fn().mockResolvedValue({ ...mockTasks[0], description: "Updated task" }),
+        patch: vi
+          .fn()
+          .mockResolvedValue({ ...mockTasks[0], description: "Updated task" }),
         delete: vi.fn().mockResolvedValue({}),
       },
       users: {
@@ -71,69 +75,69 @@ vi.mock("../../utils/api/client", async () => {
         getSprints: vi.fn().mockResolvedValue(mockSprints),
       },
     },
-  }
-})
+  };
+});
 
 // Render helper
 function renderTasks() {
-  const queryClient = new QueryClient()
+  const queryClient = new QueryClient();
   return render(
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
         <Tasks />
       </QueryClientProvider>
-    </MemoryRouter>
-  )
+    </MemoryRouter>,
+  );
 }
 
 describe("Tasks Component", () => {
   it("renders the Tasks title", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      expect(screen.getByText("Tasks")).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("Tasks")).toBeInTheDocument();
+    });
+  });
 
   it("displays the correct number of tasks", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      expect(screen.getByText("2 tasks")).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("2 tasks")).toBeInTheDocument();
+    });
+  });
 
   it("renders task cards with correct information", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      expect(screen.getByText("Fix login bug")).toBeInTheDocument()
-      expect(screen.getByText("Implement UI")).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("Fix login bug")).toBeInTheDocument();
+      expect(screen.getByText("Implement UI")).toBeInTheDocument();
+    });
+  });
 
   it("searches tasks by description", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText("Search tasks...")
-      fireEvent.change(searchInput, { target: { value: "login" } })
-      
-      expect(screen.getByText("Fix login bug")).toBeInTheDocument()
-      expect(screen.queryByText("Implement UI")).not.toBeInTheDocument()
-    })
-  })
+      const searchInput = screen.getByPlaceholderText("Search tasks...");
+      fireEvent.change(searchInput, { target: { value: "login" } });
+
+      expect(screen.getByText("Fix login bug")).toBeInTheDocument();
+      expect(screen.queryByText("Implement UI")).not.toBeInTheDocument();
+    });
+  });
 
   it("displays task status correctly", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      expect(screen.getByText("Done")).toBeInTheDocument()
-      expect(screen.getByText("In Progress")).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText("Done")).toBeInTheDocument();
+      expect(screen.getByText("In Progress")).toBeInTheDocument();
+    });
+  });
 
   it("shows task estimates and actual hours", async () => {
-    renderTasks()
+    renderTasks();
     await waitFor(() => {
-      expect(screen.getByText("4h")).toBeInTheDocument()
-      expect(screen.getByText("5h")).toBeInTheDocument()
-      expect(screen.getByText("6h")).toBeInTheDocument()
-    })
-  })
-})
+      expect(screen.getByText("4h")).toBeInTheDocument();
+      expect(screen.getByText("5h")).toBeInTheDocument();
+      expect(screen.getByText("6h")).toBeInTheDocument();
+    });
+  });
+});
