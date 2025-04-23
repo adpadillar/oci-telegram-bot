@@ -755,14 +755,59 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String taskDescription = lastMessage.getContent();
 	
-			// Save the estimated hours and ask for the sprint number
+			// Get available sprints for the project
+			List<SprintModel> availableSprints = sprintService.findByProjectId(user.getProjectId());
+			
+			// Sort sprints by start date (most recent first)
+			availableSprints.sort((a, b) -> b.getStartedAt().compareTo(a.getStartedAt()));
+			
+			// Build sprint options list
+			StringBuilder sprintOptions = new StringBuilder();
+			sprintOptions.append("Sprints disponibles:\n");
+			for (SprintModel sprint : availableSprints) {
+				sprintOptions.append("- ")
+				.append(sprint.getName())
+				.append(" (").append(sprint.getStartedAt().toLocalDate())
+				.append(" - ").append(sprint.getEndsAt().toLocalDate()).append(")\n");
+			}
+
+			// Create keyboard with sprint options
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			
+			// Add sprint options in rows of 2
+			for (int i = 0; i < availableSprints.size(); i += 2) {
+				KeyboardRow row = new KeyboardRow();
+				row.add(availableSprints.get(i).getName() + " (" + availableSprints.get(i).getID() + ")");
+				if (i + 1 < availableSprints.size()) {
+					row.add(availableSprints.get(i + 1).getName() + " (" + availableSprints.get(i + 1).getID() + ")");
+				}
+				keyboardRows.add(row);
+			}
+			
+			
+			// Add back button
+			KeyboardRow backRow = new KeyboardRow();
+			backRow.add("↩️ Back to Main Menu");
+			keyboardRows.add(backRow);
+			
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+
 			SendMessage messageToTelegram = new SendMessage();
 			messageToTelegram.setChatId(chatId);
-			messageToTelegram.setText("📅 *Número de Sprint*\n\n" +
-									"¿En qué sprint deseas agregar esta tarea?\n" +
-									"Ingresa el número del sprint (por ejemplo: 1, 2, 3)");
-	
-			// Save the state of the user as "waiting_for_task_sprint"
+			messageToTelegram.setText("📅 *Selección de Sprint*\n\n" +
+									"¿En qué sprint deseas agregar esta tarea?\n\n" +
+									sprintOptions.toString() +
+									"\nPor favor, selecciona el ID del sprint" +
+									(availableSprints.isEmpty() ? 
+									 "\n\n⚠️ *No hay sprints disponibles*" :
+									 "\n\n💡 Se recomienda el Sprint " + availableSprints.get(0).getName() + 
+									 " (el más reciente)"));
+			messageToTelegram.setReplyMarkup(keyboard);
+			messageToTelegram.enableMarkdown(true);
+
+			// Save the state with task description and hours
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_task_sprint");
 			assistantMessage.setRole("assistant");
@@ -770,7 +815,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
-	
+
 			execute(messageToTelegram);
 		} catch (TelegramApiException e) {
 			logger.error("Error al solicitar el número del sprint: " + e.getMessage());
@@ -781,36 +826,43 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 * Processes sprint assignment and requests task category
 	 * @param chatId - Telegram chat ID of the user
 	 * @param user - UserModel of the current user
-	 * @param sprintNumberText - Sprint number for the task
+	 * @param sprintText - Sprint text containing name and ID
 	 */
-	private void handleTaskSprint(long chatId, UserModel user, String sprintNumberText) {
+	private void handleTaskSprint(long chatId, UserModel user, String sprintText) {
 		try {
-			// Validate that the sprint number is an integer
-			int sprintNumber;
+			// Extract sprint ID from the button text format "Sprint Name (ID)"
+			int sprintId;
 			try {
-				sprintNumber = Integer.parseInt(sprintNumberText);
-				if (sprintNumber <= 0) {
-					throw new NumberFormatException();
-				}
-			} catch (NumberFormatException e) {
+				String idStr = sprintText.substring(sprintText.lastIndexOf("(") + 1, sprintText.lastIndexOf(")"));
+				sprintId = Integer.parseInt(idStr);
+			} catch (Exception e) {
 				SendMessage errorMessage = new SendMessage();
 				errorMessage.setChatId(chatId);
-				errorMessage.setText("❌ Por favor, ingresa un número válido mayor a 0 para el sprint.");
+				errorMessage.setText("❌ Por favor, selecciona un sprint válido de la lista.");
 				execute(errorMessage);
 				return;
 			}
-	
+
 			// Retrieve the task description and estimated hours saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String[] taskData = lastMessage.getContent().split("\\|");
 			String taskDescription = taskData[0];
 			double estimateHours = Double.parseDouble(taskData[1]);
-	
+
+			// Verify sprint exists
+			if (!sprintService.getSprintById(sprintId).isPresent()) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Sprint no encontrado. Por favor, selecciona un sprint válido.");
+				execute(errorMessage);
+				return;
+			}
+
 			// Save the current state with sprint number
 			MessageModel stateMessage = new MessageModel();
 			stateMessage.setMessageType("waiting_for_task_category");
 			stateMessage.setRole("assistant");
-			stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + sprintNumber);
+			stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + sprintId);
 			stateMessage.setUserId(chatId);
 			stateMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(stateMessage);
@@ -893,6 +945,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// Save the task and get its ID
 			TaskModel savedTask = taskService.addTodoItemToProject(user.getProjectId(), newTask);
 
+			// Get sprint name
+			String sprintName = "Not set";
+			Optional<SprintModel> sprint = sprintService.getSprintById(sprintNumber);
+			if (sprint.isPresent()) {
+				sprintName = sprint.get().getName();
+			}
+
 			// Create keyboard with back button
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
 			List<KeyboardRow> keyboardRows = new ArrayList<>();
@@ -909,7 +968,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 									 "🆔 *ID de la Tarea:* " + savedTask.getID() + "\n" +
 									 "📝 *Descripción:* " + taskDescription + "\n" +
 									 "⏱️ *Horas Estimadas:* " + estimateHours + "\n" +
-									 "📅 *Sprint:* " + sprintNumber + "\n" +
+									 "📅 *Sprint:* " + sprintName + "\n" +
 									 "🏷️ *Categoría:* " + categoryDisplay + "\n\n" +
 									 "Puedes ver esta tarea en el menú \"View Tasks\"");
 			confirmationMessage.setReplyMarkup(keyboard);
@@ -2115,8 +2174,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "Here are your available options:\n" +
 						  "📋 View Tasks - See all project tasks\n" +
 						  "🔍 Filter Tasks - Filter tasks by status\n" +
-						  "➕ Add Task - Create new tasks\n" +
-						  "✏️ Update Task - Modify existing tasks\n" +
+						  "➕ Add Task - Create new tasks for developers\n\n" +
+						  "✏️ Update Task - Modify existing tasks\n\n" +
 						  "📅 *Sprint Management*\n" +
 						  "- Create new sprints\n" +
 						  "- Update sprint details\n" +
