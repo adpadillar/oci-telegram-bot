@@ -765,8 +765,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			messageToTelegram.setChatId(chatId);
 			messageToTelegram.setText("📅 *Fecha de Vencimiento*\n\n" +
 								"¿Cuándo debe completarse esta tarea?\n" +
-								"Ingresa la fecha en el formato YYYY-MM-DD\n" +
-								"Ejemplo: 2024-05-30");
+								"Ingresa la fecha en el formato YYYY-MM-DD " +
+								"(Ejemplo: 2024-05-30)");
 
 			// Save the state of the user as "waiting_for_task_due_date"
 			MessageModel assistantMessage = new MessageModel();
@@ -1677,7 +1677,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			messageToTelegram.setChatId(chatId);
 			messageToTelegram.setText("📅 *Fecha de Inicio*\n\n" +
 									"Ahora, ingresa la fecha de inicio del sprint.\n" +
-									"Formato: YYYY-MM-DD\n" +
+									"Formato: YYYY-MM-DD" +
 									"Ejemplo: 2024-04-08\n\n" +
 									"💡 *Consejo:* La fecha debe ser posterior o igual a hoy.");
 
