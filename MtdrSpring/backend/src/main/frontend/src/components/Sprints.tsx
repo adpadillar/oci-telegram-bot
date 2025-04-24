@@ -278,7 +278,7 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)}
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />
@@ -342,7 +342,7 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)} // Cambia la ruta a /tasks con el filtro del sprint
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />
@@ -398,7 +398,7 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/sprints/${sprint.id}`)}
+                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)} // Cambia la ruta a /tasks con el filtro del sprint
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />

@@ -16,11 +16,13 @@ import {
   User,
   Tag,
   CalendarCheck,
+  Download,
 } from "lucide-react";
 import { api, TaskRequest, TaskResponse } from "../utils/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../utils/query/query-client";
 import { useSearchParams } from "react-router-dom";
+import { generateTaskListPDF } from "../utils/reports/task-list-pdf-generator"; // Importa la nueva función
 
 const Tasks: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1277,6 +1279,21 @@ const Tasks: React.FC = () => {
     assigneeFilter !== null ||
     sprintFilter !== null;
 
+  const handleDownloadTaskListPDF = async () => {
+    try {
+      if (!tasks) {
+        alert("No hay tareas disponibles para generar el reporte.");
+        return;
+      }
+
+      const pdf = await generateTaskListPDF(tasks);
+      pdf.save("task-list-report.pdf");
+    } catch (error) {
+      console.error("Error al generar el reporte:", error);
+      alert("Ocurrió un error al generar el reporte.");
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
@@ -1290,6 +1307,16 @@ const Tasks: React.FC = () => {
             </span>
           </h1>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            {/* Botón para descargar el reporte */}
+            <button
+              onClick={handleDownloadTaskListPDF}
+              className="bg-blue-500 text-white px-3 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors whitespace-nowrap"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Download Task List</span>
+              <span className="sm:hidden">Descargar</span>
+            </button>
+            {/* Otros botones existentes */}
             <div className="relative w-full sm:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-400" />
