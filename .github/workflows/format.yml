@@ -29,5 +29,5 @@ jobs:
       - name: Install dependencies
         run: npm ci # Use npm ci for faster, reliable installs in CI
 
-      - name: Run Prettier check
-        run: npm run format # Runs 'prettier --check .'
+      - name: Format code with Prettier
+        run: npm run format:fix # Runs 'prettier --write .'
