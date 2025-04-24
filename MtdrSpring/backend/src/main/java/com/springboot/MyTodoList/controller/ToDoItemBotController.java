@@ -198,6 +198,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
+			if ("waiting_for_task_due_date".equals(lastMessage.getMessageType())) {
+				handleTaskDueDate(chatId, user, messageText);
+				return;
+			}
+
 			if ("waiting_for_task_sprint".equals(lastMessage.getMessageType())) {
 				handleTaskSprint(chatId, user, messageText);
 				return;
@@ -729,7 +734,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	}
 
 	/**
-	 * Processes estimated hours input and requests sprint assignment
+	 * Processes estimated hours input and requests due date
 	 * @param chatId - Telegram chat ID of the user
 	 * @param user - UserModel of the current user
 	 * @param estimateHoursText - Estimated hours for the task
@@ -750,11 +755,71 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				execute(errorMessage);
 				return;
 			}
-	
+
 			// Retrieve the task description saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String taskDescription = lastMessage.getContent();
-	
+
+			// Save the estimated hours and ask for due date
+			SendMessage messageToTelegram = new SendMessage();
+			messageToTelegram.setChatId(chatId);
+			messageToTelegram.setText("📅 *Fecha de Vencimiento*\n\n" +
+								"¿Cuándo debe completarse esta tarea?\n" +
+								"Ingresa la fecha en el formato YYYY-MM-DD " +
+								"(Ejemplo: 2024-05-30)");
+
+			// Save the state of the user as "waiting_for_task_due_date"
+			MessageModel assistantMessage = new MessageModel();
+			assistantMessage.setMessageType("waiting_for_task_due_date");
+			assistantMessage.setRole("assistant");
+			assistantMessage.setContent(taskDescription + "|" + estimateHours);
+			assistantMessage.setUserId(chatId);
+			assistantMessage.setCreatedAt(OffsetDateTime.now());
+			messageService.saveMessage(assistantMessage);
+
+			execute(messageToTelegram);
+		} catch (TelegramApiException e) {
+			logger.error("Error al solicitar la fecha de vencimiento: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Processes due date input and requests sprint assignment
+	 * @param chatId - Telegram chat ID of the user
+	 * @param user - UserModel of the current user
+	 * @param dueDateText - Due date for the task
+	 */
+	private void handleTaskDueDate(long chatId, UserModel user, String dueDateText) {
+		try {
+			// Validate date format
+			if (!dueDateText.matches("\\d{4}-\\d{2}-\\d{2}")) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Formato de fecha inválido.\n\n" +
+								   "Por favor, ingresa la fecha en el formato YYYY-MM-DD\n" +
+								   "Ejemplo: 2024-05-30");
+				execute(errorMessage);
+				return;
+			}
+			
+			// Make sure the date is not in the past
+			OffsetDateTime dueDate = OffsetDateTime.parse(dueDateText + "T23:59:59Z");
+			OffsetDateTime now = OffsetDateTime.now();
+			if (dueDate.isBefore(now)) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ La fecha de vencimiento no puede estar en el pasado.\n\n" +
+								   "Por favor, ingresa una fecha futura.");
+				execute(errorMessage);
+				return;
+			}
+
+			// Retrieve the task description and estimated hours saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] taskData = lastMessage.getContent().split("\\|");
+			String taskDescription = taskData[0];
+			double estimateHours = Double.parseDouble(taskData[1]);
+
 			// Get available sprints for the project
 			List<SprintModel> availableSprints = sprintService.findByProjectId(user.getProjectId());
 			
@@ -811,12 +876,22 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			MessageModel assistantMessage = new MessageModel();
 			assistantMessage.setMessageType("waiting_for_task_sprint");
 			assistantMessage.setRole("assistant");
-			assistantMessage.setContent(taskDescription + "|" + estimateHours);
+			assistantMessage.setContent(taskDescription + "|" + estimateHours + "|" + dueDateText);
 			assistantMessage.setUserId(chatId);
 			assistantMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(assistantMessage);
 
+
 			execute(messageToTelegram);
+		} catch (IllegalArgumentException e) {
+			SendMessage errorMessage = new SendMessage();
+			errorMessage.setChatId(chatId);
+			errorMessage.setText("❌ Formato de fecha inválido. Por favor, ingresa la fecha en el formato YYYY-MM-DD.");
+			try {
+				execute(errorMessage);
+			} catch (TelegramApiException ex) {
+				logger.error("Error sending message", ex);
+			}
 		} catch (TelegramApiException e) {
 			logger.error("Error al solicitar el número del sprint: " + e.getMessage());
 		}
@@ -843,11 +918,13 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				return;
 			}
 
-			// Retrieve the task description and estimated hours saved previously
+			// Retrieve the task description, estimated hours and due date saved previously
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
 			String[] taskData = lastMessage.getContent().split("\\|");
 			String taskDescription = taskData[0];
 			double estimateHours = Double.parseDouble(taskData[1]);
+			String dueDate = taskData[2];
+
 
 			// Verify sprint exists
 			if (!sprintService.getSprintById(sprintId).isPresent()) {
@@ -862,7 +939,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			MessageModel stateMessage = new MessageModel();
 			stateMessage.setMessageType("waiting_for_task_category");
 			stateMessage.setRole("assistant");
-			stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + sprintId);
+			stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + dueDate + "|" + sprintId);
 			stateMessage.setUserId(chatId);
 			stateMessage.setCreatedAt(OffsetDateTime.now());
 			messageService.saveMessage(stateMessage);
@@ -930,7 +1007,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			String[] taskData = lastMessage.getContent().split("\\|");
 			String taskDescription = taskData[0];
 			double estimateHours = Double.parseDouble(taskData[1]);
-			int sprintNumber = Integer.parseInt(taskData[2]);
+			String dueDate = taskData[2];
+			int sprintNumber = Integer.parseInt(taskData[3]);
 
 			// Create the new task
 			TaskDTO newTask = new TaskDTO();
@@ -941,6 +1019,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			newTask.setCreatedBy(user.getID());
 			newTask.setAssignedTo(user.getID());
 			newTask.setCategory(validCategory);
+			newTask.setDueDate(OffsetDateTime.parse(dueDate + "T23:59:59Z"));
 
 			// Save the task and get its ID
 			TaskModel savedTask = taskService.addTodoItemToProject(user.getProjectId(), newTask);
@@ -968,6 +1047,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 									 "🆔 *ID de la Tarea:* " + savedTask.getID() + "\n" +
 									 "📝 *Descripción:* " + taskDescription + "\n" +
 									 "⏱️ *Horas Estimadas:* " + estimateHours + "\n" +
+									 "📅 *Fecha de Vencimiento:* " + dueDate + "\n" +
 									 "📅 *Sprint:* " + sprintName + "\n" +
 									 "🏷️ *Categoría:* " + categoryDisplay + "\n\n" +
 									 "Puedes ver esta tarea en el menú \"View Tasks\"");
@@ -1658,7 +1738,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			messageToTelegram.setChatId(chatId);
 			messageToTelegram.setText("📅 *Fecha de Inicio*\n\n" +
 									"Ahora, ingresa la fecha de inicio del sprint.\n" +
-									"Formato: YYYY-MM-DD\n" +
+									"Formato: YYYY-MM-DD" +
 									"Ejemplo: 2024-04-08\n\n" +
 									"💡 *Consejo:* La fecha debe ser posterior o igual a hoy.");
 
@@ -2174,8 +2254,8 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 						  "Here are your available options:\n" +
 						  "📋 View Tasks - See all project tasks\n" +
 						  "🔍 Filter Tasks - Filter tasks by status\n" +
-						  "➕ Add Task - Create new tasks for developers\n\n" +
-						  "✏️ Update Task - Modify existing tasks\n\n" +
+						  "➕ Add Task - Create new tasks for developers\n" +
+						  "✏️ Update Task - Modify existing tasks\n" +
 						  "📅 *Sprint Management*\n" +
 						  "- Create new sprints\n" +
 						  "- Update sprint details\n" +

@@ -15,11 +15,14 @@ import {
   Calendar,
   User,
   Tag,
+  CalendarCheck,
+  Download,
 } from "lucide-react";
 import { api, TaskRequest, TaskResponse } from "../utils/api/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../utils/query/query-client";
 import { useSearchParams } from "react-router-dom";
+import { generateTaskListPDF } from "../utils/reports/task-list-pdf-generator"; // Importa la nueva función
 
 const Tasks: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,14 +31,20 @@ const Tasks: React.FC = () => {
   const [taskToEdit, setTaskToEdit] = useState<TaskResponse | null>(null);
 
   // Initialize search term from URL parameters
-  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
+  const [searchTerm, setSearchTerm] = useState(
+    () => searchParams.get("search") || "",
+  );
 
   // Initialize state from URL parameters
   const [viewMode, setViewMode] = useState<"kanban" | "table">(() => {
     return (searchParams.get("view") as "kanban" | "table") || "table";
   });
-  const [categoryFilter, setCategoryFilter] = useState<string>(() => searchParams.get("category") || "");
-  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "");
+  const [categoryFilter, setCategoryFilter] = useState<string>(
+    () => searchParams.get("category") || "",
+  );
+  const [statusFilter, setStatusFilter] = useState<string>(
+    () => searchParams.get("status") || "",
+  );
   const [assigneeFilter, setAssigneeFilter] = useState<number | null>(() => {
     const assignee = searchParams.get("assignee");
     return assignee ? Number(assignee) : null;
@@ -48,7 +57,7 @@ const Tasks: React.FC = () => {
   // Update URL when filters, view mode, or search term change
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
-    
+
     // Update search term in URL
     if (searchTerm) {
       params.set("search", searchTerm);
@@ -89,7 +98,16 @@ const Tasks: React.FC = () => {
     }
 
     setSearchParams(params, { replace: true });
-  }, [viewMode, categoryFilter, statusFilter, assigneeFilter, sprintFilter, setSearchParams, searchParams, searchTerm]);
+  }, [
+    viewMode,
+    categoryFilter,
+    statusFilter,
+    assigneeFilter,
+    sprintFilter,
+    setSearchParams,
+    searchParams,
+    searchTerm,
+  ]);
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryFn: api.tasks.list,
@@ -105,6 +123,32 @@ const Tasks: React.FC = () => {
     queryFn: api.sprints.getSprints,
     queryKey: ["sprints"],
   });
+
+  // Helper function to format date
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return "No due date";
+    return new Date(date).toLocaleDateString("en-MX", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Helper function to check if a due date is approaching or past
+  const getDueDateStatus = (date: Date | null | undefined) => {
+    if (!date) return "none";
+
+    const dueDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+
+    if (daysDiff < 0) return "overdue";
+    if (daysDiff <= 3) return "soon";
+    return "ok";
+  };
 
   // Filter tasks using the defined filters and search term
   const filteredTasks = useMemo(() => {
@@ -156,10 +200,13 @@ const Tasks: React.FC = () => {
   const statusCounts = useMemo(() => {
     if (!filteredTasks) return {};
 
-    return filteredTasks.reduce((acc, task) => {
-      acc[task.status] = (acc[task.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return filteredTasks.reduce(
+      (acc, task) => {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }, [filteredTasks]);
 
   const TaskCard = ({ task }: { task: TaskResponse }) => (
@@ -175,8 +222,8 @@ const Tasks: React.FC = () => {
             task.category === "bug"
               ? "bg-red-100 text-red-800"
               : task.category === "issue"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-purple-100 text-purple-800"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-purple-100 text-purple-800"
           }
         `}
         >
@@ -190,8 +237,8 @@ const Tasks: React.FC = () => {
           {task.category === "bug"
             ? "Bug"
             : task.category === "issue"
-            ? "Issue"
-            : "Feature"}
+              ? "Issue"
+              : "Feature"}
         </span>
       </div>
       <div className="space-y-2 text-sm">
@@ -205,6 +252,22 @@ const Tasks: React.FC = () => {
             <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full flex items-center gap-1">
               <Clock size={12} />
               {task.estimateHours}h est.
+            </span>
+          )}
+          {task.dueDate && (
+            <span
+              className={`px-2 py-0.5 rounded-full flex items-center gap-1
+                ${
+                  getDueDateStatus(task.dueDate) === "overdue"
+                    ? "bg-red-100 text-red-800"
+                    : getDueDateStatus(task.dueDate) === "soon"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-green-100 text-green-700"
+                }
+              `}
+            >
+              <CalendarCheck size={12} />
+              {formatDate(task.dueDate)}
             </span>
           )}
         </div>
@@ -260,6 +323,7 @@ const Tasks: React.FC = () => {
     >("created");
     const [estimateHours, setEstimateHours] = useState<number | null>(null);
     const [realHours, setRealHours] = useState<number | null>(null);
+    const [dueDate, setDueDate] = useState<string>("");
 
     const createTaskMutation = useMutation({
       mutationFn: (taskData: Omit<TaskRequest, "createdBy">) => {
@@ -285,6 +349,7 @@ const Tasks: React.FC = () => {
         realHours,
         sprint,
         category,
+        dueDate: dueDate ? new Date(dueDate) : null,
       });
     };
 
@@ -326,7 +391,7 @@ const Tasks: React.FC = () => {
                     value={category || ""}
                     onChange={(e) =>
                       setCategory(
-                        e.target.value as "bug" | "feature" | "issue" | null
+                        e.target.value as "bug" | "feature" | "issue" | null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -351,7 +416,7 @@ const Tasks: React.FC = () => {
                           | "in-progress"
                           | "in-review"
                           | "testing"
-                          | "done"
+                          | "done",
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -363,6 +428,18 @@ const Tasks: React.FC = () => {
                     <option value="done">Done</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -395,7 +472,7 @@ const Tasks: React.FC = () => {
                     value={estimateHours === null ? "" : estimateHours}
                     onChange={(e) =>
                       setEstimateHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -411,7 +488,7 @@ const Tasks: React.FC = () => {
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
                       setRealHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -427,7 +504,7 @@ const Tasks: React.FC = () => {
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
                     setAssignedTo(
-                      e.target.value ? Number(e.target.value) : null
+                      e.target.value ? Number(e.target.value) : null,
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -487,7 +564,7 @@ const Tasks: React.FC = () => {
     >(task.category as "bug" | "feature" | "issue" | null);
     const [sprint, setSprint] = useState<number | null>(task.sprintId || null);
     const [assignedTo, setAssignedTo] = useState<number | null>(
-      task.assignedToId || null
+      task.assignedToId || null,
     );
     const [status, setStatus] = useState<
       "created" | "in-progress" | "in-review" | "testing" | "done"
@@ -497,13 +574,17 @@ const Tasks: React.FC = () => {
         | "in-progress"
         | "in-review"
         | "testing"
-        | "done"
+        | "done",
     );
     const [estimateHours, setEstimateHours] = useState<number | null>(
-      task.estimateHours
+      task.estimateHours,
     );
-
     const [realHours, setRealHours] = useState<number | null>(task.realHours);
+
+    // Format date for input element (YYYY-MM-DD)
+    const [dueDate, setDueDate] = useState<string>(
+      task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
+    );
 
     const updateTaskMutation = useMutation({
       mutationFn: (taskData: Partial<TaskRequest>) => {
@@ -529,6 +610,7 @@ const Tasks: React.FC = () => {
         realHours,
         sprint,
         category,
+        dueDate: dueDate ? new Date(dueDate) : null,
       });
     };
 
@@ -568,7 +650,7 @@ const Tasks: React.FC = () => {
                     value={category || ""}
                     onChange={(e) =>
                       setCategory(
-                        e.target.value as "bug" | "feature" | "issue" | null
+                        e.target.value as "bug" | "feature" | "issue" | null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -593,7 +675,7 @@ const Tasks: React.FC = () => {
                           | "in-progress"
                           | "in-review"
                           | "testing"
-                          | "done"
+                          | "done",
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -605,6 +687,18 @@ const Tasks: React.FC = () => {
                     <option value="done">Done</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -637,7 +731,7 @@ const Tasks: React.FC = () => {
                     value={estimateHours === null ? "" : estimateHours}
                     onChange={(e) =>
                       setEstimateHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -653,7 +747,7 @@ const Tasks: React.FC = () => {
                     value={realHours === null ? "" : realHours}
                     onChange={(e) =>
                       setRealHours(
-                        e.target.value ? Number(e.target.value) : null
+                        e.target.value ? Number(e.target.value) : null,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -669,7 +763,7 @@ const Tasks: React.FC = () => {
                   value={assignedTo === null ? "" : assignedTo}
                   onChange={(e) =>
                     setAssignedTo(
-                      e.target.value ? Number(e.target.value) : null
+                      e.target.value ? Number(e.target.value) : null,
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -715,16 +809,15 @@ const Tasks: React.FC = () => {
       </div>
     );
   };
-
   const FilterMenu = () => {
     const [tempCategoryFilter, setTempCategoryFilter] =
       useState(categoryFilter);
     const [tempStatusFilter, setTempStatusFilter] = useState(statusFilter);
     const [tempAssigneeFilter, setTempAssigneeFilter] = useState<number | null>(
-      assigneeFilter
+      assigneeFilter,
     );
     const [tempSprintFilter, setTempSprintFilter] = useState<number | null>(
-      sprintFilter
+      sprintFilter,
     );
 
     const applyFilters = () => {
@@ -794,7 +887,7 @@ const Tasks: React.FC = () => {
               value={tempAssigneeFilter === null ? "" : tempAssigneeFilter}
               onChange={(e) =>
                 setTempAssigneeFilter(
-                  e.target.value ? Number(e.target.value) : null
+                  e.target.value ? Number(e.target.value) : null,
                 )
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -815,7 +908,7 @@ const Tasks: React.FC = () => {
               value={tempSprintFilter === null ? "" : tempSprintFilter}
               onChange={(e) =>
                 setTempSprintFilter(
-                  e.target.value ? Number(e.target.value) : null
+                  e.target.value ? Number(e.target.value) : null,
                 )
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -914,6 +1007,12 @@ const Tasks: React.FC = () => {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
+                  Due Date
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Estimate / Real
                 </th>
                 <th
@@ -950,8 +1049,8 @@ const Tasks: React.FC = () => {
                         task.category === "bug"
                           ? "bg-red-100 text-red-800"
                           : task.category === "issue"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-purple-100 text-purple-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-purple-100 text-purple-800"
                       }`}
                       >
                         {task.category === "bug" ? (
@@ -964,8 +1063,8 @@ const Tasks: React.FC = () => {
                         {task.category === "bug"
                           ? "Bug"
                           : task.category === "issue"
-                          ? "Issue"
-                          : "Feature"}
+                            ? "Issue"
+                            : "Feature"}
                       </span>
                     ) : (
                       <button
@@ -991,6 +1090,32 @@ const Tasks: React.FC = () => {
                         onClick={() => setTaskToEdit(task)}
                       >
                         <Plus size={16} />
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {task.dueDate ? (
+                      <span
+                        className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full
+                        ${
+                          getDueDateStatus(task.dueDate) === "overdue"
+                            ? "bg-red-100 text-red-800"
+                            : getDueDateStatus(task.dueDate) === "soon"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        <CalendarCheck size={12} className="mr-1" />
+                        {formatDate(task.dueDate)}
+                      </span>
+                    ) : (
+                      <button
+                        className="text-gray-400 hover:text-gray-600 flex items-center text-xs border border-dashed border-gray-300 rounded-full px-2 py-1 transition-colors"
+                        title="Set due date"
+                        onClick={() => setTaskToEdit(task)}
+                      >
+                        <CalendarCheck size={12} className="mr-1" />
+                        <span>Set date</span>
                       </button>
                     )}
                   </td>
@@ -1046,23 +1171,23 @@ const Tasks: React.FC = () => {
                         task.status === "created"
                           ? "bg-gray-100 text-gray-800"
                           : task.status === "in-progress"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : task.status === "in-review"
-                          ? "bg-blue-100 text-blue-800"
-                          : task.status === "testing"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-green-100 text-green-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : task.status === "in-review"
+                              ? "bg-blue-100 text-blue-800"
+                              : task.status === "testing"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-green-100 text-green-800"
                       }`}
                     >
                       {task.status === "created"
                         ? "Created"
                         : task.status === "in-progress"
-                        ? "In Progress"
-                        : task.status === "in-review"
-                        ? "In Review"
-                        : task.status === "testing"
-                        ? "Testing"
-                        : "Done"}
+                          ? "In Progress"
+                          : task.status === "in-review"
+                            ? "In Review"
+                            : task.status === "testing"
+                              ? "Testing"
+                              : "Done"}
                     </span>
                   </td>
                   <td className="px-6 py-4 flex space-x-2 whitespace-nowrap text-sm text-gray-500">
@@ -1154,6 +1279,21 @@ const Tasks: React.FC = () => {
     assigneeFilter !== null ||
     sprintFilter !== null;
 
+  const handleDownloadTaskListPDF = async () => {
+    try {
+      if (!tasks) {
+        alert("No hay tareas disponibles para generar el reporte.");
+        return;
+      }
+
+      const pdf = await generateTaskListPDF(tasks);
+      pdf.save("task-list-report.pdf");
+    } catch (error) {
+      console.error("Error al generar el reporte:", error);
+      alert("Ocurrió un error al generar el reporte.");
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
@@ -1167,6 +1307,16 @@ const Tasks: React.FC = () => {
             </span>
           </h1>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            {/* Botón para descargar el reporte */}
+            <button
+              onClick={handleDownloadTaskListPDF}
+              className="bg-blue-500 text-white px-3 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors whitespace-nowrap"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Download Task List</span>
+              <span className="sm:hidden">Descargar</span>
+            </button>
+            {/* Otros botones existentes */}
             <div className="relative w-full sm:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-400" />

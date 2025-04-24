@@ -58,6 +58,11 @@ export const taskResponseValidator = z.object({
   sprintId: z.number().nullable(),
   projectId: z.number(),
   category: z.string().nullable(),
+  dueDate: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((value) => (value ? new Date(value) : null)),
 });
 
 export const taskRequestValidator = z.object({
@@ -69,6 +74,11 @@ export const taskRequestValidator = z.object({
   realHours: z.number().nullable(),
   sprint: z.number().nullable(),
   category: z.enum(["feature", "bug", "issue"]).nullable(),
+  dueDate: z
+    .date()
+    .nullable()
+    .optional()
+    .transform((value) => (value ? value : null)),
 });
 
 export type TaskResponse = z.infer<typeof taskResponseValidator>;
@@ -116,12 +126,12 @@ function createApiClient(baseUrl: string) {
     return safeParsed.data
       .filter(
         (user) =>
-          user.role === "developer" || user.role === "user-pending-activation"
+          user.role === "developer" || user.role === "user-pending-activation",
       )
       .sort(
         (a, b) =>
           a.firstName.localeCompare(b.firstName) ||
-          a.lastName.localeCompare(b.lastName)
+          a.lastName.localeCompare(b.lastName),
       );
   }
 
@@ -155,7 +165,7 @@ function createApiClient(baseUrl: string) {
     console.log("Safe parsed", safeParsed.data);
 
     return safeParsed.data.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
   }
 
@@ -218,7 +228,7 @@ function createApiClient(baseUrl: string) {
     console.log("Safe parsed", safeParsed.data);
 
     return safeParsed.data.sort(
-      (a, b) => a.name.localeCompare(b.name) || a.id - b.id
+      (a, b) => a.name.localeCompare(b.name) || a.id - b.id,
     );
   }
 

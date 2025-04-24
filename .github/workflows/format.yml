@@ -1,0 +1,33 @@
+# .github/workflows/format.yml
+name: Format Code
+
+on:
+  push:
+    branches: ["main"] # Or your default branch
+  pull_request:
+    branches: ["main"] # Or your default branch
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./MtdrSpring/backend/src/main/frontend # Set working directory for steps
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Match the version in tests.yml
+          cache: "npm"
+          cache-dependency-path: ./MtdrSpring/backend/src/main/frontend/package-lock.json # Path relative to repo root
+
+      - name: Install dependencies
+        run: npm ci # Use npm ci for faster, reliable installs in CI
+
+      - name: Format code with Prettier
+        run: npm run format:fix # Runs 'prettier --write .'

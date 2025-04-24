@@ -1,14 +1,14 @@
 // vite.config.ts
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
   const baseConfig = {
     plugins: [react(), tailwindcss()],
     build: {
-      outDir: './build',
+      outDir: "./build",
     },
     server: {
       watch: {
@@ -23,22 +23,22 @@ export default defineConfig(({ command }) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom',
-      setupFiles: './vitest.setup.ts',
+      environment: "jsdom",
+      setupFiles: "./vitest.setup.ts",
     },
-  }
+  };
 
-  if (command === 'serve') {
+  if (command === "serve") {
     return {
       ...baseConfig,
       server: {
         ...baseConfig.server,
         proxy: {
-          '/api': 'http://localhost:8081',
+          "/api": "http://localhost:8081",
         },
       },
-    }
+    };
   }
 
-  return baseConfig
-})
+  return baseConfig;
+});

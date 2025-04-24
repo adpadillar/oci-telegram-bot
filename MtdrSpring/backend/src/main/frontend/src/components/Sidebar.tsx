@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight, X } from "lucide-react";
 
 interface SidebarProps {
   activeNavItem: string;
@@ -18,12 +18,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   setIsMobileMenuOpen,
 }) => {
   return (
-    <div 
+    <div
       className={`
         fixed md:static inset-y-0 left-0 z-40
         w-64 bg-white border-r border-gray-200 shadow-sm
         transform transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -48,18 +48,20 @@ const Sidebar: React.FC<SidebarProps> = ({
             className={`
               group relative w-full flex items-center space-x-3 p-3 rounded-lg mb-1
               transition-all duration-200
-              ${activeNavItem === item.key
-                ? "bg-blue-50 text-blue-600"
-                : "text-gray-700 hover:bg-gray-50"
+              ${
+                activeNavItem === item.key
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-700 hover:bg-gray-50"
               }
             `}
           >
-            <div 
+            <div
               className={`
                 flex items-center justify-center w-8 h-8 rounded-md
-                ${activeNavItem === item.key
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
+                ${
+                  activeNavItem === item.key
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
                 }
               `}
             >
