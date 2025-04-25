@@ -129,7 +129,7 @@ const KPIs = () => {
     if (!users || !tasks) return null;
 
     // Get developers
-    const developers = users.filter((user) => user.role === "developer");
+    const developers = users;
 
     // Count tasks per developer
     const taskCounts = developers.reduce(
@@ -487,7 +487,7 @@ const KPIs = () => {
   const developerMetricsPerSprint = useMemo(() => {
     if (!users || !tasks || !sprints) return null;
 
-    const developers = users.filter((user) => user.role === "developer");
+    const developers = users;
 
     return developers.map((dev) => {
       const devTasks = selectedSprintFilter
@@ -872,7 +872,7 @@ const KPIs = () => {
                 Team Size
               </p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {users.filter((user) => user.role === "developer").length}
+                {users.length}
               </h3>
             </div>
             <div className="bg-teal-100 p-2 rounded-lg">
@@ -880,12 +880,11 @@ const KPIs = () => {
             </div>
           </div>
           <div className="mt-2 flex items-center text-sm">
-            <span className="text-gray-500">Tasks per developer:</span>
+            <span className="text-gray-500">Tasks per team member:</span>
             <span className="ml-1 font-medium text-gray-700">
               {Math.round(
                 tasks.filter((task) => task.assignedToId !== null).length /
-                  (users.filter((user) => user.role === "developer").length ||
-                    1)
+                  (users.length || 1)
               )}
             </span>
           </div>
@@ -1022,7 +1021,7 @@ const KPIs = () => {
             <div className="p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Award className="h-5 w-5 text-blue-500" />
-                Developer Performance
+                Team Performance
               </h2>
             </div>
             <div className="overflow-x-auto -mx-6 px-6">
