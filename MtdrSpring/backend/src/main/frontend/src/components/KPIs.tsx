@@ -93,7 +93,7 @@ const KPIs = () => {
   // Use getDevelopers to fetch the complete list of developers (consistent with Developers.tsx)
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
-    queryFn: api.users.getDevelopers,
+    queryFn: api.users.getUsers,
   });
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
