@@ -54,7 +54,7 @@ ChartJS.register(
   BarElement,
   Title,
   PointElement,
-  LineElement,
+  LineElement
 );
 
 // Custom hook for extra small screens (below sm breakpoint)
@@ -136,7 +136,7 @@ const KPIs = () => {
       (acc, dev) => {
         // Ensure both sides are numbers
         const count = tasks.filter(
-          (task) => Number(task.assignedToId) === Number(dev.id),
+          (task) => Number(task.assignedToId) === Number(dev.id)
         ).length;
         if (count > 0) {
           acc.labels.push(`${dev.firstName} ${dev.lastName}`);
@@ -156,7 +156,7 @@ const KPIs = () => {
         data: [] as number[],
         backgroundColor: [] as string[],
         borderColor: [] as string[],
-      },
+      }
     );
 
     return {
@@ -179,20 +179,18 @@ const KPIs = () => {
 
     const sprintHours = sprints.map((sprint) => {
       // Get completed tasks for this sprint that have realHours
-      const sprintTasks = tasks.filter(
-        (task) => task.sprintId === sprint.id && task.status === "done",
-      );
+      const sprintTasks = tasks.filter((task) => task.sprintId === sprint.id);
 
       // Sum the real hours
       const totalRealHours = sprintTasks.reduce(
         (sum, task) => sum + (task.realHours || 0),
-        0,
+        0
       );
 
       // Sum the estimated hours
       const totalEstimateHours = sprintTasks.reduce(
         (sum, task) => sum + (task.estimateHours || 0),
-        0,
+        0
       );
 
       // Store estimated (actually, estimated as "estimateHours") hours for each task to display on click
@@ -338,13 +336,13 @@ const KPIs = () => {
     // Sort sprints by start date
     const sortedSprints = [...sprints].sort(
       (a, b) =>
-        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
     );
 
     const completionRates = sortedSprints.map((sprint) => {
       const sprintTasks = tasks.filter((task) => task.sprintId === sprint.id);
       const completedTasks = sprintTasks.filter(
-        (task) => task.status === "done",
+        (task) => task.status === "done"
       );
       const completionRate =
         sprintTasks.length > 0
@@ -386,7 +384,7 @@ const KPIs = () => {
     if (!selectedSprint || !hoursPerSprintData) return null;
 
     return hoursPerSprintData.sprintDetails.find(
-      (s) => s.sprintId === selectedSprint,
+      (s) => s.sprintId === selectedSprint
     );
   }, [selectedSprint, hoursPerSprintData]);
 
@@ -399,7 +397,7 @@ const KPIs = () => {
 
     // Completed tasks
     const completedTasks = tasks.filter(
-      (task) => task.status === "done",
+      (task) => task.status === "done"
     ).length;
 
     // Completion rate
@@ -408,17 +406,17 @@ const KPIs = () => {
 
     // Active sprints
     const activeSprints = sprints.filter(
-      (sprint) => new Date(sprint.endsAt) >= new Date(),
+      (sprint) => new Date(sprint.endsAt) >= new Date()
     ).length;
 
     // Tasks without estimates
     const tasksWithoutEstimates = tasks.filter(
-      (task) => task.estimateHours === null,
+      (task) => task.estimateHours === null
     ).length;
 
     // Tasks without assignees
     const tasksWithoutAssignees = tasks.filter(
-      (task) => task.assignedToId === null,
+      (task) => task.assignedToId === null
     ).length;
 
     // Average tasks per sprint
@@ -427,7 +425,7 @@ const KPIs = () => {
 
     // Estimate accuracy (ratio of real hours to estimated hours)
     const tasksWithBothHours = tasks.filter(
-      (task) => task.status === "done" && task.estimateHours && task.realHours,
+      (task) => task.status === "done" && task.estimateHours && task.realHours
     );
 
     const estimateAccuracy =
@@ -435,13 +433,13 @@ const KPIs = () => {
         ? Math.round(
             (tasksWithBothHours.reduce(
               (sum, task) => sum + (task.realHours || 0),
-              0,
+              0
             ) /
               tasksWithBothHours.reduce(
                 (sum, task) => sum + (task.estimateHours || 0),
-                0,
+                0
               )) *
-              100,
+              100
           )
         : 0;
 
@@ -457,52 +455,6 @@ const KPIs = () => {
     };
   }, [tasks, sprints]);
 
-  // Calculate developer performance metrics
-  const developerPerformance = useMemo(() => {
-    if (!users || !tasks) return null;
-
-    const developers = users.filter((user) => user.role === "developer");
-
-    return developers
-      .map((dev) => {
-        const devTasks = tasks.filter((task) => task.assignedToId === dev.id);
-        const completedTasks = devTasks.filter(
-          (task) => task.status === "done",
-        );
-        const completionRate =
-          devTasks.length > 0
-            ? (completedTasks.length / devTasks.length) * 100
-            : 0;
-
-        // Calculate estimate accuracy
-        const tasksWithBothHours = completedTasks.filter(
-          (task) => task.estimateHours && task.realHours,
-        );
-        const estimateAccuracy =
-          tasksWithBothHours.length > 0
-            ? (tasksWithBothHours.reduce(
-                (sum, task) => sum + (task.realHours || 0),
-                0,
-              ) /
-                tasksWithBothHours.reduce(
-                  (sum, task) => sum + (task.estimateHours || 0),
-                  0,
-                )) *
-              100
-            : 0;
-
-        return {
-          id: dev.id,
-          name: `${dev.firstName} ${dev.lastName}`,
-          totalTasks: devTasks.length,
-          completedTasks: completedTasks.length,
-          completionRate: Math.round(completionRate),
-          estimateAccuracy: Math.round(estimateAccuracy),
-        };
-      })
-      .sort((a, b) => b.completedTasks - a.completedTasks);
-  }, [users, tasks]);
-
   // Calculate team metrics per sprint
   const teamMetricsPerSprint = useMemo(() => {
     if (!tasks || !sprints) return null;
@@ -510,11 +462,11 @@ const KPIs = () => {
     return sprints.map((sprint) => {
       const sprintTasks = tasks.filter((task) => task.sprintId === sprint.id);
       const completedTasks = sprintTasks.filter(
-        (task) => task.status === "done",
+        (task) => task.status === "done"
       );
-      const totalHours = completedTasks.reduce(
+      const totalHours = sprintTasks.reduce(
         (sum, task) => sum + (task.realHours || 0),
-        0,
+        0
       );
 
       return {
@@ -536,21 +488,20 @@ const KPIs = () => {
     if (!users || !tasks || !sprints) return null;
 
     const developers = users.filter((user) => user.role === "developer");
-    const selectedSprint = sprints.find((s) => s.id === selectedSprintFilter);
 
     return developers.map((dev) => {
       const devTasks = selectedSprintFilter
         ? tasks.filter(
             (task) =>
               task.assignedToId === dev.id &&
-              task.sprintId === selectedSprintFilter,
+              task.sprintId === selectedSprintFilter
           )
         : tasks.filter((task) => task.assignedToId === dev.id);
 
       const completedTasks = devTasks.filter((task) => task.status === "done");
-      const totalHours = completedTasks.reduce(
+      const totalHours = devTasks.reduce(
         (sum, task) => sum + (task.realHours || 0),
-        0,
+        0
       );
 
       return {
@@ -934,7 +885,7 @@ const KPIs = () => {
               {Math.round(
                 tasks.filter((task) => task.assignedToId !== null).length /
                   (users.filter((user) => user.role === "developer").length ||
-                    1),
+                    1)
               )}
             </span>
           </div>
@@ -1051,7 +1002,7 @@ const KPIs = () => {
                 value={selectedSprintFilter || ""}
                 onChange={(e) =>
                   setSelectedSprintFilter(
-                    e.target.value ? Number(e.target.value) : null,
+                    e.target.value ? Number(e.target.value) : null
                   )
                 }
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
@@ -1407,7 +1358,7 @@ const KPIs = () => {
                   <td className="px-6 py-3 text-left text-xs font-medium text-gray-900">
                     {selectedSprintDetails.tasks.reduce(
                       (sum, task) => sum + task.estimateHours,
-                      0,
+                      0
                     )}
                     h
                   </td>
@@ -1420,7 +1371,7 @@ const KPIs = () => {
                       selectedSprintDetails.totalRealHours >
                       selectedSprintDetails.tasks.reduce(
                         (sum, task) => sum + task.estimateHours,
-                        0,
+                        0
                       )
                         ? "text-red-600"
                         : "text-green-600"
@@ -1429,7 +1380,7 @@ const KPIs = () => {
                     {selectedSprintDetails.totalRealHours >
                     selectedSprintDetails.tasks.reduce(
                       (sum, task) => sum + task.estimateHours,
-                      0,
+                      0
                     ) ? (
                       <ArrowUp className="w-4 h-4 mr-1 text-red-600" />
                     ) : (
@@ -1438,7 +1389,7 @@ const KPIs = () => {
                     {selectedSprintDetails.totalRealHours -
                       selectedSprintDetails.tasks.reduce(
                         (sum, task) => sum + task.estimateHours,
-                        0,
+                        0
                       )}
                     h
                   </td>
@@ -1521,7 +1472,7 @@ const KPIs = () => {
           {tasks &&
             users &&
             tasksPerDeveloperData?.datasets[0].data.some(
-              (count) => count > 8,
+              (count) => count > 8
             ) && (
               <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
                 <AlertCircle
