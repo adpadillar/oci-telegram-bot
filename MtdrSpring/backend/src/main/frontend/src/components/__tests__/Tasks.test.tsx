@@ -151,7 +151,9 @@ describe("Tasks Component", () => {
     // Open edit modal for first task
     fireEvent.click(screen.getAllByTitle("Edit task")[0]);
     // Change description
-    const descriptionInput = screen.getByLabelText("Task Description") as HTMLInputElement;
+    const descriptionInput = screen.getByLabelText(
+      "Task Description",
+    ) as HTMLInputElement;
     fireEvent.change(descriptionInput, { target: { value: "Updated task" } });
     // Submit update
     expect(descriptionInput.value).toBe("Updated task");
@@ -160,7 +162,7 @@ describe("Tasks Component", () => {
     await waitFor(() => {
       expect(client.api.tasks.patch).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ description: "Updated task" })
+        expect.objectContaining({ description: "Updated task" }),
       );
     });
   });
@@ -182,7 +184,7 @@ describe("Tasks Component", () => {
     await waitFor(() => {
       expect(client.api.tasks.patch).toHaveBeenCalledWith(
         2,
-        expect.objectContaining({ status: "done" })
+        expect.objectContaining({ status: "done" }),
       );
     });
   });

@@ -13,6 +13,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../utils/api/client";
 
+interface Sprint {
+  id: number;
+  name: string;
+  description: string | null;
+  startedAt: string;
+  endsAt: string;
+  projectId: number;
+}
+
 const Sprints = () => {
   const navigate = useNavigate();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -38,7 +47,7 @@ const Sprints = () => {
   };
 
   // Check if sprint is active
-  const isSprintActive = (sprint: any) => {
+  const isSprintActive = (sprint: Sprint) => {
     const now = new Date();
     return new Date(sprint.startedAt) <= now && new Date(sprint.endsAt) >= now;
   };
@@ -278,7 +287,9 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)}
+                      onClick={() =>
+                        navigate(`/tasks?view=table&sprint=${sprint.id}`)
+                      }
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />
@@ -342,7 +353,9 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)} // Cambia la ruta a /tasks con el filtro del sprint
+                      onClick={() =>
+                        navigate(`/tasks?view=table&sprint=${sprint.id}`)
+                      } // Cambia la ruta a /tasks con el filtro del sprint
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />
@@ -398,7 +411,9 @@ const Sprints = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => navigate(`/tasks?view=table&sprint=${sprint.id}`)} // Cambia la ruta a /tasks con el filtro del sprint
+                      onClick={() =>
+                        navigate(`/tasks?view=table&sprint=${sprint.id}`)
+                      } // Cambia la ruta a /tasks con el filtro del sprint
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                       <ChevronRight size={20} className="text-gray-500" />

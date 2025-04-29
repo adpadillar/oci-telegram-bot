@@ -11,7 +11,7 @@ import * as client from "../../utils/api/client";
 // Mock the API client
 vi.mock("../../utils/api/client", async () => {
   const original = await vi.importActual<typeof client>(
-    "../../utils/api/client"
+    "../../utils/api/client",
   );
 
   // Define mock data for this test
@@ -49,14 +49,31 @@ vi.mock("../../utils/api/client", async () => {
   ];
 
   const mockSprints = [
-    { id: 1, name: "Sprint 1", description: null, startedAt: new Date().toISOString(), endsAt: new Date().toISOString(), projectId: 1 },
-    { id: 2, name: "Sprint 2", description: null, startedAt: new Date().toISOString(), endsAt: new Date().toISOString(), projectId: 1 },
+    {
+      id: 1,
+      name: "Sprint 1",
+      description: null,
+      startedAt: new Date().toISOString(),
+      endsAt: new Date().toISOString(),
+      projectId: 1,
+    },
+    {
+      id: 2,
+      name: "Sprint 2",
+      description: null,
+      startedAt: new Date().toISOString(),
+      endsAt: new Date().toISOString(),
+      projectId: 1,
+    },
   ];
 
   return {
     ...original,
     api: {
-      users: { getDevelopers: vi.fn().mockResolvedValue(mockUsers), getUsers: vi.fn().mockResolvedValue(mockUsers) },
+      users: {
+        getDevelopers: vi.fn().mockResolvedValue(mockUsers),
+        getUsers: vi.fn().mockResolvedValue(mockUsers),
+      },
       tasks: { list: vi.fn().mockResolvedValue(mockTasks) },
       sprints: { getSprints: vi.fn().mockResolvedValue(mockSprints) },
     },
@@ -73,18 +90,18 @@ describe("Developer-to-Tasks Integration", () => {
             <Route path="/tasks" element={<Tasks />} />
           </Routes>
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Wait for tasks page load
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Search tasks...")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search tasks..."),
+      ).toBeInTheDocument();
     });
 
     // Sprint2 task should be present, Sprint1 task hidden
     expect(screen.getByText("Marcela Sprint2 Task")).toBeInTheDocument();
-    expect(
-      screen.queryByText("Marcela Sprint1 Task")
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Marcela Sprint1 Task")).not.toBeInTheDocument();
   });
-}); 
+});

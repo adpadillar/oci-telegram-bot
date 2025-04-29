@@ -17,7 +17,7 @@ export const mockTasks = [
     projectId: 1,
     createdAt: new Date(),
     category: "bug" as string | null,
-    dueDate: null as Date | null
+    dueDate: null as Date | null,
   },
   {
     id: 2,
@@ -31,8 +31,8 @@ export const mockTasks = [
     projectId: 1,
     createdAt: new Date(),
     category: "feature" as string | null,
-    dueDate: null as Date | null
-  }
+    dueDate: null as Date | null,
+  },
 ];
 
 export const mockUsers = [
@@ -41,15 +41,15 @@ export const mockUsers = [
     firstName: "Ana",
     lastName: "Ramírez",
     role: "developer" as UserRole,
-    title: null as string | null
+    title: null as string | null,
   },
   {
     id: 2,
     firstName: "Luis",
     lastName: "Hernández",
     role: "developer" as UserRole,
-    title: null as string | null
-  }
+    title: null as string | null,
+  },
 ];
 
 export const mockSprints = [
@@ -59,6 +59,6 @@ export const mockSprints = [
     description: "Initial sprint" as string | null,
     startedAt: new Date("2024-03-01"),
     endsAt: new Date("2024-03-07"),
-    projectId: 1
-  }
+    projectId: 1,
+  },
 ];
