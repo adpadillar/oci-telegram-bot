@@ -58,12 +58,13 @@ ChartJS.register(
 );
 
 // Custom hook for extra small screens (below sm breakpoint)
-const useExtraSmallScreen = () => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const useExtraSmallScreen = () => {
   const [isXs, setIsXs] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsXs(window.innerWidth < 640);
+      setIsXs(window.innerWidth < 640); // sm breakpoint
     };
 
     checkScreenSize();
@@ -605,6 +606,7 @@ const KPIs = () => {
       {/* Summary cards */}
       <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div
+          data-testid="task-overview-card"
           className="relative bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-help"
           onMouseEnter={() => setHoveredCard("taskOverview")}
           onMouseLeave={() => setHoveredCard(null)}
