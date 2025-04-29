@@ -2,6 +2,12 @@ package com.springboot.MyTodoList.controller;
 import com.springboot.MyTodoList.dto.TaskDTO;
 import com.springboot.MyTodoList.model.TaskModel;
 import com.springboot.MyTodoList.service.TaskService;
+import com.springboot.MyTodoList.service.AIService;
+import com.springboot.MyTodoList.dto.InsightDTO;
+import com.springboot.MyTodoList.model.UserModel;
+import com.springboot.MyTodoList.model.SprintModel;
+import com.springboot.MyTodoList.service.UserService;
+import com.springboot.MyTodoList.service.SprintService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +34,15 @@ import java.util.Optional;
 public class TaskApiController {
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private AIService aiService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private SprintService sprintService;
 
     @Operation(
         summary = "Get all tasks for a project",
@@ -248,5 +263,53 @@ public class TaskApiController {
             return new ResponseEntity<>(true, HttpStatus.OK);
         }
         return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Operation(
+        summary = "Get efficiency insights",
+        description = "Generates AI-based efficiency insights for the team based on tasks, users, and sprints.",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Insights generated successfully",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(
+                        example = "["
+                            + "{"
+                            + "\"type\": \"positive\","
+                            + "\"title\": \"Buen balance de tareas\","
+                            + "\"message\": \"El equipo tiene una distribución equilibrada de tareas.\""
+                            + "},"
+                            + "{"
+                            + "\"type\": \"warning\","
+                            + "\"title\": \"Baja tasa de finalización\","
+                            + "\"message\": \"Solo el 50% de las tareas están completadas. Revisa la planificación.\""
+                            + "}"
+                            + "]"
+                    )
+                )
+            ),
+            @ApiResponse(responseCode = "500", description = "Error generating insights")
+        }
+    )
+    @GetMapping(value = "/api/{project}/insights")
+    public ResponseEntity<Object> getEfficiencyInsights(
+        @Parameter(description = "Project ID", required = true, example = "1")
+        @PathVariable("project") int project
+    ) {
+        try {
+            // Obtener datos necesarios
+            List<TaskModel> tasks = taskService.findAllByProjectId(project);
+            List<UserModel> users = userService.findAllUsers();
+            List<SprintModel> sprints = sprintService.findByProjectId(project);
+
+            // Llamar al servicio de IA para generar insights
+            List<InsightDTO> insights = aiService.generateEfficiencyInsights(tasks, users, sprints);
+
+            return new ResponseEntity<>(insights, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error generating insights: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
