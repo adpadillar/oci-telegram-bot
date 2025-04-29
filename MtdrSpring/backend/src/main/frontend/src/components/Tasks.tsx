@@ -629,7 +629,10 @@ const Tasks: React.FC = () => {
           <form onSubmit={handleSubmit} className="p-4">
             <div className="space-y-4">
               <div>
-                <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="edit-description"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Task Description
                 </label>
                 <input
@@ -664,7 +667,10 @@ const Tasks: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="edit-status"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Status
                   </label>
                   <select
@@ -903,7 +909,10 @@ const Tasks: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="filter-sprint" className="block text-xs font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="filter-sprint"
+              className="block text-xs font-medium text-gray-700 mb-1"
+            >
               Sprint
             </label>
             <select

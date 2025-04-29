@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +15,7 @@ import * as client from "../../utils/api/client";
 // Mock the API client
 vi.mock("../../utils/api/client", async () => {
   const original = await vi.importActual<typeof client>(
-    "../../utils/api/client"
+    "../../utils/api/client",
   );
 
   const mockUsers = [
@@ -73,7 +79,7 @@ function renderKpis() {
   return render(
     <QueryClientProvider client={queryClient}>
       <KPIs />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -91,7 +97,7 @@ describe("KPIs Component", () => {
     // Wait for the dashboard heading
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /KPI Dashboard/i })
+        screen.getByRole("heading", { name: /KPI Dashboard/i }),
       ).toBeInTheDocument();
     });
     // Switch to Sprints view
@@ -99,9 +105,7 @@ describe("KPIs Component", () => {
 
     // Wait for team metrics table
     await waitFor(() => {
-      expect(
-        screen.getByText("Team Metrics per Sprint")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Team Metrics per Sprint")).toBeInTheDocument();
     });
 
     // Check the data row for Sprint 1
@@ -124,13 +128,11 @@ describe("KPIs Component", () => {
     // Wait for dashboard heading
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /KPI Dashboard/i })
+        screen.getByRole("heading", { name: /KPI Dashboard/i }),
       ).toBeInTheDocument();
     });
     // Switch to Developers view
-    fireEvent.click(
-      screen.getByRole("button", { name: /Developers/i })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Developers/i }));
 
     // Wait for team performance table
     await waitFor(() => {

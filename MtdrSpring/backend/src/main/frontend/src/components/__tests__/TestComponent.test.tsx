@@ -33,4 +33,4 @@ describe("useExtraSmallScreen hook", () => {
       expect(screen.getByTestId("xs-flag")).toHaveTextContent("false");
     });
   });
-}); 
+});
