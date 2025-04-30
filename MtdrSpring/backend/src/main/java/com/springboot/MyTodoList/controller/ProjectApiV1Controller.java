@@ -1,6 +1,5 @@
 package com.springboot.MyTodoList.controller;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +18,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@Tag(name = "Projects", description = "Project management APIs - Core entity that groups sprints, tasks and team members")
-public class ProjectApiController {
+@Tag(name = "Projects V1", description = "Project management APIs - Core entity that groups sprints, tasks and team members")
+public class ProjectApiV1Controller {
     @Autowired
     private ProjectService projectService;
 
@@ -44,7 +43,7 @@ public class ProjectApiController {
             )
         }
     )
-    @GetMapping(value = "/api/projects")
+    @GetMapping(value = "/api/v1/projects")
     public List<ProjectModel> getAllProjects() {
         return projectService.findAll();
     }
@@ -63,7 +62,7 @@ public class ProjectApiController {
             )
         }
     )
-    @PostMapping(value = "/api/projects")
+    @PostMapping(value = "/api/v1/projects")
     public ResponseEntity<Object> addProject(
         @Parameter(
             description = "Project details",
@@ -106,7 +105,7 @@ public class ProjectApiController {
             )
         }
     )
-    @GetMapping(value = "/api/projects/{id}")
+    @GetMapping(value = "/api/v1/projects/{id}")
     public ResponseEntity<ProjectModel> getProjectById(
         @Parameter(description = "Project ID to retrieve", example = "1") 
         @PathVariable int id

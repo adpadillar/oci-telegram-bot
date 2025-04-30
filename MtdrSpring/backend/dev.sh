@@ -19,8 +19,15 @@ cleanup() {
     for var in $(grep -v '^#' .env | sed -E 's/([^=]+)=.*/\1/'); do
         unset "$var"
     done
-    # Kill all background processes
-    kill $(jobs -p) 2>/dev/null
+    # Kill processes if they're still running
+    if [[ ! -z "${FRONTEND_PID}" ]]; then
+        echo "Stopping frontend process..."
+        kill -TERM $FRONTEND_PID 2>/dev/null || true
+    fi
+    if [[ ! -z "${BACKEND_PID}" ]]; then
+        echo "Stopping backend process..."
+        kill -TERM $BACKEND_PID 2>/dev/null || true
+    fi
     exit
 }
 
@@ -39,10 +46,23 @@ fi
 # Start frontend in background
 echo "Starting Vite development server..."
 cd src/main/frontend
-npm install
+if ! npm install; then
+    echo "Failed to install frontend dependencies"
+    cleanup
+    exit 1
+fi
+
 npm run dev &
 FRONTEND_PID=$!
 echo "Frontend server started with PID: $FRONTEND_PID"
+
+# Check if frontend started successfully
+sleep 2
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+    echo "Frontend failed to start"
+    cleanup
+    exit 1
+fi
 
 # Start backend
 echo "Starting Spring Boot backend..."
@@ -51,18 +71,27 @@ $MVN_CMD spring-boot:run &
 BACKEND_PID=$!
 echo "Backend server started with PID: $BACKEND_PID"
 
+# Check if backend started successfully
+sleep 5
+if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "Backend failed to start"
+    cleanup
+    exit 1
+fi
+
 # Function to handle Ctrl+C
 handle_interrupt() {
-    echo "Shutting down servers..."
-    kill $FRONTEND_PID 2>/dev/null
-    kill $BACKEND_PID 2>/dev/null
+    echo "Received interrupt signal..."
     cleanup
 }
 
 trap handle_interrupt INT
 
-# Wait for either process to exit
-wait -n $FRONTEND_PID $BACKEND_PID
-# If we get here, one of the processes died, kill the other one
-kill $FRONTEND_PID 2>/dev/null
-kill $BACKEND_PID 2>/dev/null
+# Monitor both processes
+while kill -0 $FRONTEND_PID 2>/dev/null && kill -0 $BACKEND_PID 2>/dev/null; do
+    sleep 1
+done
+
+# If we get here, one of the processes died
+echo "One of the processes has terminated unexpectedly"
+cleanup

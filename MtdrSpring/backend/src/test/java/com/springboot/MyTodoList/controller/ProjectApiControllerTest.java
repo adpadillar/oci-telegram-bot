@@ -22,7 +22,7 @@ class ProjectApiControllerTest {
     private ProjectService projectService;
 
     @InjectMocks
-    private ProjectApiController projectApiController;
+    private ProjectApiV1Controller projectApiController;
 
     public ProjectApiControllerTest() {
         MockitoAnnotations.openMocks(this);

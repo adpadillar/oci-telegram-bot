@@ -18,7 +18,7 @@ class UserApiControllerTest {
     private UserService userService;
 
     @InjectMocks
-    private UserApiController userApiController;
+    private UserApiV1Controller userApiController;
 
     public UserApiControllerTest() {
         MockitoAnnotations.openMocks(this);

@@ -32,6 +32,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
             .authorizeRequests(requests -> requests
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .antMatchers("/api/*/request-code", "/api/*/validate-code").permitAll()
+                .antMatchers("/api/v*/**").permitAll()  // Added this line
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .addFilterBefore(bearerTokenFilter(), UsernamePasswordAuthenticationFilter.class);

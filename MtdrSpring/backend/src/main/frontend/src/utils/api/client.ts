@@ -126,12 +126,12 @@ function createApiClient(baseUrl: string) {
     return safeParsed.data
       .filter(
         (user) =>
-          user.role === "developer" || user.role === "user-pending-activation",
+          user.role === "developer" || user.role === "user-pending-activation"
       )
       .sort(
         (a, b) =>
           a.firstName.localeCompare(b.firstName) ||
-          a.lastName.localeCompare(b.lastName),
+          a.lastName.localeCompare(b.lastName)
       );
   }
 
@@ -165,7 +165,7 @@ function createApiClient(baseUrl: string) {
     console.log("Safe parsed", safeParsed.data);
 
     return safeParsed.data.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
     );
   }
 
@@ -228,7 +228,7 @@ function createApiClient(baseUrl: string) {
     console.log("Safe parsed", safeParsed.data);
 
     return safeParsed.data.sort(
-      (a, b) => a.name.localeCompare(b.name) || a.id - b.id,
+      (a, b) => a.name.localeCompare(b.name) || a.id - b.id
     );
   }
 
@@ -315,4 +315,4 @@ function createApiClient(baseUrl: string) {
   };
 }
 
-export const api = createApiClient("/api");
+export const api = createApiClient("/api/v1");

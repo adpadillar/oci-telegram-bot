@@ -1,6 +1,5 @@
 package com.springboot.MyTodoList.controller;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +22,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@Tag(name = "Sprints", description = "Sprint management APIs - Manage time-boxed iterations of work containing tasks")
-public class SprintApiController {
+@Tag(name = "Sprints V1", description = "Sprint management APIs - Manage time-boxed iterations of work containing tasks")
+public class SprintApiV1Controller {
     @Autowired
     private SprintService sprintService;
 
@@ -48,7 +47,7 @@ public class SprintApiController {
             )
         }
     )
-    @GetMapping("/api/{project}/sprints")
+    @GetMapping("/api/v1/{project}/sprints")
     public List<SprintModel> getAllSprints(
         @Parameter(description = "Project ID to fetch sprints from", required = true, example = "1")
         @PathVariable("project") int project
@@ -70,7 +69,7 @@ public class SprintApiController {
             )
         }
     )
-    @PostMapping("/api/{project}/sprints")
+    @PostMapping("/api/v1/{project}/sprints")
     public ResponseEntity<Object> addSprint(
         @Parameter(description = "Project ID to create sprint in", required = true, example = "1")
         @PathVariable("project") int project,
@@ -113,7 +112,7 @@ public class SprintApiController {
             @ApiResponse(responseCode = "400", description = "Sprint not in specified project")
         }
     )
-    @GetMapping("/api/{project}/sprints/{id}")
+    @GetMapping("/api/v1/{project}/sprints/{id}")
     public ResponseEntity<SprintModel> getSprintById(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,
@@ -143,7 +142,7 @@ public class SprintApiController {
             @ApiResponse(responseCode = "404", description = "Sprint not found")
         }
     )
-    @PatchMapping("/api/{project}/sprints/{id}")
+    @PatchMapping("/api/v1/{project}/sprints/{id}")
     public ResponseEntity<Object> updateSprint(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,
@@ -190,7 +189,7 @@ public class SprintApiController {
             @ApiResponse(responseCode = "404", description = "Sprint not found or sprint not in project")
         }
     )
-    @GetMapping("/api/{project}/sprints/{id}/tasks")
+    @GetMapping("/api/v1/{project}/sprints/{id}/tasks")
     public ResponseEntity<List<TaskModel>> getTasksForSprint(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,

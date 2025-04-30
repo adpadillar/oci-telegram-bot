@@ -18,15 +18,15 @@ import java.util.List;
 
 @RestController
 @Tag(
-    name = "Users",
+    name = "Users V1",
     description = "User management APIs for handling project team members, including developers and managers"
 )
-public class UserApiController {
+public class UserApiV1Controller {
 
     private final UserService userService;
     private final ToDoItemBotController botController;
 
-    public UserApiController(UserService userService, ToDoItemBotController botController) {
+    public UserApiV1Controller(UserService userService, ToDoItemBotController botController) {
         this.userService = userService;
         this.botController = botController;
     }
@@ -60,7 +60,7 @@ public class UserApiController {
             )
         }
     )
-    @GetMapping("/api/{project}/users")
+    @GetMapping("/api/v1/{project}/users")
     public List<UserModel> getAllUsers(
         @Parameter(description = "Project ID to fetch users from", required = true, example = "1")
         @PathVariable("project") int project
@@ -86,7 +86,7 @@ public class UserApiController {
             )
         }
     )
-    @PostMapping("/api/{project}/users")
+    @PostMapping("/api/v1/{project}/users")
     public ResponseEntity<UserModel> createUser(
         @Parameter(description = "Project ID to create user in", required = true, example = "1")
         @PathVariable("project") int projectId,
@@ -141,7 +141,7 @@ public class UserApiController {
             )
         }
     )
-    @GetMapping("/api/{project}/users/{id}")
+    @GetMapping("/api/v1/{project}/users/{id}")
     public ResponseEntity<UserModel> getUserById(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,
@@ -175,7 +175,7 @@ public class UserApiController {
             )
         }
     )
-    @PatchMapping("/api/{project}/users/{id}")
+    @PatchMapping("/api/v1/{project}/users/{id}")
     public ResponseEntity<UserModel> updateUser(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,
@@ -229,7 +229,7 @@ public class UserApiController {
             )
         }
     )
-    @DeleteMapping("/api/{project}/users/{id}")
+    @DeleteMapping("/api/v1/{project}/users/{id}")
     public ResponseEntity<Void> deleteUser(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,

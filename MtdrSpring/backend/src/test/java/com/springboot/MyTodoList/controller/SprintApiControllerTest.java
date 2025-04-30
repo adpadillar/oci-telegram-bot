@@ -20,7 +20,7 @@ class SprintApiControllerTest {
     private SprintService sprintService;
 
     @InjectMocks
-    private SprintApiController sprintApiController;
+    private SprintApiV1Controller sprintApiController;
 
     public SprintApiControllerTest() {
         MockitoAnnotations.openMocks(this);

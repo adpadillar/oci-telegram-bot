@@ -20,10 +20,10 @@ import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @Tag(
-    name = "Authentication",
+    name = "Authentication V1",
     description = "Authentication APIs for project managers and team members using Telegram-based two-factor authentication"
 )
-public class AuthController {
+public class AuthV1Controller {
     
     private final UserService userService;
     private final ToDoItemBotController botController;
@@ -33,7 +33,7 @@ public class AuthController {
     @Value("${auth.mastercode}")
     private String masterCode;
 
-    public AuthController(UserService userService, ToDoItemBotController botController, JwtService jwtService) {
+    public AuthV1Controller(UserService userService, ToDoItemBotController botController, JwtService jwtService) {
         this.userService = userService;
         this.botController = botController;
         this.jwtService = jwtService;
@@ -57,7 +57,7 @@ public class AuthController {
             )
         }
     )
-    @PostMapping("/api/{project}/request-code")
+    @PostMapping("/api/v1/{project}/request-code")
     public ResponseEntity<Void> requestLoginCode(
         @Parameter(description = "Project ID to authenticate for", required = true, example = "1")
         @PathVariable("project") int projectId
@@ -97,7 +97,7 @@ public class AuthController {
             )
         }
     )
-    @PostMapping("/api/{project}/validate-code")
+    @PostMapping("/api/v1/{project}/validate-code")
     public ResponseEntity<Map<String, String>> validateCode(
         @Parameter(description = "Project ID to authenticate for", required = true, example = "1")
         @PathVariable("project") int projectId,
@@ -156,7 +156,7 @@ public class AuthController {
             )
         }
     )
-    @PostMapping("/api/logout")
+    @PostMapping("/api/v1/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("auth_token", null);
         cookie.setHttpOnly(true);
@@ -188,7 +188,7 @@ public class AuthController {
             )
         }
     )
-    @GetMapping("/api/me")
+    @GetMapping("/api/v1/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(
         @Parameter(description = "Authentication token from cookie", required = false)
         @CookieValue(name = "auth_token", required = false) String token,

@@ -22,10 +22,10 @@ import java.util.Optional;
 
 @RestController
 @Tag(
-    name = "Tasks",
+    name = "Tasks V1",
     description = "Task management APIs - Core functionality for managing individual work items within sprints"
 )
-public class TaskApiController {
+public class TaskApiV1Controller {
     @Autowired
     private TaskService taskService;
 
@@ -63,7 +63,7 @@ public class TaskApiController {
             )
         }
     )
-    @GetMapping(value = "/api/{project}/tasks")
+    @GetMapping(value = "/api/v1/{project}/tasks")
     public List<TaskModel> getAllToDoItems(
         @Parameter(description = "Project ID to fetch tasks from", required = true, example = "1")
         @PathVariable("project") int project
@@ -90,7 +90,7 @@ public class TaskApiController {
             )
         }
     )
-    @PostMapping(value = "/api/{project}/tasks")
+    @PostMapping(value = "/api/v1/{project}/tasks")
     public ResponseEntity<Object> addToDoItem(
         @Parameter(
             description = "Task details",
@@ -152,7 +152,7 @@ public class TaskApiController {
             @ApiResponse(responseCode = "404", description = "Task not found or task not in specified project")
         }
     )
-    @GetMapping(value = "/api/{project}/tasks/{id}")
+    @GetMapping(value = "/api/v1/{project}/tasks/{id}")
     public ResponseEntity<TaskModel> getToDoItemById(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,
@@ -186,7 +186,7 @@ public class TaskApiController {
             @ApiResponse(responseCode = "404", description = "Task not found")
         }
     )
-    @PatchMapping(value = "/api/{project}/tasks/{id}")
+    @PatchMapping(value = "/api/v1/{project}/tasks/{id}")
     public ResponseEntity<Object> updateToDoItem(
         @Parameter(
             description = "Updated task details. Only include fields that need to be updated.\n"
@@ -227,7 +227,7 @@ public class TaskApiController {
             @ApiResponse(responseCode = "500", description = "Internal server error while deleting task")
         }
     )
-    @DeleteMapping(value = "/api/{project}/tasks/{id}")
+    @DeleteMapping(value = "/api/v1/{project}/tasks/{id}")
     public ResponseEntity<Boolean> deleteToDoItem(
         @Parameter(description = "Project ID", required = true, example = "1")
         @PathVariable("project") int project,

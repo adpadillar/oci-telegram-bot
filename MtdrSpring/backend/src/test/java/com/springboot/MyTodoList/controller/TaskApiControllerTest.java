@@ -21,7 +21,7 @@ class TaskApiControllerTest {
     private TaskService taskService;
 
     @InjectMocks
-    private TaskApiController taskApiController;
+    private TaskApiV1Controller taskApiController;
 
     public TaskApiControllerTest() {
         MockitoAnnotations.openMocks(this);
