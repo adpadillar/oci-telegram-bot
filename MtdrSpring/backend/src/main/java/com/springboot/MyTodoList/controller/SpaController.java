@@ -20,6 +20,7 @@ public class SpaController {
      */
     @RequestMapping("/swagger-ui")
     public String swaggerRedirect() {
-        return "redirect:/swagger-ui/index.html";
+        System.out.println("Redirecting to Swagger UI");
+        return "redirect:/swagger-ui.html";
     }
 }
