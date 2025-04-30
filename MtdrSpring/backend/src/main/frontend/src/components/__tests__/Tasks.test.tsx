@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import Tasks from "../Tasks";
 import * as client from "../../utils/api/client";
 
+// npx vitest run
 // Mock the API client
 vi.mock("../../utils/api/client", async () => {
   const original = await vi.importActual<typeof client>(
@@ -139,5 +140,60 @@ describe("Tasks Component", () => {
       expect(screen.getByText("5h")).toBeInTheDocument();
       expect(screen.getByText("6h")).toBeInTheDocument();
     });
+  });
+
+  it("allows editing task description (state change)", async () => {
+    renderTasks();
+    // Wait for edit buttons to appear
+    await waitFor(() => {
+      expect(screen.getAllByTitle("Edit task")[0]).toBeInTheDocument();
+    });
+    // Open edit modal for first task
+    fireEvent.click(screen.getAllByTitle("Edit task")[0]);
+    // Change description
+    const descriptionInput = screen.getByLabelText(
+      "Task Description",
+    ) as HTMLInputElement;
+    fireEvent.change(descriptionInput, { target: { value: "Updated task" } });
+    // Submit update
+    expect(descriptionInput.value).toBe("Updated task");
+    fireEvent.click(screen.getByRole("button", { name: /Update Task/i }));
+    // Assert input value updated and patch API called with correct payload
+    await waitFor(() => {
+      expect(client.api.tasks.patch).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ description: "Updated task" }),
+      );
+    });
+  });
+
+  it("marks a task as completed", async () => {
+    renderTasks();
+    // Wait for edit buttons to appear
+    await waitFor(() => {
+      expect(screen.getAllByTitle("Edit task")[1]).toBeInTheDocument();
+    });
+    // Open edit modal for second task (in-progress)
+    fireEvent.click(screen.getAllByTitle("Edit task")[1]);
+    // Change status to Done
+    const statusSelect = screen.getByLabelText("Status") as HTMLSelectElement;
+    fireEvent.change(statusSelect, { target: { value: "done" } });
+    // Submit update
+    fireEvent.click(screen.getByRole("button", { name: /Update Task/i }));
+    // Assert patch API called with correct args
+    await waitFor(() => {
+      expect(client.api.tasks.patch).toHaveBeenCalledWith(
+        2,
+        expect.objectContaining({ status: "done" }),
+      );
+    });
+  });
+
+  it("matches Tasks component snapshot", async () => {
+    const { container } = renderTasks();
+    await waitFor(() => {
+      expect(screen.getByText("Tasks")).toBeInTheDocument();
+    });
+    expect(container).toMatchSnapshot();
   });
 });

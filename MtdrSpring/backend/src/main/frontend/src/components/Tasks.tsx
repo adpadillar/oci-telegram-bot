@@ -629,10 +629,14 @@ const Tasks: React.FC = () => {
           <form onSubmit={handleSubmit} className="p-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="edit-description"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Task Description
                 </label>
                 <input
+                  id="edit-description"
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -663,10 +667,14 @@ const Tasks: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="edit-status"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Status
                   </label>
                   <select
+                    id="edit-status"
                     value={status}
                     onChange={(e) =>
                       setStatus(
@@ -901,10 +909,14 @@ const Tasks: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="filter-sprint"
+              className="block text-xs font-medium text-gray-700 mb-1"
+            >
               Sprint
             </label>
             <select
+              id="filter-sprint"
               value={tempSprintFilter === null ? "" : tempSprintFilter}
               onChange={(e) =>
                 setTempSprintFilter(

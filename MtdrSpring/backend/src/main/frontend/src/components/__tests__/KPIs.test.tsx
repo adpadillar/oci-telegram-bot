@@ -1,15 +1,18 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, vi, expect } from "vitest";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
 import KPIs from "../KPIs";
 import * as client from "../../utils/api/client";
 
-// Mock HTMLCanvasElement
-HTMLCanvasElement.prototype.getContext = vi.fn();
-
-// ✅ Mocks dentro del vi.mock, para evitar hoisting error
+// npx vitest run
+// Mock the API client
 vi.mock("../../utils/api/client", async () => {
   const original = await vi.importActual<typeof client>(
     "../../utils/api/client",
@@ -63,71 +66,89 @@ vi.mock("../../utils/api/client", async () => {
   return {
     ...original,
     api: {
-      tasks: {
-        list: vi.fn().mockResolvedValue(mockTasks),
-      },
-      users: {
-        getDevelopers: vi.fn().mockResolvedValue(mockUsers),
-      },
-      sprints: {
-        getSprints: vi.fn().mockResolvedValue(mockSprints),
-      },
+      tasks: { list: vi.fn().mockResolvedValue(mockTasks) },
+      users: { getUsers: vi.fn().mockResolvedValue(mockUsers) },
+      sprints: { getSprints: vi.fn().mockResolvedValue(mockSprints) },
     },
   };
 });
 
-// Render helper
-function renderKPIs() {
+// Helper to render KPIs with React Query context
+function renderKpis() {
   const queryClient = new QueryClient();
   return render(
-    <MemoryRouter>
-      <QueryClientProvider client={queryClient}>
-        <KPIs />
-      </QueryClientProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <KPIs />
+    </QueryClientProvider>,
   );
 }
 
+// Stub ResizeObserver for Chart.js
+// @vitest-environment jsdom
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 describe("KPIs Component", () => {
-  it("renders the KPI Dashboard title", async () => {
-    renderKPIs();
+  it("shows team metrics per sprint", async () => {
+    renderKpis();
+    // Wait for the dashboard heading
     await waitFor(() => {
-      expect(screen.getByText("KPI Dashboard")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /KPI Dashboard/i }),
+      ).toBeInTheDocument();
     });
+    // Switch to Sprints view
+    fireEvent.click(screen.getByRole("button", { name: /Sprints/i }));
+
+    // Wait for team metrics table
+    await waitFor(() => {
+      expect(screen.getByText("Team Metrics per Sprint")).toBeInTheDocument();
+    });
+
+    // Check the data row for Sprint 1
+    const row = screen.getByText("Sprint 1").closest("tr");
+    expect(row).toBeTruthy();
+    if (row) {
+      // Total tasks = 2
+      expect(within(row).getByText("2")).toBeInTheDocument();
+      // Completed tasks = 1
+      expect(within(row).getByText("1")).toBeInTheDocument();
+      // Hours worked = 5h
+      expect(within(row).getByText("5h")).toBeInTheDocument();
+      // Completion rate = 50%
+      expect(within(row).getByText("50%")).toBeInTheDocument();
+    }
   });
 
-  it("renders task status chart with data", async () => {
-    renderKPIs();
+  it("shows developer metrics per sprint", async () => {
+    renderKpis();
+    // Wait for dashboard heading
     await waitFor(() => {
-      expect(screen.getByText("Tasks by Status")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /KPI Dashboard/i }),
+      ).toBeInTheDocument();
     });
-  });
+    // Switch to Developers view
+    fireEvent.click(screen.getByRole("button", { name: /Developers/i }));
 
-  it("displays total tasks and completion rate", async () => {
-    renderKPIs();
+    // Wait for team performance table
     await waitFor(() => {
-      expect(screen.getByText("Task Overview")).toBeInTheDocument();
-      expect(screen.getByText("50%")).toBeInTheDocument();
+      expect(screen.getByText("Team Performance")).toBeInTheDocument();
     });
-  });
 
-  it("displays developer metrics including task count", async () => {
-    renderKPIs();
-    await waitFor(() => {
-      expect(screen.getByText("Team Size")).toBeInTheDocument();
-    });
-    // Check for text "2" (developers), ideally refine this if there's conflict
-    const twos = screen.getAllByText("2");
-    expect(twos.length).toBeGreaterThan(0);
-  });
-
-  it("displays bar chart of hours per sprint", async () => {
-    renderKPIs();
-    await waitFor(() => {
-      screen.getByText("Sprints").click();
-    });
-    await waitFor(() => {
-      expect(screen.getByText("Hours per Sprint")).toBeInTheDocument();
-    });
+    // Check the row for Ana Ramírez
+    const anaRow = screen.getByText("Ana Ramírez").closest("tr");
+    expect(anaRow).toBeTruthy();
+    if (anaRow) {
+      const cells = within(anaRow).getAllByRole("cell");
+      // cells[0] = Developer, [1]=totalTasks, [2]=completed, [3]=hours, [4]=rate
+      expect(cells[1]).toHaveTextContent("1");
+      expect(cells[2]).toHaveTextContent("1");
+      expect(cells[3]).toHaveTextContent("5h");
+      expect(cells[4]).toHaveTextContent(/100%/);
+    }
   });
 });
