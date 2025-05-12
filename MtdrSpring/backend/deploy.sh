@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DIR=$(dirname $0)
+SCRIPT_DIR=$(dirname pwd)
 if [ -z "$TODO_PDB_NAME" ]; then
     echo "TODO_PDB_NAME not set. Will get it with state_get"
   export TODO_PDB_NAME=$(state_get MTDR_DB_NAME)
