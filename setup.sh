@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Pulling latest changes..."
+git pull >> /dev/null 2>&1
+
 echo "🚀 Development Environment Ready!"
 echo ""
 
@@ -18,9 +21,10 @@ echo "Next steps:
    nano MtdrSpring/backend/.env
 
 2️⃣  Extract wallet:
-   unzip wallet.zip -d wallet/
+   unzip wallet.zip
    
 3️⃣  Start development:
+   cd MtdrSpring/backend
    ./dev.sh
 
 ⚠️  Note: Make sure to properly configure your .env file before running dev.sh
