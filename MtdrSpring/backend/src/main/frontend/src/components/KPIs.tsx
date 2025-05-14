@@ -519,6 +519,45 @@ const KPIs = () => {
     });
   }, [users, tasks, sprints, selectedSprintFilter]);
 
+  // 1. Agregar los nuevos datasets usando useMemo
+  const hoursByDeveloperPerSprint = useMemo(() => {
+    if (!users || !tasks || !sprints) return null;
+    const labels = sprints.map((s) => s.name);
+    const datasets = users.map((dev, idx) => {
+      const data = sprints.map((sprint) => {
+        return tasks
+          .filter(
+            (task) => task.sprintId === sprint.id && task.assignedToId === dev.id && task.realHours
+          )
+          .reduce((sum, task) => sum + (task.realHours || 0), 0);
+      });
+      return {
+        label: `${dev.firstName} ${dev.lastName}`,
+        data,
+        backgroundColor: `rgba(${50 + idx * 40}, ${120 + idx * 30}, 220, 0.6)`
+      };
+    });
+    return { labels, datasets };
+  }, [users, tasks, sprints]);
+
+  const completedTasksByDeveloperPerSprint = useMemo(() => {
+    if (!users || !tasks || !sprints) return null;
+    const labels = sprints.map((s) => s.name);
+    const datasets = users.map((dev, idx) => {
+      const data = sprints.map((sprint) => {
+        return tasks.filter(
+          (task) => task.sprintId === sprint.id && task.assignedToId === dev.id && task.status === 'done'
+        ).length;
+      });
+      return {
+        label: `${dev.firstName} ${dev.lastName}`,
+        data,
+        backgroundColor: `rgba(${50 + idx * 40}, ${200 - idx * 30}, 150, 0.6)`
+      };
+    });
+    return { labels, datasets };
+  }, [users, tasks, sprints]);
+
   // Loading state
   if (usersLoading || tasksLoading || sprintsLoading) {
     return (
@@ -1088,6 +1127,75 @@ const KPIs = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Gráfica 1: Horas Totales trabajadas por Sprint */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              Total Hours Worked per Sprint
+            </h2>
+            <div className="h-60 sm:h-70 md:h-80">
+              {hoursPerSprintData ? (
+                <Bar
+                  data={hoursPerSprintData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { title: { display: true, text: 'Horas' } } },
+                  }}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-full text-gray-500">No data available</div>
+              )}
+            </div>
+          </div>
+
+          {/* Gráfica 2: Horas Trabajadas por Developer por Sprint */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              Hours Worked per Developer per Sprint
+            </h2>
+            <div className="h-60 sm:h-70 md:h-80">
+              {hoursByDeveloperPerSprint ? (
+                <Bar
+                  data={hoursByDeveloperPerSprint}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { title: { display: true, text: 'Horas' } } },
+                  }}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-full text-gray-500">No data available</div>
+              )}
+            </div>
+          </div>
+
+          {/* Gráfica 3: Tareas Completadas por Developer por Sprint */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              Tasks Completed by Developer per Sprint
+            </h2>
+            <div className="h-60 sm:h-70 md:h-80">
+              {completedTasksByDeveloperPerSprint ? (
+                <Bar
+                  data={completedTasksByDeveloperPerSprint}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { title: { display: true, text: 'Tareas completadas' } } },
+                  }}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-full text-gray-500">No data available</div>
+              )}
             </div>
           </div>
         </div>
