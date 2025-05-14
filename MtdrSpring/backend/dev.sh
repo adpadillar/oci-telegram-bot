@@ -141,7 +141,7 @@ if ! npm install; then
     exit 1
 fi
 
-npm run dev &
+npm run dev -- --host &
 FRONTEND_PID=$!
 echo "Frontend server started with PID: $FRONTEND_PID"
 

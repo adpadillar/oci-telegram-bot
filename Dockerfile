@@ -10,6 +10,12 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     sudo \
+    apt-utils \
+    nano \
+    vim \
+    unzip \
+    default-jdk \
+    maven \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
@@ -20,42 +26,38 @@ RUN useradd -m -s /bin/bash developer && \
 USER developer
 WORKDIR /home/developer
 
+# Install NVM and Node.js
+ENV NVM_DIR=/home/developer/.nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+    . $NVM_DIR/nvm.sh && \
+    nvm install 20 && \
+    nvm alias default 20
+
+# Add NVM to PATH and set default Node version
+ENV NODE_VERSION=20
+ENV PATH="/home/developer/.nvm/versions/node/v${NODE_VERSION}/bin:${PATH}"
+
 # Clone the repository
 RUN git clone https://github.com/adpadillar/oci-telegram-bot.git
 
 # Copy wallet.zip if it exists in build context
 COPY --chown=developer:developer wallet.zip /home/developer/oci-telegram-bot/wallet.zip
 
-# Set working directory to the project
+# Pre-download Maven dependencies and compile
+WORKDIR /home/developer/oci-telegram-bot/MtdrSpring/backend
+RUN mvn dependency:go-offline && \
+    mvn clean install -DskipTests && \
+    rm -rf target/
+
+# Install frontend dependencies
+WORKDIR /home/developer/oci-telegram-bot/MtdrSpring/backend/src/main/frontend
+RUN . $NVM_DIR/nvm.sh && \
+    npm install
+
+# Copy setup script
 WORKDIR /home/developer/oci-telegram-bot
+COPY --chown=developer:developer setup.sh /home/developer/setup.sh
+RUN chmod +x /home/developer/setup.sh
 
-# Add a helpful message about required dependencies
-RUN echo '#!/bin/bash\n\
-# Update package list and install editors\n\
-echo "Updating package list..."\n\
-sudo apt-get update >> /dev/null\n\
-echo "Installing nano, unzip, and neofetch..."\n\
-sudo apt-get install -y nano unzip neofetch >> /dev/null\n\
-echo "Installing Node.js and npm..."\n\
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - >> /dev/null\n\
-sudo apt-get install -y nodejs npm >> /dev/null\n\
-echo "Installing Java JDK..."\n\
-sudo apt-get install -y default-jdk >> /dev/null\n\
-echo "Installing Maven..."\n\
-sudo apt-get install -y maven >> /dev/null\n\
-echo "Welcome to the OCI Telegram Bot development environment!\n\
-\n\
-Required dependencies that need to be installed:\n\
-- Node.js and npm: sudo apt install nodejs npm\n\
-- Java JDK: sudo apt install default-jdk\n\
-- Maven: sudo apt install maven\n\
-\n\
-After installing dependencies:\n\
-1. Create .env file in MtdrSpring/backend/\n\
-2. Run ./dev.sh in MtdrSpring/backend/\n\
-"\n\
-exec /bin/bash' > /home/developer/welcome.sh && \
-    chmod +x /home/developer/welcome.sh
-
-# Set the welcome script to run when container starts
-ENTRYPOINT ["/home/developer/welcome.sh"] 
+# Set the setup script to run when container starts
+ENTRYPOINT ["/home/developer/setup.sh"] 
