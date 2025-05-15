@@ -679,7 +679,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 * Initiates the task creation process
 	 * @param chatId - Telegram chat ID of the user
 	 */
-	private void handleAddTask(long chatId) {
+	protected void handleAddTask(long chatId) {
 		try {
 			// Enviar mensaje para solicitar la descripción de la tarea
 			SendMessage messageToTelegram = new SendMessage();
@@ -1522,7 +1522,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 * @param chatId - Telegram chat ID of the user
 	 * @param user - UserModel of the current user
 	 */
-	private void handleMyTasks(long chatId, UserModel user) {
+	protected void handleMyTasks(long chatId, UserModel user) {
 		try {
 			List<TaskModel> tasks = taskService.findByUserAssigned(user.getID());
 			sendTaskList(chatId, tasks, "📋 *My Assigned Tasks*\n\n");
@@ -1603,20 +1603,29 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 * @param chatId - Telegram chat ID of the user
 	 * @param status - Status to filter tasks by
 	 */
-	private void handleTasksByStatus(long chatId, String status) {
-		/* try {
+	protected void handleTasksByStatus(long chatId, String status) {
+		try {
 			List<TaskModel> tasks = taskService.findByStatus(status);
-			String title = switch (status) {
-				case "created" -> "⭕ *Created Tasks*\n\n";
-				case "in_progress" -> "📊 *In Progress Tasks*\n\n";
-				case "done" -> "✅ *Done Tasks*\n\n";
-				default -> "📋 *Tasks*\n\n";
-			};
+			String title;
+			switch (status) {
+				case "created":
+					title = "⭕ *Created Tasks*\n\n";
+					break;
+				case "in_progress":
+					title = "📊 *In Progress Tasks*\n\n";
+					break;
+				case "done":
+					title = "✅ *Done Tasks*\n\n";
+					break;
+				default:
+					title = "📋 *Tasks*\n\n";
+					break;
+			}
 			sendTaskList(chatId, tasks, title);
 		} catch (Exception e) {
 			logger.error("Error getting " + status + " tasks", e);
 			
-		} */
+		}
 	}
 
 	/**
