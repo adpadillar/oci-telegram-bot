@@ -34,12 +34,12 @@ kind: Deployment
 metadata:
   name: todolistapp-springboot-deployment
 spec:
-  replicas: 1  # Specify desired number of replicas
+  replicas: 1 # Specify desired number of replicas
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # Number of pods that can be created above desired replicas
-      maxUnavailable: 0   # Number of pods that can be unavailable during update
+      maxSurge: 1 # Number of pods that can be created above desired replicas
+      maxUnavailable: 0 # Number of pods that can be unavailable during update
   selector:
     matchLabels:
       app: todolistapp-springboot
@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
         - name: todolistapp-springboot
-          image: %DOCKER_REGISTRY%/todolistapp-springboot:0.1
+          image: "%DOCKER_REGISTRY%/todolistapp-springboot:0.1"
           imagePullPolicy: Always
           env:
             - name: db_user
