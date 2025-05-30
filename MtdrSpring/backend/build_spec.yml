@@ -84,5 +84,5 @@ steps:
 
 outputArtifacts:
   - name: deployment-manifest
-    type: KUBERNETES_MANIFEST
+    type: BINARY
     location: deployment.yaml
