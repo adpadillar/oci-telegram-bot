@@ -4,115 +4,82 @@ timeoutInSeconds: 1800
 shell: bash
 env:
   variables:
-    # Información del Docker Registry
+    # Docker Registry Information
     DOCKER_REGISTRY: "${region-code}.ocir.io"
     NAMESPACE: "${namespace}"
 
-    # Información del repositorio
-    BACKEND_REPO: "${namespace}/todolistapp-springboot-backend"
-    FRONTEND_REPO: "${namespace}/todolistapp-springboot-frontend"
+    # Repository Information
+    BACKEND_REPO: "${namespace}/todolistapp-springboot"
 
-    # Rutas a los Dockerfiles
-    BACKEND_DOCKERFILE_PATH: "MtdrSpring/backend/Dockerfile"
-    FRONTEND_DOCKERFILE_PATH: "MtdrSpring/frontend/Dockerfile"
+    # Dockerfile Paths
+    BACKEND_DOCKERFILE_PATH: "Dockerfile"
 
-    # Rutas a los directorios de construcción
-    BACKEND_CONTEXT: "MtdrSpring/backend"
-    FRONTEND_CONTEXT: "MtdrSpring/frontend"
+    # Build Contexts
+    BACKEND_CONTEXT: "."
 
   exportedVariables:
     - BACKEND_IMAGE_TAG
-    - FRONTEND_IMAGE_TAG
 
 steps:
-  # Paso 1: Iniciar sesión en OCIR
+  # Step 1: Login to OCIR
   - type: Command
-    name: "Iniciar sesión en OCIR"
+    name: "Login to OCIR"
     timeoutInSeconds: 60
     command: |
-      echo "Iniciando sesión en OCIR..."
+      echo "Logging into OCIR..."
       echo "${OCIR_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${NAMESPACE}/oracleidentitycloudservice/${OCIR_USER}" --password-stdin
     onFailure:
       - type: Command
         command: |
-          echo "Error al iniciar sesión en OCIR"
+          echo "Failed to login to OCIR"
           exit 1
 
-  # Paso 2: Construir y publicar imagen de Backend
+  # Step 2: Build and Push Backend Image
   - type: Command
-    name: "Construir y publicar imagen de Backend"
+    name: "Build and Push Backend Image"
     timeoutInSeconds: 600
     command: |
-      echo "Construyendo imagen de backend..."
+      echo "Building backend image..."
       cd ${OCI_PRIMARY_SOURCE_DIR}
 
-      # Generar tag único para la imagen de backend
+      # Generate unique tag for backend image
       export BACKEND_IMAGE_TAG="${DOCKER_REGISTRY}/${BACKEND_REPO}:${OCI_BUILD_RUN_ID}"
-      echo "Tag para la imagen de backend: ${BACKEND_IMAGE_TAG}"
+      echo "Backend image tag: ${BACKEND_IMAGE_TAG}"
 
-      # Construir la imagen
+      # Build the image
       docker build -t ${BACKEND_IMAGE_TAG} -f ${BACKEND_DOCKERFILE_PATH} ${BACKEND_CONTEXT}
 
-      # Publicar la imagen
+      # Push the image
       docker push ${BACKEND_IMAGE_TAG}
-      echo "Imagen de backend publicada: ${BACKEND_IMAGE_TAG}"
+      echo "Backend image pushed: ${BACKEND_IMAGE_TAG}"
     onFailure:
       - type: Command
         command: |
-          echo "Error al construir o publicar la imagen de backend"
+          echo "Failed to build or push backend image"
           exit 1
 
-  # Paso 3: Construir y publicar imagen de Frontend
+  # Step 3: Prepare Kubernetes Deployment File
   - type: Command
-    name: "Construir y publicar imagen de Frontend"
-    timeoutInSeconds: 600
-    command: |
-      echo "Construyendo imagen de frontend..."
-      cd ${OCI_PRIMARY_SOURCE_DIR}
-
-      # Generar tag único para la imagen de frontend
-      export FRONTEND_IMAGE_TAG="${DOCKER_REGISTRY}/${FRONTEND_REPO}:${OCI_BUILD_RUN_ID}"
-      echo "Tag para la imagen de frontend: ${FRONTEND_IMAGE_TAG}"
-
-      # Crear nginx.conf si no existe
-      NGINX_CONF_PATH="${FRONTEND_CONTEXT}/nginx.conf"
-      if [ ! -f "${NGINX_CONF_PATH}" ]; then
-        echo "Creando nginx.conf..."
-        cp MtdrSpring/frontend/nginx.conf "${NGINX_CONF_PATH}"
-      fi
-
-      # Construir la imagen
-      docker build -t ${FRONTEND_IMAGE_TAG} -f ${FRONTEND_DOCKERFILE_PATH} ${FRONTEND_CONTEXT}
-
-      # Publicar la imagen
-      docker push ${FRONTEND_IMAGE_TAG}
-      echo "Imagen de frontend publicada: ${FRONTEND_IMAGE_TAG}"
-    onFailure:
-      - type: Command
-        command: |
-          echo "Error al construir o publicar la imagen de frontend"
-          exit 1
-
-  # Paso 4: Preparar archivo de despliegue de Kubernetes
-  - type: Command
-    name: "Preparar archivo de despliegue"
+    name: "Prepare Deployment File"
     timeoutInSeconds: 300
     command: |
-      echo "Preparando archivo de despliegue..."
+      echo "Preparing deployment file..."
       cd ${OCI_PRIMARY_SOURCE_DIR}
 
-      # Copiar el archivo de despliegue
-      cp MtdrSpring/deployment.yaml deployment.yaml
+      # Copy the deployment file
+      cp src/main/resources/todolistapp-springboot.yaml deployment.yaml
 
-      # Reemplazar los placeholders con las imágenes construidas
-      sed -i "s|\${BACKEND_IMAGE}|${BACKEND_IMAGE_TAG}|g" deployment.yaml
-      sed -i "s|\${FRONTEND_IMAGE}|${FRONTEND_IMAGE_TAG}|g" deployment.yaml
+      # Replace image placeholders
+      sed -i "s|%DOCKER_REGISTRY%/todolistapp-springboot:0.1|${BACKEND_IMAGE_TAG}|g" deployment.yaml
+      sed -i "s|%TODO_PDB_NAME%|${TODO_PDB_NAME}|g" deployment.yaml
+      sed -i "s|%OCI_REGION%|${OCI_REGION}|g" deployment.yaml
+      sed -i "s|%UI_USERNAME%|${UI_USERNAME}|g" deployment.yaml
 
-      echo "Archivo de despliegue preparado"
+      echo "Deployment file prepared"
     onFailure:
       - type: Command
         command: |
-          echo "Error al preparar el archivo de despliegue"
+          echo "Failed to prepare deployment file"
           exit 1
 
 outputArtifacts:
