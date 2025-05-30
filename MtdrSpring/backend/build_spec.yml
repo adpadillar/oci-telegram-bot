@@ -27,7 +27,10 @@ steps:
     timeoutInSeconds: 60
     command: |
       echo "Logging into OCIR..."
-      echo "${OCIR_PASSWORD}" | docker login ${DOCKER_REGISTRY} -u "${NAMESPACE}/oracleidentitycloudservice/${OCIR_USER}" --password-stdin
+      echo "(.sfJ{t2an{6vTsN4fKZ" | docker login -u "axb2aizifb6n/a01637239@tec.mx" --password-stdin "mx-queretaro-1.ocir.io"
+
+      echo "Logging into Docker Hub..."
+      echo "dckr_pat_LKtmjo-KcfLdRZOEPgRToNDdVjc" | docker login docker.io -u "adpadillar" --password-stdin
     onFailure:
       - type: Command
         command: |
@@ -40,46 +43,32 @@ steps:
     timeoutInSeconds: 600
     command: |
       echo "Building backend image..."
-      cd ${OCI_PRIMARY_SOURCE_DIR}
 
-      # Generate unique tag for backend image
-      export BACKEND_IMAGE_TAG="${DOCKER_REGISTRY}/${BACKEND_REPO}:${OCI_BUILD_RUN_ID}"
-      echo "Backend image tag: ${BACKEND_IMAGE_TAG}"
+      IMAGE_NAME=todolistapp-springboot
+      IMAGE_VERSION=$(date '+%Y%m%d_%H%M%S')  # Dynamic version based on timestamp
+      DOCKER_REGISTRY="mx-queretaro-1.ocir.io/axb2aizifb6n/reacttodo/r37hp"
 
-      # Build the image
-      docker build -t ${BACKEND_IMAGE_TAG} -f ${BACKEND_DOCKERFILE_PATH} ${BACKEND_CONTEXT}
+      export IMAGE=${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_VERSION}
 
-      # Push the image
-      docker push ${BACKEND_IMAGE_TAG}
-      echo "Backend image pushed: ${BACKEND_IMAGE_TAG}"
+      cd MtdrSpring/backend
+      docker build -f Dockerfile -t $IMAGE .
+      docker push $IMAGE
+
+      cd ../../
+
+      echo "Preparando archivo de despliegue..."
+
+      # Copiar el archivo de despliegue
+      cp MtdrSpring/backend/src/main/resources/todolistapp-springboot.yaml deployment.yaml
+
+      # Reemplazar los placeholders con las imágenes construidas
+      sed -i "s|%IMAGE%|$IMAGE|g" deployment.yaml
+
+      echo "Archivo de despliegue preparado"
     onFailure:
       - type: Command
         command: |
           echo "Failed to build or push backend image"
-          exit 1
-
-  # Step 3: Prepare Kubernetes Deployment File
-  - type: Command
-    name: "Prepare Deployment File"
-    timeoutInSeconds: 300
-    command: |
-      echo "Preparing deployment file..."
-      cd ${OCI_PRIMARY_SOURCE_DIR}
-
-      # Copy the deployment file
-      cp src/main/resources/todolistapp-springboot.yaml deployment.yaml
-
-      # Replace image placeholders
-      sed -i "s|%DOCKER_REGISTRY%/todolistapp-springboot:0.1|${BACKEND_IMAGE_TAG}|g" deployment.yaml
-      sed -i "s|%TODO_PDB_NAME%|${TODO_PDB_NAME}|g" deployment.yaml
-      sed -i "s|%OCI_REGION%|${OCI_REGION}|g" deployment.yaml
-      sed -i "s|%UI_USERNAME%|${UI_USERNAME}|g" deployment.yaml
-
-      echo "Deployment file prepared"
-    onFailure:
-      - type: Command
-        command: |
-          echo "Failed to prepare deployment file"
           exit 1
 
 outputArtifacts:
