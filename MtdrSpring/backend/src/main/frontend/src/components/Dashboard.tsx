@@ -39,6 +39,11 @@ const DashboardContent = ({
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   useEffect(() => {
     const path = location.pathname.slice(1);
@@ -132,9 +137,11 @@ const DashboardContent = ({
             navItems={navItems}
             isMobileMenuOpen={isMobileMenuOpen}
             setIsMobileMenuOpen={setIsMobileMenuOpen}
+            isCollapsed={isCollapsed}
+            toggleSidebar={toggleSidebar}
           />
-          <div className="flex-grow p-3 sm:p-4 md:p-6 w-full md:w-auto overflow-x-hidden">
-            <div className="container mx-auto max-w-full sm:max-w-7xl">
+          <div className={`flex-grow overflow-x-hidden transition-all duration-300 ${isCollapsed ? 'md:ml-10' : 'md:ml-10'}`}>
+            <div className="w-full h-full p-3 sm:p-4 md:p-6">
               <Routes>
                 <Route
                   path="/"
