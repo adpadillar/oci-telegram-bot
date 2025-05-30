@@ -64,7 +64,7 @@ export const LoginPage = () => {
             <h2 className="mt-6 text-3xl font-bold text-gray-900">TaskFlow</h2>
             <p className="mt-2 text-sm text-gray-600">
               {step === "request"
-                ? "¡Pidele un código a tu líder de proyecto!"
+                ? "Ask your manager for an access code!"
                 : isMasterCode
                   ? "Enter the master code"
                   : "Enter the code sent to your project manager"}
