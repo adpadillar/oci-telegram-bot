@@ -316,14 +316,34 @@ const Tasks: React.FC = () => {
     const [category, setCategory] = useState<
       "bug" | "feature" | "issue" | null
     >("feature");
-    const [sprint, setSprint] = useState<number | null>(null);
-    const [assignedTo, setAssignedTo] = useState<number | null>(null);
+    const [sprint, setSprint] = useState<number | null>(() => {
+      // Initialize with first sprint if available
+      return sprints?.[0]?.id ?? null;
+    });
+    const [assignedTo, setAssignedTo] = useState<number | null>(() => {
+      // Initialize with first user if available
+      return users?.[0]?.id ?? null;
+    });
     const [status, setStatus] = useState<
       "created" | "in-progress" | "in-review" | "testing" | "done"
     >("created");
     const [estimateHours, setEstimateHours] = useState<number | null>(null);
     const [realHours, setRealHours] = useState<number | null>(null);
     const [dueDate, setDueDate] = useState<string>("");
+
+    // Update sprint when sprints data changes
+    useEffect(() => {
+      if (sprints?.length && !sprint) {
+        setSprint(sprints[0].id);
+      }
+    }, [sprints]);
+
+    // Update assignee when users data changes
+    useEffect(() => {
+      if (users?.length && !assignedTo) {
+        setAssignedTo(users[0].id);
+      }
+    }, [users]);
 
     const createTaskMutation = useMutation({
       mutationFn: (taskData: Omit<TaskRequest, "createdBy">) => {
@@ -1376,7 +1396,7 @@ const Tasks: React.FC = () => {
                   }`}
                 >
                   <Filter size={16} />
-                  <span className="hidden sm:inline">
+                  <span>
                     {hasActiveFilters ? "Filters" : "Filter"}
                   </span>
                   {hasActiveFilters && (
