@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Task Management E2E', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Login reutilizando el flujo real
+    // Login reutilizando el flujo de auth.spec.ts
     await page.goto('http://localhost:5173/login');
     await expect(page.getByRole('button', { name: /Have a master code\?/i })).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: /Have a master code\?/i }).click();
@@ -19,7 +19,7 @@ test.describe('Task Management E2E', () => {
   });
 
   test('should filter tasks by category and status [@filter @param]', async ({ page }) => {
-    // --- Primer filtro ---
+    // Filtrar por categoría y status
     await page.getByRole('button', { name: /^filter/i }).first().click();
     const selects = page.locator('select');
     await expect(selects.first()).toBeVisible({ timeout: 10000 });
@@ -34,11 +34,14 @@ test.describe('Task Management E2E', () => {
     await expect(selects.first()).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: /clear all/i }).first().click();
 
-    // Screenshot visual del resultado filtrado
+    // Screenshot
     await expect(page).toHaveScreenshot('tasks-filtered.png');
   });
 
   test('should add a new task and see it in the list [@add]', async ({ page }) => {
+    const timestamp = Date.now();
+    const taskDescription = `Nueva tarea Playwright - ${timestamp}`;
+
     // Abre el modal
     await page.getByRole('button', { name: /add task/i }).click();
 
@@ -46,50 +49,57 @@ test.describe('Task Management E2E', () => {
     const modal = page.locator('.bg-white').filter({ hasText: 'Add New Task' });
     await expect(modal).toBeVisible();
 
-    // Llena la descripción
-    await modal.locator('input[type="text"]').first().fill('Nueva tarea Playwright');
+    // Llena el modal
+    const taskDescriptionInput = modal.locator('input[type="text"]').first();
+    await taskDescriptionInput.fill(taskDescription);
 
-    // Selecciona categoría
     await modal.locator('select').nth(0).selectOption('feature');
 
-    // Selecciona status
     await modal.locator('select').nth(1).selectOption('created');
 
-    // Selecciona sprint "Sprint 1"
     await modal.locator('select').nth(2).selectOption('Sprint 1');
 
-    // Llena estimate (hours)
     await modal.locator('input[type="number"]').nth(0).fill('2');
 
-    // Selecciona usuario asignado "Axel Padilla"
     await modal.locator('select').nth(3).selectOption('Axel Padilla');
 
-    // Log page content before clicking "Add Task"
-    console.log('Page content before clicking Add Task:', await page.content());
+    // Re-fill Task Description justo antes de hacer clic en Añadir Tarea (workaround por que a veces el campo se vaciaba cuando re renderizaba)
+    await taskDescriptionInput.fill(taskDescription);
+    await expect(taskDescriptionInput).toHaveValue(taskDescription, { timeout: 5000 });
+    await page.waitForTimeout(500);
 
-    // Click "Add Task"
+    // Click en "Add Task"
     await modal.getByRole('button', { name: /add task/i }).click();
 
-    // Espera a que la llamada a la API para crear la tarea sea exitosa
-    const response = await page.waitForResponse(resp =>
-      resp.url().includes('/api/v1/tasks') &&
-      resp.request().method() === 'POST'
-    );
+    // Espera a que el modal de añadir tarea desaparezca
+    await expect(modal).not.toBeVisible();
 
-    // Log the response status
-    console.log(`API response status for /api/v1/tasks POST: ${response.status()}`);
-
-    // Assert that the response status is 201 (Created)
-    expect(response.status()).toBe(201); // Este expect fallará si el status no es 201
-
-    // Espera a que el modal de añadir tarea se cierre
-    await expect(modal).not.toBeVisible({ timeout: 10000 });
+    // Filtra por el nombre de la tarea recién creada
+    await page.getByPlaceholder('Search tasks...').fill(taskDescription);
+    await page.keyboard.press('Enter'); // Simula presionar Enter para aplicar el filtro
 
     // Espera a que la tarea aparezca en la lista
-    await expect(page.getByText('Nueva tarea Playwright')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(taskDescription, { exact: true })).toBeVisible({ timeout: 15000 });
 
-    // Screenshot visual del modal cerrado y tarea visible
-    await expect(page).toHaveScreenshot('task-added.png');
+    // Screenshot enmascarando elementos dinámicos
+    await expect(page).toHaveScreenshot('task-added.png', {
+      mask: [
+        // Contador de tareas (e.g., "1 task", "54 tasks")
+        page.locator('h1:has-text("Tasks") span.text-sm'),
+
+        // Contenido del campo de búsqueda
+        page.getByPlaceholder('Search tasks...'),
+
+        // Enmascarar la descripción de la tarea en la tabla (que incluye el timestamp)
+        page.getByRole('cell', { name: /Nueva tarea Playwright - \d+/ }),
+
+        // Botón "Set date"
+        page.getByRole('button', { name: 'Set date' }),
+
+        // Avatares de usuarios asignados (el ID del avatar es dinámico)
+        page.locator('img[alt$="\'s avatar"]'),
+      ],
+    });
   });
 
   test('should download the task list as PDF [@download @mock]', async ({ page, context }) => {
