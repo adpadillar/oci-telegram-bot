@@ -1525,10 +1525,104 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	protected void handleMyTasks(long chatId, UserModel user) {
 		try {
 			List<TaskModel> tasks = taskService.findByUserAssigned(user.getID());
-			sendTaskList(chatId, tasks, "📋 *My Assigned Tasks*\n\n");
+			
+			// Sort tasks by creation date (most recent first) and then by ID for stability
+			tasks.sort((a, b) -> {
+				// First compare by creation date
+				if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
+					int dateCompare = b.getCreatedAt().compareTo(a.getCreatedAt());
+					if (dateCompare != 0) {
+						return dateCompare;
+					}
+				} else if (a.getCreatedAt() == null && b.getCreatedAt() != null) {
+					return 1;
+				} else if (a.getCreatedAt() != null && b.getCreatedAt() == null) {
+					return -1;
+				}
+				// If dates are equal or both null, sort by ID for stability
+				return Integer.compare(b.getID(), a.getID());
+			});
+			
+			// Create keyboard with pagination options
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			
+			// Add pagination buttons if there are more than 5 tasks
+			if (tasks.size() > 5) {
+				KeyboardRow paginationRow = new KeyboardRow();
+				paginationRow.add("⏮️ First 5");
+				paginationRow.add("⏭️ Next 5");
+				keyboardRows.add(paginationRow);
+			}
+			
+			KeyboardRow backRow = new KeyboardRow();
+			backRow.add("↩️ Back to Main Menu");
+			keyboardRows.add(backRow);
+			
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+			keyboard.setOneTimeKeyboard(false);
+
+			// Show first 5 tasks by default
+			StringBuilder message = new StringBuilder("📋 *My Assigned Tasks*\n\n");
+			
+			if (tasks.isEmpty()) {
+				message = new StringBuilder("📭 *No Tasks Found*\n\n" +
+										  "You don't have any assigned tasks yet.\n" +
+										  "Tasks will appear here once they are assigned to you.");
+			} else {
+				int tasksToShow = Math.min(5, tasks.size());
+				for (int i = 0; i < tasksToShow; i++) {
+					TaskModel task = tasks.get(i);
+					UserModel assignedTo = task.getAssignedToId() != null ? 
+						userService.findUserById(task.getAssignedToId()) : null;
+					UserModel createdBy = userService.findUserById(task.getCreatedById());
+					
+					message.append("🔹 *Task #" + task.getID() + "*\n")
+						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
+						.append("📊 *Status:* ").append(getStatusEmoji(task.getStatus())).append(" ").append(task.getStatus()).append("\n")
+						.append("⏱️ *Hours:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append(" (est.)");
+					
+					if (task.getRealHours() != null) {
+						message.append(" / ").append(task.getRealHours()).append(" (real)");
+					}
+					
+					message.append("\n")
+						.append("📅 *Sprint:* ").append(task.getSprintId() != null ? task.getSprintId() : "Not set").append("\n");
+					
+					if (task.getCategory() != null) {
+						message.append("🏷️ *Category:* ").append(getCategoryEmoji(task.getCategory())).append(" ").append(task.getCategory()).append("\n");
+					}
+					
+					message.append("👤 *Assigned to:* ").append(assignedTo != null ? 
+						assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+						.append("👥 *Created by:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
+						.append("📅 *Created:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n");
+				}
+				
+				if (tasks.size() > 5) {
+					message.append("\nShowing 1-5 of ").append(tasks.size()).append(" tasks. Use the buttons below to navigate.");
+					
+					// Save initial pagination state
+					MessageModel stateMessage = new MessageModel();
+					stateMessage.setMessageType("task_pagination");
+					stateMessage.setRole("assistant");
+					stateMessage.setContent("1|my_tasks");
+					stateMessage.setUserId(chatId);
+					stateMessage.setCreatedAt(OffsetDateTime.now());
+					messageService.saveMessage(stateMessage);
+				}
+			}
+
+			SendMessage response = new SendMessage();
+			response.setChatId(chatId);
+			response.setText(message.toString());
+			response.enableMarkdown(true);
+			response.setReplyMarkup(keyboard);
+
+			execute(response);
 		} catch (Exception e) {
 			logger.error("Error getting user tasks", e);
-			
 		}
 	}
 
@@ -2287,8 +2381,47 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 	 */
 	private void handleTaskPagination(long chatId, String action) {
 		try {
-			List<TaskModel> tasks = taskService.findAll();
-			tasks.sort(Comparator.comparingInt(TaskModel::getID));
+			// Get the current page from the last message
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			int currentPage = 1; // Default to first page
+			String viewType = "all"; // Default to all tasks view
+			
+			if (lastMessage != null && lastMessage.getMessageType().equals("task_pagination")) {
+				String[] content = lastMessage.getContent().split("\\|");
+				currentPage = Integer.parseInt(content[0]);
+				if (content.length > 1) {
+					viewType = content[1];
+				}
+			}
+			
+			// Get tasks based on view type
+			List<TaskModel> tasks;
+			String title;
+			if ("my_tasks".equals(viewType)) {
+				UserModel user = userService.findUserByChatId(chatId);
+				tasks = taskService.findByUserAssigned(user.getID());
+				title = "📋 *My Assigned Tasks*\n\n";
+			} else {
+				tasks = taskService.findAll();
+				title = "📋 *All Tasks*\n\n";
+			}
+			
+			// Sort tasks by creation date (most recent first) and then by ID for stability
+			tasks.sort((a, b) -> {
+				// First compare by creation date
+				if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
+					int dateCompare = b.getCreatedAt().compareTo(a.getCreatedAt());
+					if (dateCompare != 0) {
+						return dateCompare;
+					}
+				} else if (a.getCreatedAt() == null && b.getCreatedAt() != null) {
+					return 1;
+				} else if (a.getCreatedAt() != null && b.getCreatedAt() == null) {
+					return -1;
+				}
+				// If dates are equal or both null, sort by ID for stability
+				return Integer.compare(b.getID(), a.getID());
+			});
 			
 			// Create keyboard with pagination options
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
@@ -2310,52 +2443,69 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			keyboard.setResizeKeyboard(true);
 			keyboard.setOneTimeKeyboard(false);
 
-			StringBuilder message = new StringBuilder("📋 *All Tasks*\n\n");
+			StringBuilder message = new StringBuilder(title);
 			
 			if (tasks.isEmpty()) {
-				message = new StringBuilder("No tasks found. Use the Add Task option to create new tasks.");
+				message = new StringBuilder("📭 *No Tasks Found*\n\n" +
+										  "There are no tasks matching your criteria.\n" +
+										  "Try using different filters or create new tasks.");
 			} else {
-				// Get the current page from the last message
-				MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
-				int currentPage = 1; // Default to first page
-				
-				if (lastMessage != null && lastMessage.getMessageType().equals("task_pagination")) {
-					currentPage = Integer.parseInt(lastMessage.getContent());
-				}
-				
 				// Calculate start and end indices based on current page and action
 				if (action.equals("⏮️ First 5")) {
 					currentPage = 1;
 				} else if (action.equals("⏭️ Next 5")) {
-					currentPage++;
+					int nextStartIndex = currentPage * 5;
+					if (nextStartIndex < tasks.size()) {
+						currentPage++;
+					}
 				}
 				
 				int startIndex = (currentPage - 1) * 5;
 				int endIndex = Math.min(startIndex + 5, tasks.size());
 				
-				// If we're at the last page and trying to go next, stay on the last page
+				// Ensure we don't go out of bounds
 				if (startIndex >= tasks.size()) {
-					currentPage--;
-					startIndex = (currentPage - 1) * 5;
-					endIndex = Math.min(startIndex + 5, tasks.size());
+					currentPage = 1;
+					startIndex = 0;
+					endIndex = Math.min(5, tasks.size());
 				}
 				
 				// Save current page state
 				MessageModel stateMessage = new MessageModel();
 				stateMessage.setMessageType("task_pagination");
 				stateMessage.setRole("assistant");
-				stateMessage.setContent(String.valueOf(currentPage));
+				stateMessage.setContent(currentPage + "|" + viewType);
 				stateMessage.setUserId(chatId);
 				stateMessage.setCreatedAt(OffsetDateTime.now());
 				messageService.saveMessage(stateMessage);
 				
+				// Display tasks for current page
 				for (int i = startIndex; i < endIndex; i++) {
 					TaskModel task = tasks.get(i);
-					message.append("🔹 *Task ID:* `").append(task.getID()).append("`\n")
+					UserModel assignedTo = task.getAssignedToId() != null ? 
+						userService.findUserById(task.getAssignedToId()) : null;
+					UserModel createdBy = userService.findUserById(task.getCreatedById());
+					
+					message.append("🔹 *Task #" + task.getID() + "*\n")
 						.append("📝 *Description:* ").append(task.getDescription()).append("\n")
-						.append("📊 *Status:* ").append(task.getStatus()).append("\n")
-						.append("👤 *Assigned to:* ").append(task.getAssignedToId() != null ? 
-							userService.findUserById(task.getAssignedToId()).getFirstName() : "Unknown").append("\n\n");
+						.append("📊 *Status:* ").append(getStatusEmoji(task.getStatus())).append(" ").append(task.getStatus()).append("\n")
+						.append("⏱️ *Hours:* ").append(task.getEstimateHours() != null ? task.getEstimateHours() : "Not set").append(" (est.)");
+					
+					if (task.getRealHours() != null) {
+						message.append(" / ").append(task.getRealHours()).append(" (real)");
+					}
+					
+					message.append("\n")
+						.append("📅 *Sprint:* ").append(task.getSprintId() != null ? task.getSprintId() : "Not set").append("\n");
+					
+					if (task.getCategory() != null) {
+						message.append("🏷️ *Category:* ").append(getCategoryEmoji(task.getCategory())).append(" ").append(task.getCategory()).append("\n");
+					}
+					
+					message.append("👤 *Assigned to:* ").append(assignedTo != null ? 
+						assignedTo.getFirstName() + " " + assignedTo.getLastName() : "Unassigned").append("\n")
+						.append("👥 *Created by:* ").append(createdBy.getFirstName() + " " + createdBy.getLastName()).append("\n")
+						.append("📅 *Created:* ").append(task.getCreatedAt() != null ? task.getCreatedAt() : "Not set").append("\n\n");
 				}
 				
 				if (tasks.size() > 5) {
