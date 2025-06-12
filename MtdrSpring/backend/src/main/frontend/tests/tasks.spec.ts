@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-// Etiquetas para categorizar
-// @tasks @filter @download
-
 test.describe('Task Management E2E', () => {
 
   test.beforeEach(async ({ page, context }) => {
@@ -14,7 +11,7 @@ test.describe('Task Management E2E', () => {
     await page.getByRole('button', { name: /validate code/i }).click();
     await expect(page.getByText('Tasks')).toBeVisible({ timeout: 15000 });
 
-    // Check if the mobile menu button is visible and click it if it is
+    // Otro proceso si es mobile
     const mobileMenuButton = page.getByRole('button', { name: 'Toggle menu' });
     if (await mobileMenuButton.isVisible()) {
       await mobileMenuButton.click();
@@ -24,7 +21,7 @@ test.describe('Task Management E2E', () => {
     await expect(page.getByRole('heading', { name: /Tasks/i })).toBeVisible();
   });
 
-  test('should filter tasks by category and status [@filter @param]', async ({ page }) => {
+  test('should filter tasks by category and status [ID: FILTER-001]', async ({ page }) => {
     // Filtrar por categoría y status
     await page.getByRole('button', { name: /^filter/i }).first().click();
     const selects = page.locator('select');
@@ -44,7 +41,7 @@ test.describe('Task Management E2E', () => {
     await expect(page).toHaveScreenshot('tasks-filtered.png');
   });
 
-  test('should add a new task and see it in the list [@add]', async ({ page }) => {
+  test('should add a new task and see it in the list [ID: ADD-001]', async ({ page }) => {
     const timestamp = Date.now();
     const taskDescription = `Nueva tarea Playwright - ${timestamp}`;
 
@@ -89,13 +86,10 @@ test.describe('Task Management E2E', () => {
     // Screenshot enmascarando elementos dinámicos
     await expect(page).toHaveScreenshot('task-added.png', {
       mask: [
-        // Contador de tareas (e.g., "1 task", "54 tasks")
         page.locator('h1:has-text("Tasks") span.text-sm'),
 
-        // Contenido del campo de búsqueda
         page.getByPlaceholder('Search tasks...'),
 
-        // Enmascarar la hilera completa de la tarea
         page.getByText(taskDescription, { exact: true }).locator('xpath=ancestor::tr'),
       ],
       maxDiffPixelRatio: 0.05,
