@@ -1385,8 +1385,9 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 				List<KeyboardRow> keyboardRows = new ArrayList<>();
 				KeyboardRow row1 = new KeyboardRow();
 				row1.add("created");
-				row1.add("in progress");
+				row1.add("in-progress");
 				row1.add("done");
+				row1.add("in-review");
 				keyboardRows.add(row1);
 				keyboard.setKeyboard(keyboardRows);
 				keyboard.setResizeKeyboard(true);
