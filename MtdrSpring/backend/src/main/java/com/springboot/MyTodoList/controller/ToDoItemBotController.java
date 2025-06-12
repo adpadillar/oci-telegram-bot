@@ -553,7 +553,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			// Get tasks from service
 			List<TaskModel> tasks = taskService.findAll();
 			// Sort tasks by creation date (most recent first)
-			tasks.sort(Comparator.comparing(TaskModel::getCreationDate).reversed());
+			tasks.sort(Comparator.comparing(TaskModel::getCreatedAt).reversed());
 			
 			// Create keyboard with pagination options
 			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
