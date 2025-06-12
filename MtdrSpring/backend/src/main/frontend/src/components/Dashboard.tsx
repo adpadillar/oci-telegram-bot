@@ -12,7 +12,6 @@ import {
   ListTodo,
   LineChart,
   UsersIcon,
-  Search,
   Menu,
   X,
   LogOut,
@@ -38,7 +37,6 @@ const DashboardContent = ({
     return path || "developers";
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleSidebar = () => {
@@ -83,26 +81,6 @@ const DashboardContent = ({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {searchOpen ? (
-                <div className="relative w-full sm:w-auto">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full sm:w-64 h-9 pl-9 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    autoFocus
-                    onBlur={() => setSearchOpen(false)}
-                  />
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                </div>
-              ) : (
-                <button
-                  onClick={() => setSearchOpen(true)}
-                  className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
-                  aria-label="Search"
-                >
-                  <Search size={18} />
-                </button>
-              )}
               <button
                 onClick={handleLogout}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
@@ -140,7 +118,9 @@ const DashboardContent = ({
             isCollapsed={isCollapsed}
             toggleSidebar={toggleSidebar}
           />
-          <div className={`flex-grow overflow-x-hidden transition-all duration-300 ${isCollapsed ? 'md:ml-10' : 'md:ml-10'}`}>
+          <div
+            className={`flex-grow overflow-x-hidden transition-all duration-300 ${isCollapsed ? "md:ml-10" : "md:ml-10"}`}
+          >
             <div className="w-full h-full p-3 sm:p-4 md:p-6">
               <Routes>
                 <Route
