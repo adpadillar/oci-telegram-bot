@@ -155,6 +155,11 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			
 			// Check if the user is in the state of waiting for task description
 			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			if ("waiting_for_task_assignee".equals(lastMessage.getMessageType())) {
+				handleTaskAssignee(chatId, messageText);
+				return;
+			}
+
 			if ("waiting_for_update_selection".equals(lastMessage.getMessageType())) {
 				System.out.println("Waiting for update selection");
 				handleUpdateTaskSelection(chatId, messageText);
@@ -1010,7 +1015,50 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			String dueDate = taskData[2];
 			int sprintNumber = Integer.parseInt(taskData[3]);
 
-			// Create the new task
+			if (user.getRole().equals("manager")) {
+				// Manager: prompt to select an assignee
+				List<UserModel> teamMembers = userService.findUsersByProject(user.getProjectId());
+				// Remove self from options (optional)
+				// teamMembers.removeIf(u -> u.getID().equals(user.getID()));
+
+				ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+				List<KeyboardRow> keyboardRows = new ArrayList<>();
+				for (int i = 0; i < teamMembers.size(); i += 2) {
+					KeyboardRow row = new KeyboardRow();
+					UserModel member1 = teamMembers.get(i);
+					row.add(member1.getFirstName() + " " + member1.getLastName() + " (" + member1.getID() + ")");
+					if (i + 1 < teamMembers.size()) {
+						UserModel member2 = teamMembers.get(i + 1);
+						row.add(member2.getFirstName() + " " + member2.getLastName() + " (" + member2.getID() + ")");
+					}
+					keyboardRows.add(row);
+				}
+				KeyboardRow backRow = new KeyboardRow();
+				backRow.add("↩️ Back to Main Menu");
+				keyboardRows.add(backRow);
+				keyboard.setKeyboard(keyboardRows);
+				keyboard.setResizeKeyboard(true);
+
+				SendMessage message = new SendMessage();
+				message.setChatId(chatId);
+				message.setText("👤 *Asignar Tarea*\n\nSelecciona a quién deseas asignar esta tarea:");
+				message.setReplyMarkup(keyboard);
+				message.enableMarkdown(true);
+
+				// Save state with all task info so far, including category
+				MessageModel stateMessage = new MessageModel();
+				stateMessage.setMessageType("waiting_for_task_assignee");
+				stateMessage.setRole("assistant");
+				stateMessage.setContent(taskDescription + "|" + estimateHours + "|" + dueDate + "|" + sprintNumber + "|" + validCategory + "|" + categoryDisplay);
+				stateMessage.setUserId(chatId);
+				stateMessage.setCreatedAt(java.time.OffsetDateTime.now());
+				messageService.saveMessage(stateMessage);
+
+				execute(message);
+				return;
+			}
+
+			// Developer: proceed as before (auto-assign to self)
 			TaskDTO newTask = new TaskDTO();
 			newTask.setDescription(taskDescription);
 			newTask.setEstimateHours(estimateHours);
@@ -1019,7 +1067,7 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			newTask.setCreatedBy(user.getID());
 			newTask.setAssignedTo(user.getID());
 			newTask.setCategory(validCategory);
-			newTask.setDueDate(OffsetDateTime.parse(dueDate + "T23:59:59Z"));
+			newTask.setDueDate(java.time.OffsetDateTime.parse(dueDate + "T23:59:59Z"));
 
 			// Save the task and get its ID
 			TaskModel savedTask = taskService.addTodoItemToProject(user.getProjectId(), newTask);
@@ -1065,7 +1113,84 @@ public class ToDoItemBotController extends TelegramLongPollingBot {
 			logger.error("Error al crear la tarea: " + e.getMessage());
 		}
 	}
-	
+
+	// Handler for manager assignee selection
+	private void handleTaskAssignee(long chatId, String assigneeText) {
+		try {
+			// Parse the assignee ID from the button text "First Last (ID)"
+			int assigneeId;
+			try {
+				String idStr = assigneeText.substring(assigneeText.lastIndexOf("(") + 1, assigneeText.lastIndexOf(")"));
+				assigneeId = Integer.parseInt(idStr);
+			} catch (Exception e) {
+				SendMessage errorMessage = new SendMessage();
+				errorMessage.setChatId(chatId);
+				errorMessage.setText("❌ Por favor, selecciona un usuario válido de la lista.");
+				execute(errorMessage);
+				return;
+			}
+
+			// Retrieve the task data saved previously
+			MessageModel lastMessage = messageService.findLastAssistantMessageByUserId(chatId);
+			String[] taskData = lastMessage.getContent().split("\\|");
+			String taskDescription = taskData[0];
+			double estimateHours = Double.parseDouble(taskData[1]);
+			String dueDate = taskData[2];
+			int sprintNumber = Integer.parseInt(taskData[3]);
+			String validCategory = taskData[4];
+			String categoryDisplay = taskData[5];
+
+			UserModel manager = userService.findUserByChatId(chatId);
+
+			TaskDTO newTask = new TaskDTO();
+			newTask.setDescription(taskDescription);
+			newTask.setEstimateHours(estimateHours);
+			newTask.setSprint(sprintNumber);
+			newTask.setStatus("created");
+			newTask.setCreatedBy(manager.getID());
+			newTask.setAssignedTo(assigneeId);
+			newTask.setCategory(validCategory);
+			newTask.setDueDate(java.time.OffsetDateTime.parse(dueDate + "T23:59:59Z"));
+
+			TaskModel savedTask = taskService.addTodoItemToProject(manager.getProjectId(), newTask);
+
+			// Get sprint name
+			String sprintName = "Not set";
+			Optional<SprintModel> sprint = sprintService.getSprintById(sprintNumber);
+			if (sprint.isPresent()) {
+				sprintName = sprint.get().getName();
+			}
+
+			// Create keyboard with back button
+			ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+			List<KeyboardRow> keyboardRows = new ArrayList<>();
+			KeyboardRow row = new KeyboardRow();
+			row.add("↩️ Back to Main Menu");
+			keyboardRows.add(row);
+			keyboard.setKeyboard(keyboardRows);
+			keyboard.setResizeKeyboard(true);
+
+			SendMessage confirmationMessage = new SendMessage();
+			confirmationMessage.setChatId(chatId);
+			confirmationMessage.setText("✅ *¡Tarea Creada Exitosamente!*\n\n" +
+							 "🆔 *ID de la Tarea:* " + savedTask.getID() + "\n" +
+							 "📝 *Descripción:* " + taskDescription + "\n" +
+							 "⏱️ *Horas Estimadas:* " + estimateHours + "\n" +
+							 "📅 *Fecha de Vencimiento:* " + dueDate + "\n" +
+							 "📅 *Sprint:* " + sprintName + "\n" +
+							 "🏷️ *Categoría:* " + categoryDisplay + "\n" +
+							 "👤 *Asignado a:* " + assigneeText + "\n\n" +
+							 "Puedes ver esta tarea en el menú \"View Tasks\"");
+			confirmationMessage.setReplyMarkup(keyboard);
+			confirmationMessage.enableMarkdown(true);
+			execute(confirmationMessage);
+
+			showManagerMainMenu(chatId);
+		} catch (TelegramApiException e) {
+			logger.error("Error al asignar la tarea: " + e.getMessage());
+		}
+	}
+
 	/**
 	 * Shows filter options for tasks
 	 * @param chatId - Telegram chat ID of the user
